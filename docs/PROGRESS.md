@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 46 — Startup video preview playback controls (CI pending)
+## Phase 46 — Startup video preview playback controls (CI verified)
 
 - Audited original startup video settings: audio on by default, 0-second delay (0–30), max play 30 seconds (5–60), fade-out on by default.
 - Added those controls to the existing SAF-selected local-video preview only.
@@ -8,7 +8,8 @@
 - Preview stops at its time limit; optional one-second volume fade is used when audio is enabled. Closing the dialog cancels pending callbacks.
 - Added bounded options model and unit tests.
 - Details: `docs/STARTUP_VIDEO_PREVIEW_OPTIONS.md`.
-- Source/test commits: `142eeba245558c89d7843f17e6d61238d4d97f80`, `98fddd2c3a74d7ad7119fff59b260b05a1efcb20`, `6753de156a84867d2e41a398b51818e968ff782f`, `7fb6ee0dab316c22155190b157b9e66725f905d1`; CI pending.
+- GitHub Actions run #133 (ID 41776056994) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776056994
+- Final source/test commit: `7fb6ee0dab316c22155190b157b9e66725f905d1`; artifact ID: 13296299094; APK size: 75,234 bytes; SHA-256: `e4b57e3ff0194eaeae6d8898c8f484fc9a2b765e385df2bf93af1af47cacc48b`.
 
 ## Phase 46 — Foreground device compass sensor (CI pending)
 
