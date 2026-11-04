@@ -9,6 +9,9 @@ public final class CapabilitySnapshot {
     public final String model = Build.MODEL;
     public final String device = Build.DEVICE;
     public final String product = Build.PRODUCT;
+    public final String board = Build.BOARD;
+    public final String hardware = Build.HARDWARE;
+    public final String fingerprint = Build.FINGERPRINT;
     public final int sdk = Build.VERSION.SDK_INT;
     public final String release = Build.VERSION.RELEASE;
     public final String[] abis = Build.SUPPORTED_ABIS.clone();
