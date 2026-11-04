@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 21 — User-confirmed local APK installer (CI pending)
+
+- Added document-picker selection for a local APK and handoff to Android's package installer.
+- Android 8+ unknown-source authorization is handled through the system app-specific setting; installation itself remains a system-confirmed user action.
+- No silent install, root, background install, or APK download is implemented.
+- Details: `docs/LOCAL_APK_INSTALLER.md`.
+- Source and manifest commits are in `f5e31c2236ebe23c2d74b2604f8607d5bada7a29` and `c610b515a787b6833ff57d8f0659109f07c08d1d`; CI validation pending.
+
 ## Phase 20 — Direct JSON preset file import and export (CI verified)
 
 - Added Android document-picker import for JSON presets; files are read through content URIs with a 1 MiB limit and validated before storage.
