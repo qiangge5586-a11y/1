@@ -68,6 +68,7 @@ public final class MainActivity extends Activity {
     private TextView obdStatus;
     private TextView obdPidStatus;
     private TextView obdDtcStatus;
+    private TextView obdEngineStatus;
     private Runnable meterPreviewRender;
     private boolean obdLiveConnected;
     private Integer obdLiveSpeedKph;
@@ -2037,6 +2038,10 @@ public final class MainActivity extends Activity {
         obdDtcStatus.setText("Stored trouble codes: not requested");
         obdDtcStatus.setTextSize(13);
         content.addView(obdDtcStatus);
+        obdEngineStatus = new TextView(this);
+        obdEngineStatus.setText("Engine status / MIL: not requested");
+        obdEngineStatus.setTextSize(13);
+        content.addView(obdEngineStatus);
         Button readStored = new Button(this);
         readStored.setText("Read stored fault codes (Mode 03)");
         readStored.setOnClickListener(v ->
@@ -2055,6 +2060,12 @@ public final class MainActivity extends Activity {
                 confirmDiagnosticRead(ObdReadOnlyCommands.PERMANENT_DTC, "permanent"));
         content.addView(readPermanent, matchWrap());
 
+        Button readEngineStatus = new Button(this);
+        readEngineStatus.setText("Read check-engine light status (PID 01)");
+        readEngineStatus.setOnClickListener(v ->
+                confirmDiagnosticRead(ObdReadOnlyCommands.ENGINE_STATUS, "check-engine status"));
+        content.addView(readEngineStatus, matchWrap());
+
         Button copyReport = new Button(this);
         copyReport.setText("Copy OBD-II diagnostic report");
         copyReport.setOnClickListener(v -> copyObdDiagnosticReport());
@@ -2071,9 +2082,18 @@ public final class MainActivity extends Activity {
                 .setMessage("Sends one standard read-only OBD request after confirmation. It does not clear codes, reset the ECU or change vehicle settings.")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Read codes", (dialog, which) -> {
-                    if (obdController == null
-                            || !obdController.requestDiagnosticCodes(command)) {
-                        obdDtcStatus.setText("Connect to a paired OBD-II adapter and wait until it is ready before reading codes.");
+                    boolean isEngineStatus = ObdReadOnlyCommands.ENGINE_STATUS.equals(command);
+                    boolean queued = obdController != null && (isEngineStatus
+                            ? obdController.requestEngineStatus()
+                            : obdController.requestDiagnosticCodes(command));
+                    if (!queued) {
+                        if (isEngineStatus) {
+                            obdEngineStatus.setText("Connect to a paired OBD-II adapter and wait until it is ready.");
+                        } else {
+                            obdDtcStatus.setText("Connect to a paired OBD-II adapter and wait until it is ready before reading codes.");
+                        }
+                    } else if (isEngineStatus) {
+                        obdEngineStatus.setText("Reading check-engine light status…");
                     } else {
                         obdDtcStatus.setText("Reading " + category + " trouble codes…");
                     }
@@ -2088,6 +2108,7 @@ public final class MainActivity extends Activity {
         String report = ObdDiagnosticReport.build(generatedAt,
                 obdStatus == null ? null : obdStatus.getText().toString(),
                 obdPidStatus == null ? null : obdPidStatus.getText().toString(),
+                obdEngineStatus == null ? null : obdEngineStatus.getText().toString(),
                 obdDtcStatus == null ? null : obdDtcStatus.getText().toString());
         android.content.ClipboardManager clipboard =
                 (android.content.ClipboardManager) getSystemService(
@@ -2200,6 +2221,8 @@ public final class MainActivity extends Activity {
                         obdPidStatus.setText("ECU-supported dashboard PIDs: unavailable");
                     if (obdDtcStatus != null)
                         obdDtcStatus.setText("Diagnostic results unavailable after adapter disconnect.");
+                    if (obdEngineStatus != null)
+                        obdEngineStatus.setText("Engine status / MIL: adapter disconnected.");
                 }
                 if (obdStatus != null) obdStatus.setText(state);
             }
@@ -2230,6 +2253,17 @@ public final class MainActivity extends Activity {
                     result.append("\\n").append(obdPidLabel(command)).append(" · ").append(command);
                 }
                 obdPidStatus.setText(result.toString());
+            }
+            @Override public void onEngineStatus(ObdReadinessDecoder.Status status) {
+                if (isFinishing() || isDestroyed() || obdEngineStatus == null) return;
+                if (status == null) {
+                    obdEngineStatus.setText("Check-engine status: no valid ECU response.");
+                    return;
+                }
+                obdEngineStatus.setText("Check-engine light (MIL): "
+                        + (status.milOn ? "ON" : "OFF")
+                        + "\\nStored DTC count (PID 01): " + status.storedDtcCount
+                        + "\\nRead only · no codes were cleared.");
             }
             @Override public void onDiagnosticCodes(String command, java.util.List<String> codes) {
                 if (isFinishing() || isDestroyed() || obdDtcStatus == null) return;
