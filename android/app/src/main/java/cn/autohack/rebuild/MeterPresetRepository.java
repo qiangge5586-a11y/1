@@ -29,7 +29,7 @@ public final class MeterPresetRepository {
             byte[] buffer = new byte[1024];
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return MeterPreset.fromJson(new String(output.toByteArray(), StandardCharsets.UTF_8));
+            return MeterPreset.fromJson(new String(output.toByteArray(), Charset.forName("UTF-8")));
         }
     }
 }
