@@ -8,7 +8,7 @@
 - Related 10th-gen Civic research reports Android 4.2.2 for most 2016–2021 head units but warns that some lower trims differ; 2019 China-market 劲动 trim sources confirm CarPlay/basic display context but do not confirm its exact OS or APK sideload capability.
 - This is an API compatibility target, not a claim that the user's exact factory screen accepts APK installation. Physical API 17/19 head-unit testing remains outstanding.
 - Details: `docs/ANDROID_API17_COMPATIBILITY.md`.
-- Source/workflow commits: `33f8f20a1e986fd1ffd20a34c8932f4b0e99ec04`, `297689c0647f3d23067e2446c2cae50250354620`; CI pending.
+- Source/workflow commits: `33f8f20a1e986fd1ffd20a34c8932f4b0e99ec04`, `297689c0647f3d23067e2446c2cae50250354620`, `6cf89c282832bed44f1fbfe89ff0d4b28f1b9488`, `cefdcdff74cde694437d2ee0892efbe6512d893d`, `e132656c703afd61b1d960a394823adafcb74aba`, `eabfd90da49a302c5b51131d87923596e63f02c7`; CI pending.
 
 
 ## Phase 70 — Local OBD diagnostic report copy (CI verified)
