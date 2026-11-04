@@ -29,6 +29,26 @@ jobs:
       - name: Assemble debug APK
         working-directory: android
         run: gradle --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+      - name: Verify APK metadata and write build info
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          PACKAGE="$(printf '%s\n' "$BADGING" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")"
+          MIN_SDK="$(printf '%s\n' "$BADGING" | sed -n "s/.*sdkVersion:'\\([^']*\\)'.*/\\1/p" | head -n 1)"
+          TARGET_SDK="$(printf '%s\n' "$BADGING" | sed -n "s/.*targetSdkVersion:'\\([^']*\\)'.*/\\1/p" | head -n 1)"
+          APK_SHA256="$(sha256sum "$APK" | cut -d ' ' -f 1)"
+          APK_SIZE="$(stat -c '%s' "$APK")"
+          test "$MIN_SDK" = "17"
+          {
+            echo "Package: $PACKAGE"
+            echo "Min SDK: $MIN_SDK"
+            echo "Target SDK: $TARGET_SDK"
+            echo "APK size bytes: $APK_SIZE"
+            echo "APK SHA-256: $APK_SHA256"
+            echo "Build type: debug (debug signing; not a release-signed APK)"
+          } > android/app/build/outputs/apk/debug/build-info.txt
       - name: Upload lint report
         if: always()
         uses: actions/upload-artifact@v4
@@ -39,5 +59,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: hondahack-rebuild-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: hondahack-rebuild-api17-debug
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/build-info.txt
