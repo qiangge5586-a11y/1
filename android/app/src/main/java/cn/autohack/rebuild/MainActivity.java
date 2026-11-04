@@ -76,6 +76,7 @@ public final class MainActivity extends Activity {
         content.addView(startupNote);
         addStartupVideoSettings();
         addStartupAudioSettings();
+        addStartupAppLauncher();
 
         addSection("Device capability (read-only)");
         TextView facts = new TextView(this);
@@ -138,6 +139,69 @@ public final class MainActivity extends Activity {
                 scroll.smoothScrollTo(0, content.getChildAt(meterSectionIndex).getTop());
             }
         });
+    }
+
+    private void addStartupAppLauncher() {
+        addSection("Startup app selection · manual launch only");
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("startup_preferences", MODE_PRIVATE);
+        java.util.List<StartupAppLauncher.Entry> apps =
+                StartupAppLauncher.listUserLaunchableApps(this);
+        if (apps.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText("No launchable user-installed apps were found.");
+            content.addView(empty);
+            return;
+        }
+        String[] labels = new String[apps.size()];
+        for (int i = 0; i < apps.size(); i++) labels[i] = apps.get(i).label;
+        Spinner selector = new Spinner(this);
+        selector.setAdapter(new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, labels));
+        selector.setSelection(0);
+        String savedPackage = prefs.getString("selected_startup_app", null);
+        for (int i = 0; i < apps.size(); i++) {
+            if (apps.get(i).packageName.equals(savedPackage)) {
+                selector.setSelection(i);
+                break;
+            }
+        }
+        selector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent,
+                    android.view.View view, int position, long id) {
+                prefs.edit().putString("selected_startup_app",
+                        apps.get(position).packageName).apply();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        content.addView(selector, matchWrap());
+
+        TextView status = new TextView(this);
+        status.setText("Select an installed app, then tap Launch. No automatic startup is configured.");
+        content.addView(status);
+        Button launch = new Button(this);
+        launch.setText("Launch selected app");
+        launch.setOnClickListener(v -> {
+            int index = selector.getSelectedItemPosition();
+            if (index < 0 || index >= apps.size()) {
+                status.setText("Select an app first.");
+                return;
+            }
+            StartupAppLauncher.Entry entry = apps.get(index);
+            try {
+                boolean started = StartupAppLauncher.launch(this, entry.packageName);
+                status.setText(started ? "Launch request sent to " + entry.label
+                        : "The selected app no longer has a launch activity.");
+            } catch (RuntimeException error) {
+                status.setText("Unable to launch " + entry.label + ": " + error.getMessage());
+            }
+        });
+        content.addView(launch, matchWrap());
+
+        TextView note = new TextView(this);
+        note.setText("Only user-installed apps with a launcher activity are listed. Launch requires a tap. No boot receiver, background auto-start, force-stop, play command or private app data access is used.");
+        note.setTextSize(12);
+        content.addView(note);
     }
 
     private void addStartupVideoSettings() {
