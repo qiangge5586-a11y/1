@@ -5,19 +5,14 @@
 ### Verified Phase 1 — original APK archived and integrity checked
 
 - Correct Library entry: `/本田黑科技7.6.0_可联网_去注销_任意.apk`.
-- Materialized original APK to the working container without modifying the Library source.
+- Materialized a read-only working copy from the Library; original Library bytes were not modified.
 - File size: 3,893,398 bytes.
 - Recomputed SHA-256: `e52aed97a77bc4be1e4d248bb9526edafaae428ea20b8926f7763e532cc55fbe`; exact match with the reverse-engineering report.
-- ZIP/APK structure validated: 986 entries; `AndroidManifest.xml`, `resources.arsc`, one `classes.dex` (1,909,752 bytes), and three ARMv7 native libraries (`libnative.so`, `libmp3lame.so`, `libxposed.so`).
-- Assets include `assets/VERSION` and `assets/xposed_init`.
-- APK signature-related META-INF files are present; signer certificate details and binary manifest decoding remain pending.
-- Status: phase 1 complete; phase 2 inventory/decode in progress.
-
-
-- Reverse-engineering report located in the ChatGPT Library: `本田黑科技_7.6.0_逆向分析.md` (353 lines).
-- A source archive already exists in this repository: `HondaHackRebuild_source.zip` (29,808 bytes). Its contents have not yet been verified in this execution environment.
-- The original 7.6.0 APK itself was not found in the Library search results. The report identifies the analyzed modified sample as 3,893,398 bytes with SHA-256 `E52AED97A77BC4BE1E4D248BB9526EDAFAAE428EA20B8926F7763E532CC55FBE`.
-- The official comparison APK described in the report is HondaHack 4.8.16 (2,410,380 bytes), not the 7.6.0 baseline. Do not treat it as an exact substitute.
+- ZIP/APK integrity test passed; the archive contains 986 entries, one `classes.dex` (1,909,752 bytes), `resources.arsc`, and three ARMv7 native libraries.
+- Binary manifest structural decode and signer certificate inventory are documented in `MANIFEST_COMPONENT_AUDIT.md` and `APK_BASELINE_INVENTORY.md`.
+- Reverse-engineering report located in Library: `本田黑科技_7.6.0_逆向分析.md`.
+- Existing starter source archive: `HondaHackRebuild_source.zip` (29,808 bytes; 47 entries); see `SOURCE_ARCHIVE_AUDIT.md`.
+- Official comparison APK in the report is version 4.8.16, not an exact substitute for the 7.6.0 sample.
 
 ## Goal
 
@@ -63,4 +58,4 @@ The report describes replacement of `/system/bin/app_process`, overwriting `plat
 
 ## Current blocker
 
-The exact original 7.6.0 APK is not present in the Library search results currently available. The reverse-engineering report references a local Windows path, but that path is not accessible here. The existing source ZIP is in this GitHub repository, but its archive contents still need to be extracted and audited before claiming a completed rebuild.
+The exact 7.6.0 APK is available in the Library and its hash matches the reverse-engineering report. The supplied report records a JADX 1.5.3 decompilation on the original analyst workstation, but the raw `jadx-out/sources` tree is not present in the Library or GitHub repository, and the current build container has no JADX CLI installed. Therefore method-level behavior is currently supported by the report and DEX structural audits, not by a fresh source-tree review. Recover the decompilation output or install a verified JADX CLI before claiming that the key classes have been independently re-reviewed.
