@@ -200,6 +200,52 @@ public final class MainActivity extends Activity {
         });
         content.addView(clear, matchWrap());
 
+        android.widget.CheckBox videoAudio = new android.widget.CheckBox(this);
+        videoAudio.setText("Play video audio");
+        videoAudio.setChecked(prefs.getBoolean("startup_video_audio_enabled", true));
+        videoAudio.setOnCheckedChangeListener((button, checked) ->
+                prefs.edit().putBoolean("startup_video_audio_enabled", checked).apply());
+        content.addView(videoAudio);
+
+        android.widget.CheckBox fadeOut = new android.widget.CheckBox(this);
+        fadeOut.setText("Fade out at preview time limit");
+        fadeOut.setChecked(prefs.getBoolean("startup_video_fade_out", true));
+        fadeOut.setOnCheckedChangeListener((button, checked) ->
+                prefs.edit().putBoolean("startup_video_fade_out", checked).apply());
+        content.addView(fadeOut);
+
+        TextView delayLabel = new TextView(this);
+        android.widget.SeekBar delay = new android.widget.SeekBar(this);
+        delay.setMax(30);
+        delay.setProgress(Math.max(0, Math.min(30,
+                prefs.getInt("startup_video_delay_seconds", 0))));
+        addLabeledControl("Preview start delay: 0–30 seconds", delayLabel, delay);
+        delayLabel.setText("Preview start delay: " + delay.getProgress() + " seconds");
+        delay.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(android.widget.SeekBar bar, int value, boolean user) {
+                delayLabel.setText("Preview start delay: " + value + " seconds");
+                if (user) prefs.edit().putInt("startup_video_delay_seconds", value).apply();
+            }
+            @Override public void onStartTrackingTouch(android.widget.SeekBar bar) {}
+            @Override public void onStopTrackingTouch(android.widget.SeekBar bar) {}
+        });
+
+        TextView maxTimeLabel = new TextView(this);
+        android.widget.SeekBar maxTime = new android.widget.SeekBar(this);
+        maxTime.setMax(55);
+        maxTime.setProgress(Math.max(0, Math.min(55,
+                prefs.getInt("startup_video_max_seconds", 30) - 5)));
+        addLabeledControl("Maximum preview duration: 5–60 seconds", maxTimeLabel, maxTime);
+        maxTimeLabel.setText("Maximum preview duration: " + (maxTime.getProgress() + 5) + " seconds");
+        maxTime.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(android.widget.SeekBar bar, int value, boolean user) {
+                maxTimeLabel.setText("Maximum preview duration: " + (value + 5) + " seconds");
+                if (user) prefs.edit().putInt("startup_video_max_seconds", value + 5).apply();
+            }
+            @Override public void onStartTrackingTouch(android.widget.SeekBar bar) {}
+            @Override public void onStopTrackingTouch(android.widget.SeekBar bar) {}
+        });
+
         TextView explanation = new TextView(this);
         explanation.setText("The selected video is stored as a local document reference. Playback starts only after you tap Preview. No boot receiver, automatic playback, network access, or background service is used.");
         explanation.setTextSize(12);
@@ -382,17 +428,67 @@ public final class MainActivity extends Activity {
         controls.setAnchorView(video);
         video.setMediaController(controls);
         video.setVideoURI(uri);
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("startup_preferences", MODE_PRIVATE);
+        boolean audioEnabled = prefs.getBoolean("startup_video_audio_enabled", true);
+        boolean fadeEnabled = prefs.getBoolean("startup_video_fade_out", true);
+        int delaySeconds = Math.max(0, Math.min(30,
+                prefs.getInt("startup_video_delay_seconds", 0)));
+        int maxSeconds = Math.max(5, Math.min(60,
+                prefs.getInt("startup_video_max_seconds", 30)));
+        android.os.Handler playbackHandler =
+                new android.os.Handler(android.os.Looper.getMainLooper());
         LinearLayout frame = new LinearLayout(this);
         frame.setOrientation(LinearLayout.VERTICAL);
         frame.addView(video, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(220)));
+        TextView playbackNote = new TextView(this);
+        playbackNote.setText("Manual local preview · max " + maxSeconds
+                + " seconds · audio " + (audioEnabled ? "on" : "off"));
+        frame.addView(playbackNote);
         android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
                 .setTitle("Local video preview")
                 .setView(frame)
                 .setPositiveButton("Close", null)
                 .create();
-        dialog.setOnDismissListener(ignored -> video.stopPlayback());
+        video.setOnPreparedListener(player -> {
+            player.setVolume(audioEnabled ? 1.0f : 0.0f, audioEnabled ? 1.0f : 0.0f);
+            playbackNote.setText("Preview starts in " + delaySeconds + " seconds · maximum "
+                    + maxSeconds + " seconds · audio " + (audioEnabled ? "on" : "off"));
+            playbackHandler.postDelayed(() -> {
+                if (!dialog.isShowing()) return;
+                video.start();
+                playbackHandler.postDelayed(() -> {
+                    if (!dialog.isShowing()) return;
+                    if (fadeEnabled && audioEnabled) {
+                        fadeOutStartupVideo(player, video, dialog, playbackHandler, 0);
+                    } else {
+                        video.pause();
+                        playbackNote.setText("Preview time limit reached.");
+                    }
+                }, maxSeconds * 1000L);
+            }, delaySeconds * 1000L);
+        });
+        dialog.setOnDismissListener(ignored -> {
+            playbackHandler.removeCallbacksAndMessages(null);
+            video.stopPlayback();
+        });
         dialog.show();
+    }
+
+    private void fadeOutStartupVideo(android.media.MediaPlayer player,
+            android.widget.VideoView video, android.app.AlertDialog dialog,
+            android.os.Handler handler, int step) {
+        if (!dialog.isShowing()) return;
+        if (step >= 10) {
+            player.setVolume(0.0f, 0.0f);
+            video.pause();
+            return;
+        }
+        float volume = Math.max(0.0f, 1.0f - ((step + 1) / 10.0f));
+        player.setVolume(volume, volume);
+        handler.postDelayed(() ->
+                fadeOutStartupVideo(player, video, dialog, handler, step + 1), 100L);
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode,
