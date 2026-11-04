@@ -66,6 +66,7 @@ public final class MainActivity extends Activity {
     private android.widget.CheckBox gpsCourseOptInCheckbox;
     private BluetoothObdController obdController;
     private TextView obdStatus;
+    private TextView obdPidStatus;
     private TextView obdDtcStatus;
     private Runnable meterPreviewRender;
     private boolean obdLiveConnected;
@@ -1965,6 +1966,10 @@ public final class MainActivity extends Activity {
         obdStatus.setText("OBD-II adapter: disconnected · demo values above remain separate");
         obdStatus.setTextSize(14);
         content.addView(obdStatus);
+        obdPidStatus = new TextView(this);
+        obdPidStatus.setText("ECU-supported dashboard PIDs: not discovered");
+        obdPidStatus.setTextSize(13);
+        content.addView(obdPidStatus);
         Button chooseObd = new Button(this);
         chooseObd.setText("Choose paired OBD-II adapter");
         chooseObd.setOnClickListener(v -> choosePairedObdAdapter());
@@ -2099,11 +2104,15 @@ public final class MainActivity extends Activity {
                     obdLiveCoolantTempC = null;
                     obdLiveFuelPercent = null;
                     if (meterPreviewRender != null) meterPreviewRender.run();
+                    if (obdPidStatus != null)
+                        obdPidStatus.setText("ECU-supported dashboard PIDs: discovering…");
                 } else if (state.startsWith("OBD-II adapter disconnected")
                         || state.startsWith("OBD-II connection failed")) {
                     clearLiveObdOverlay();
+                    if (obdPidStatus != null)
+                        obdPidStatus.setText("ECU-supported dashboard PIDs: unavailable");
                     if (obdDtcStatus != null)
-                        obdDtcStatus.setText("Stored trouble codes: adapter disconnected.");
+                        obdDtcStatus.setText("Diagnostic results unavailable after adapter disconnect.");
                 }
                 if (obdStatus != null) obdStatus.setText(state);
             }
@@ -2123,6 +2132,18 @@ public final class MainActivity extends Activity {
                         + "\\nFuel level: " + displayObdValue(fuelPercent, "%")
                         + "\\nFour live meter fields are overlaid; unsupported route, distance and economy tokens show --.");
             }
+            @Override public void onSupportedPids(java.util.List<String> commands) {
+                if (isFinishing() || isDestroyed() || obdPidStatus == null) return;
+                if (commands == null || commands.isEmpty()) {
+                    obdPidStatus.setText("ECU-supported dashboard PIDs: none of the four requested gauges were advertised.");
+                    return;
+                }
+                StringBuilder result = new StringBuilder("ECU-supported dashboard PIDs:");
+                for (String command : commands) {
+                    result.append("\\n").append(obdPidLabel(command)).append(" · ").append(command);
+                }
+                obdPidStatus.setText(result.toString());
+            }
             @Override public void onDiagnosticCodes(String command, java.util.List<String> codes) {
                 if (isFinishing() || isDestroyed() || obdDtcStatus == null) return;
                 String category = ObdReadOnlyCommands.STORED_DTC.equals(command) ? "Stored"
@@ -2140,6 +2161,14 @@ public final class MainActivity extends Activity {
         });
         obdController.connect(device);
         obdStatus.setText("Connecting to paired OBD-II adapter…");
+    }
+
+    private String obdPidLabel(String command) {
+        if (ObdReadOnlyCommands.SPEED.equals(command)) return "Speed";
+        if (ObdReadOnlyCommands.ENGINE_RPM.equals(command)) return "Engine RPM";
+        if (ObdReadOnlyCommands.COOLANT_TEMP.equals(command)) return "Coolant temperature";
+        if (ObdReadOnlyCommands.FUEL_LEVEL.equals(command)) return "Fuel level";
+        return "Other PID";
     }
 
     private void clearLiveObdOverlay() {
