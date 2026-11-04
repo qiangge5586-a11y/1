@@ -117,3 +117,20 @@ The binary manifest was confirmed present and its UTF-16 string pool was inspect
 - Implement only the permissions required by each independently rebuilt feature, with runtime explanation and user consent.
 - Keep the ARMv7 libraries isolated for analysis; do not load them on a vehicle head unit without ABI and provenance validation.
 - Treat the original APK as a read-only forensic baseline. Rebuild functionality independently and document behavior rather than shipping a modified copy of this sample.
+
+
+## Additional DEX structural pass
+
+A direct DEX header/table parse confirms:
+- DEX format magic: `dex\n035`.
+- 12,302 string IDs.
+- 2,555 type IDs.
+- 3,490 proto IDs.
+- 13,775 field IDs.
+- 15,752 method IDs.
+- 1,770 class definitions total.
+- 427 classes under the `cn.autohack` namespace (353 under `cn.autohack.hondahack`; the remainder are utility and voice-assistant packages).
+
+The DEX string table also contains internal action identifiers for meter updates, navigation start/stop, audio focus, startup video, key remapping and voice-assistant state changes. It contains references to network endpoints and privileged filesystem operations; these are treated as forensic indicators only and are not copied into the clean rebuild.
+
+This pass is structural/string-based. It does not replace decompilation or control-flow analysis.
