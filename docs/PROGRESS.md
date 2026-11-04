@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 46 — Foreground device compass sensor (CI pending)
+
+- Added Android public `TYPE_ROTATION_VECTOR` support for the Civic meter compass when the sensor exists.
+- Converts azimuth to eight compass directions and remaps axes for display rotation.
+- Sensor starts only while the Activity is foregrounded and compass is enabled; it stops in `onPause`.
+- No location permission, GPS, navigation app, vehicle service, CAN, OBD or ECU access. Missing sensor falls back to the labelled sample heading.
+- Track-up remains simulated because device orientation is not a verified direction-of-travel source.
+- Added unit tests for cardinal/intercardinal directions, angle normalization, boundaries and invalid values.
+- Details: `docs/DEVICE_COMPASS_SENSOR.md`.
+- Source/test commits: `b6b60ddf9195b98321a27ad6baa8bb3e1ef3b0fc`, `68793720c57dac01fa2f03cc1bc19c9752e66dfa`, `dc84db3d0770825f10afe415a806e9d745c29d4b`, `47158b25c19a2b8377e5a6b745fb94afb6690aa4`, `dae73ec6fac4388b48d3b7648cb64877a5006f89`; CI pending.
+
 ## Phase 45 — Original screen-casting integration audit (analysis complete)
 
 - Confirmed original screen casting binds to the private SystemUI `TakeScreenshotService` through an Xposed process hook.
