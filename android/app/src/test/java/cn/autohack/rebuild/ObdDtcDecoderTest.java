@@ -26,6 +26,15 @@ public final class ObdDtcDecoderTest {
                 ObdDtcDecoder.decodeStoredCodes("43 01 33 01 23 01 33"));
     }
 
+    @Test public void decodesPendingAndPermanentModeResponses() {
+        assertEquals(Arrays.asList("P0133"),
+                ObdDtcDecoder.decodePendingCodes("07\\r47 01 33>"));
+        assertEquals(Arrays.asList("P0420"),
+                ObdDtcDecoder.decodePermanentCodes("0A\\r4A 04 20>"));
+        assertTrue(ObdDtcDecoder.decodePendingCodes("43 01 33").isEmpty());
+        assertTrue(ObdDtcDecoder.decodePermanentCodes("47 01 33").isEmpty());
+    }
+
     @Test public void noDataNegativeAndNullResponsesReturnEmpty() {
         assertTrue(ObdDtcDecoder.decodeStoredCodes(null).isEmpty());
         assertTrue(ObdDtcDecoder.decodeStoredCodes("NO DATA").isEmpty());
