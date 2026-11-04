@@ -23,7 +23,7 @@ public final class VoiceCommandParserTest {
         assertEquals("公司", destination.target);
         assertEquals(VoiceCommandParser.Type.NAVIGATE_TO,
                 VoiceCommandParser.parse("带我去机场").type);
-        assertEquals(VoiceCommandParser.Type.NAVIGATION_UNAVAILABLE,
+        assertEquals(VoiceCommandParser.Type.NAVIGATE_HOME,
                 VoiceCommandParser.parse("回家").type);
         assertEquals(VoiceCommandParser.Type.MUSIC_UNAVAILABLE,
                 VoiceCommandParser.parse("播放周杰伦").type);
