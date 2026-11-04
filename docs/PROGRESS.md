@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 24 — Explicit on-device voice recognition (CI pending)
+
+- Added a user-started speech-recognition prototype for Android 12+ devices that expose an on-device recognition service.
+- Requests microphone permission only after Start is tapped; provides Stop and destroys the recognizer when the Activity stops.
+- Does not use cloud fallback, wake-word/background listening, network upload, or vehicle command execution.
+- Details: `docs/ON_DEVICE_VOICE_ASSISTANT.md`.
+- Source and manifest commits: `5143804365ea9c4ca18afcb8d59b7b6f2317522b` and `5f89ec0122d7802cee50df22b5a3387af50bd0aa`; CI pending.
+
 ## Phase 23 — App-scoped display controls (CI verified)
 
 - Added an opt-in keep-screen-awake switch, active only while the app screen is visible.
