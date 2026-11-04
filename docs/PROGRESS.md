@@ -1,13 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 20 — Direct JSON preset file import and export (CI pending)
+## Phase 20 — Direct JSON preset file import and export (CI verified)
 
 - Added Android document-picker import for JSON presets; files are read through content URIs with a 1 MiB limit and validated before storage.
 - Added Save JSON file export through Android's create-document flow; existing paste import and share-sheet export remain available.
 - Details: `docs/JSON_FILE_IMPORT_EXPORT.md`.
-- CI validation is pending for this phase.
+- GitHub Actions run #48 (ID 41761494816) completed successfully; unit tests, debug APK assembly and artifact upload succeeded: https://github.com/qiangge5586-a11y/1/actions/runs/41761494816
+- Artifact ID: 13290362772; APK size: 38,228 bytes; APK SHA-256: `a414bad79f5f9a837d443f93eb7cc9ea0482fa7b5e89566debd931337d6c3de3`.
 
 ## Phase 19 — Startup preferences and local video preview (CI verified)
+
+- GitHub Actions run #47 (ID 41760974386) completed successfully: https://github.com/qiangge5586-a11y/1/actions/runs/41760974386
 
 - Added a disabled-by-default checkbox to open the offline meter editor when the app launches.
 - Persists the choice locally and scrolls to the editor after layout; no boot receiver, boot permission, background startup, or third-party launch.
@@ -29,7 +32,8 @@ Last updated: 2026-11-04
 ## Phase 20 implementation status
 
 - Source implementation committed in `a168d7c5353e43822d8ecc1cc770aa86ddc32ca2`.
-- Direct file import/export is implemented; CI and device-level document-provider checks remain pending.
+- CI run #48 passed and its APK artifact was downloaded and SHA-256 checked.
+- Real Android document-provider import/export interaction still needs manual device validation.
 
 ## Phase 17 — Named meter preset management
 
@@ -115,7 +119,7 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 
 ## Next steps
 
-1. Add Android document-picker import/export so users can select a JSON file directly.
+1. Obtain readable JADX output and review high-value original methods (MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService).
 2. Obtain readable JADX output and review high-value original methods (MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService).
 2. Add named preset save/rename/duplicate/import/export.
 3. Add safe, explicit audio-focus controls and startup preferences using public Android APIs.
