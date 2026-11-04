@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 39 — Original vehicle telemetry transport audit (analysis complete)
+
+- Confirmed original meter values use a privileged file IPC directory at `/data/local/tmp/shared_files`, created by shell and made world-writable (`chmod -R 777`).
+- `C0185dc` uses `RandomAccessFile` and file locks to read/write integer values; `C0269ua` polls speed, distance-to-empty, trip distance, fuel efficiency and coolant fields.
+- Xposed callbacks populate selected shared files; this is not a documented OBD-II or public Honda API.
+- The rebuild deliberately does not reproduce the privileged file bridge, broad permissions, root or Xposed hooks.
+- Details: `docs/VEHICLE_DATA_TRANSPORT_AUDIT.md`.
+
 ## Phase 38 — DEX-level Civic layout selector verification (analysis complete)
 
 - Rechecked `C0269ua.getMeterLayout()` in JADX raw-instruction fallback mode after normal Java output incorrectly reconstructed its switch return path.
