@@ -34,7 +34,7 @@ The companion `ObdPidQueryPlan` starts with `0100`, follows only advertised `012
 - These are generic OBD-II PIDs, not Honda-specific enhanced PIDs.
 - OBD speed is not the same as GPS speed. OBD engine/fuel values must not be replaced with GPS values.
 - No gear position is decoded because it is not a universally supported standard Mode 01 PID.
-- No live connection, Bluetooth permission or pairing UI is included in this phase. The current in-app vehicle panel remains clearly labelled demo data until a physical adapter and connection workflow are validated.
+- Phase 58 itself adds no hardware connection. Phase 59 adds an optional paired Bluetooth SPP controller with an explicit confirmation and a fixed read-only command allowlist; see `docs/BLUETOOTH_OBD_ADAPTER.md`. The offline demo snapshot remains separate from live OBD values.
 
 ## Validation
 
