@@ -503,8 +503,7 @@ public final class MainActivity extends Activity {
                         android.view.View view, int position, long id) {
                     prefs.edit().putString(preferenceKey, actions[position]).apply();
                     status.setText(keyName + " is assigned to: " + actions[position]
-                            + "
-Simulation only — no command is sent to the car.");
+                            + "\nSimulation only — no command is sent to the car.");
                 }
                 @Override public void onNothingSelected(AdapterView<?> parent) {}
             });
@@ -514,8 +513,7 @@ Simulation only — no command is sent to the car.");
             simulate.setText("Simulate " + keyName);
             simulate.setOnClickListener(v -> status.setText("Simulated " + keyName
                     + " → " + selector.getSelectedItem()
-                    + "
-No physical steering-wheel input was intercepted."));
+                    + "\nNo physical steering-wheel input was intercepted."));
             content.addView(simulate, matchWrap());
         }
     }
