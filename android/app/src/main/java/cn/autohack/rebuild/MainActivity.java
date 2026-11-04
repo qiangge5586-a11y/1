@@ -66,6 +66,7 @@ public final class MainActivity extends Activity {
     private android.widget.CheckBox gpsCourseOptInCheckbox;
     private BluetoothObdController obdController;
     private TextView obdStatus;
+    private TextView obdDtcStatus;
     private Runnable meterPreviewRender;
     private boolean obdLiveConnected;
     private Integer obdLiveSpeedKph;
@@ -1976,6 +1977,26 @@ public final class MainActivity extends Activity {
             obdStatus.setText("OBD-II adapter disconnected by user.");
         });
         content.addView(disconnectObd, matchWrap());
+
+        obdDtcStatus = new TextView(this);
+        obdDtcStatus.setText("Stored trouble codes: not requested");
+        obdDtcStatus.setTextSize(13);
+        content.addView(obdDtcStatus);
+        Button readDtc = new Button(this);
+        readDtc.setText("Read stored fault codes (Mode 03)");
+        readDtc.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                .setTitle("Read stored diagnostic codes?")
+                .setMessage("Sends one standard read-only Mode 03 request after confirmation. This does not clear codes, reset the ECU or change vehicle settings.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Read codes", (dialog, which) -> {
+                    if (obdController == null || !obdController.requestStoredCodes()) {
+                        obdDtcStatus.setText("Connect to a paired OBD-II adapter before reading stored codes.");
+                    } else {
+                        obdDtcStatus.setText("Reading stored trouble codes…");
+                    }
+                })
+                .show());
+        content.addView(readDtc, matchWrap());
     }
 
     private void choosePairedObdAdapter() {
@@ -2063,6 +2084,8 @@ public final class MainActivity extends Activity {
                 } else if (state.startsWith("OBD-II adapter disconnected")
                         || state.startsWith("OBD-II connection failed")) {
                     clearLiveObdOverlay();
+                    if (obdDtcStatus != null)
+                        obdDtcStatus.setText("Stored trouble codes: adapter disconnected.");
                 }
                 if (obdStatus != null) obdStatus.setText(state);
             }
@@ -2081,6 +2104,17 @@ public final class MainActivity extends Activity {
                         + "\\nCoolant: " + displayObdValue(coolantTempC, "°C")
                         + "\\nFuel level: " + displayObdValue(fuelPercent, "%")
                         + "\\nFour live meter fields are overlaid; unsupported route, distance and economy tokens show --.");
+            }
+            @Override public void onStoredCodes(java.util.List<String> codes) {
+                if (isFinishing() || isDestroyed() || obdDtcStatus == null) return;
+                if (codes == null || codes.isEmpty()) {
+                    obdDtcStatus.setText("Stored trouble codes: none returned (or the ECU response contained no valid codes).");
+                    return;
+                }
+                StringBuilder result = new StringBuilder("Stored trouble codes:");
+                for (String code : codes) result.append("\\n").append(code);
+                result.append("\\nRead only · no codes were cleared.");
+                obdDtcStatus.setText(result.toString());
             }
         });
         obdController.connect(device);
