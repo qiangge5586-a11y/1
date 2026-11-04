@@ -672,6 +672,7 @@ public final class MainActivity extends Activity {
             } catch (Exception error) {
                 toast("Unable to retain selected APK: " + error.getMessage());
             }
+        }
     }
 
     private void launchApkInstaller(android.net.Uri uri) {
