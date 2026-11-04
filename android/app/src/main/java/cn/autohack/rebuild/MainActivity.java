@@ -51,6 +51,7 @@ public final class MainActivity extends Activity {
 
         addSection("Feature preview");
         addMeterPreview();
+        addKeyMappingDemo();
         addFeature("Navigation state", "Waiting for a supported navigation integration");
         addFeature("Audio focus", "No audio changes until explicitly enabled");
         addFeature("Storage diagnostics", "Read-only checks; no system file modifications");
@@ -84,7 +85,7 @@ public final class MainActivity extends Activity {
             android.content.SharedPreferences prefs =
                     getSharedPreferences("meter_editor", MODE_PRIVATE);
             meterColor = prefs.getInt("background", 0xFF263746);
-            meterTextSize = prefs.getInt("text_size", 32);
+            meterTextSize = prefs.getInt("text_size", preset.primaryView.textSize);
             int initialSpeed = prefs.getInt("speed", 0);
 
             meterDisplay = new TextView(this);
