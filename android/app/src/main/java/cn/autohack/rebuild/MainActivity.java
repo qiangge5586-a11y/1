@@ -442,8 +442,7 @@ public final class MainActivity extends Activity {
             boolean installed = NavigationAppHelper.isLaunchable(this, packageName);
             TextView state = new TextView(this);
             state.setText(label + " · " + (installed ? "Launchable" : "Not installed / no launcher")
-                    + "
-" + packageName);
+                    + "\n" + packageName);
             state.setTextSize(14);
             state.setPadding(dp(10), dp(8), dp(10), dp(4));
             content.addView(state);
@@ -520,8 +519,7 @@ public final class MainActivity extends Activity {
 
     private void addFeature(String name, String detail) {
         TextView row = new TextView(this);
-        row.setText(name + "
-" + detail);
+        row.setText(name + "\n" + detail);
         row.setTextSize(14);
         row.setPadding(dp(14), dp(12), dp(14), dp(12));
         row.setBackgroundColor(0xFFF5F6F7);
