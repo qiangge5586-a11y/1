@@ -129,9 +129,9 @@ public final class MainActivity extends Activity {
             Runnable update = () -> {
                 int value = speed.getProgress();
                 int rpm = 850 + value * 32;
-                meterDisplay.setText(preset.name + "\\n"
+                meterDisplay.setText(preset.name + "\n"
                         + preset.primaryView.renderMock(value, rpm, 68, 82)
-                        + "\\nFuel: 68% · Coolant: 82 °C");
+                        + "\nFuel: 68% · Coolant: 82 °C");
                 meterDisplay.setTextSize(meterTextSize);
                 speedLabel.setText("Demo speed: " + value + " km/h");
                 sizeLabel.setText("Meter text size: " + meterTextSize + " sp");
