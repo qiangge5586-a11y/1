@@ -2,6 +2,15 @@
 
 Last updated: 2026-11-04
 
+## Phase 17 — Named meter preset management
+
+- Added local named preset library with save, load, rename, duplicate and delete operations.
+- Added JSON import via paste dialog and JSON export through Android share sheet.
+- Added validation and unit tests for preset library operations and invalid imports.
+- Implementation committed; CI build and unit tests must pass before marking this phase build-verified.
+- Details: `docs/NAMED_METER_PRESET_LIBRARY.md`.
+
+
 ## Phase 16 — Multi-widget meter editor
 
 - Parser now validates every views[] entry (up to 32 widgets), not just the first.
@@ -75,7 +84,8 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 
 ## Next steps
 
-1. Obtain readable JADX output and review high-value original methods (MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService).
+1. Add Android document-picker import/export so users can select a JSON file directly.
+2. Obtain readable JADX output and review high-value original methods (MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService).
 2. Add named preset save/rename/duplicate/import/export.
 3. Add safe, explicit audio-focus controls and startup preferences using public Android APIs.
 4. Build a compatibility matrix for the exact Civic factory head-unit model/firmware.
