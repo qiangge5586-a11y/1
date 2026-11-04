@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 42 — Original Civic vehicle-information field selection (CI pending)
+## Phase 42 — Original Civic vehicle-information field selection (CI verified)
 
 - Reproduced the original six selectable Civic meter fields and the original first-three default selection.
 - Added persistent local checkboxes and responsive bottom-row reflow; deselected fields are hidden.
@@ -8,7 +8,8 @@
 - Based on the original `pref_meter.xml` and `VehicleInformationListDefaultValues` / `VehicleInformationListValues` resources.
 - Demo-only: no ECU/CAN/OBD or head-unit data connection.
 - Details: `docs/CIVIC_VEHICLE_INFO_SELECTION.md`.
-- Source/test commits: `9572f4f873396eab7bb860a876105fa1903ecc4e`, `c75f15e3a1ea4c089c0065fa2511f2164d4e9da1`, `24e9f24c7a8510b88f10688b10845a4932a71bc6`; CI pending.
+- GitHub Actions run #112 (ID 41775167146) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41775167146
+- Final source/test commit: `24e9f24c7a8510b88f10688b10845a4932a71bc6`; artifact ID: 13296183020; APK size: 65,103 bytes; SHA-256: `cab3cfb315c301cd28a08ba4101eb5fe02122b0210f8a6c4987d0e5ab53900fd`.
 
 ## Phase 41 — Selectable Civic meter demo unit systems (CI verified)
 
