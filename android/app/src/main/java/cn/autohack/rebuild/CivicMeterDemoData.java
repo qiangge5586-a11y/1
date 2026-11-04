@@ -31,6 +31,9 @@ public final class CivicMeterDemoData {
         v.put("seg_dist", "300 m");
         v.put("speed_limit", "60");
         v.put("camera_dist", "500 m");
+        v.put("distance_unit", "km");
+        v.put("fuel_eff_unit", "L/100km");
+        v.put("coolant_unit", " °C");
         return new CivicMeterDemoData(v);
     }
 
