@@ -1,5 +1,12 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 55 — Saved destination input hardening (CI pending)
+
+- Rejects embedded non-whitespace ISO control characters before saving a home destination.
+- Preserves ordinary whitespace normalization and the 160-character limit.
+- Added tests for NUL/control characters and newline/space normalization.
+- Details: `docs/SAVED_HOME_DESTINATION.md`.
+
 ## Phase 54 — Navigation phrase normalization and destination validation (CI verified)
 
 - Added polite Chinese navigation phrase variants and cleanup of spoken trailing particles/punctuation.
