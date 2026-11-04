@@ -20,3 +20,12 @@ The recognized destination is shown first. The user must tap **Confirm suggested
 ## Validation
 
 Parser tests cover destination extraction and unsupported shortcuts. Device-level map chooser behavior depends on installed applications and requires manual validation.
+
+## Phase 53 — Navigation phrase normalization and destination validation
+
+- Expanded supported speech variants with polite prefixes such as “请帮我导航到”.
+- Removes common spoken trailing particles and punctuation before showing the destination for confirmation.
+- Rejects empty, generic navigation labels and destinations longer than 80 characters; invalid phrases do not enable a navigation action.
+- Still requires a separate confirmation tap and uses only the public Android geo URI chooser.
+- Added parser tests for polite phrasing, punctuation, empty/generic targets and excessive length.
+- No geocoding, automatic route start, home address, location access or private map-app API is introduced.
