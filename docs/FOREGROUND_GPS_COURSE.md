@@ -12,7 +12,7 @@
 
 ## Permission and fallback
 
-The app requests precise location only after the user enables the checkbox. If permission is denied or GPS is disabled, the feature reports the reason and does not use a network fallback. The user can disable the option at any time.
+The app requests fine and coarse location together only after the user enables the checkbox (as required for Android 12+ permission handling). GPS course is used only when precise location is granted; approximate-only access is not used. If permission is denied or GPS is disabled, the feature reports the reason and does not use a network fallback. The user can disable the option at any time.
 
 ## Validation
 
