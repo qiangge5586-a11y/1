@@ -1117,7 +1117,9 @@ public final class MainActivity extends Activity {
                 display.setWidgets(widgets, meterColor);
                 status.setText("Preset: " + activePresetName[0] + " · "
                         + visibleSpecs.size() + " visible widgets");
-                speedLabel.setText("Demo speed: " + value + " " + unitSystem.speedUnit());
+                speedLabel.setText((obdLiveConnected ? "OBD speed: " + demoValues.get("speed")
+                        : "Demo speed: " + value) + " " + unitSystem.speedUnit());
+                speed.setEnabled(!obdLiveConnected);
                 MeterPreset.ViewSpec s = specs.get(selected[0]);
                 sizeLabel.setText("Text size: " + s.textSize + " sp");
                 leftLabel.setText("Horizontal position: " + s.left + "%");
@@ -2078,7 +2080,7 @@ public final class MainActivity extends Activity {
                         + "\\nEngine RPM: " + displayObdValue(engineRpm, "rpm")
                         + "\\nCoolant: " + displayObdValue(coolantTempC, "°C")
                         + "\\nFuel level: " + displayObdValue(fuelPercent, "%")
-                        + "\\nFour live meter fields are overlaid; other tokens remain demo.");
+                        + "\\nFour live meter fields are overlaid; unsupported route, distance and economy tokens show --.");
             }
         });
         obdController.connect(device);
