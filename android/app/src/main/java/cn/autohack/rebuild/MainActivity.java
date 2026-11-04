@@ -70,6 +70,7 @@ public final class MainActivity extends Activity {
         facts.setPadding(dp(14), dp(12), dp(14), dp(12));
         facts.setBackgroundColor(0xFFEFF2F5);
         content.addView(facts);
+        addVehicleDataDemo();
 
         addSection("Feature preview");
         int meterSectionIndex = content.getChildCount();
@@ -990,6 +991,28 @@ public final class MainActivity extends Activity {
             startActivityForResult(intent, 7604);
         });
         content.addView(choose, matchWrap());
+    }
+
+    private void addVehicleDataDemo() {
+        addSection("Vehicle data adapter · offline demo");
+        TextView note = new TextView(this);
+        note.setText("The following values are sample data only. No CAN, OBD, ECU, Bluetooth adapter, or factory head-unit connection is active.");
+        note.setTextSize(12);
+        content.addView(note);
+
+        VehicleDataProvider provider = new MockVehicleDataProvider();
+        TextView snapshot = new TextView(this);
+        snapshot.setText(provider.getLatestSnapshot().toDisplayString());
+        snapshot.setTextSize(14);
+        snapshot.setPadding(dp(12), dp(12), dp(12), dp(12));
+        snapshot.setBackgroundColor(0xFFF5F6F7);
+        content.addView(snapshot, matchWrap());
+
+        Button refresh = new Button(this);
+        refresh.setText("Refresh demo vehicle values");
+        refresh.setOnClickListener(v ->
+                snapshot.setText(provider.getLatestSnapshot().toDisplayString()));
+        content.addView(refresh, matchWrap());
     }
 
     private void addNavigationDemo() {
