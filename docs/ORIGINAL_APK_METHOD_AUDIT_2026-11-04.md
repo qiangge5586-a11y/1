@@ -47,7 +47,7 @@
 - `MyApplication.onCreate` starts and binds `MyService`, initializes preferences and background tasks.
 - On the Mitsubishi/Clarion capability branch, it binds service interfaces named `IAvApService`, `IVehicleInfoManagerApService`, `ICameraAPService` and `IVideoManagerApService`.
 - `ServiceConnectionC0279wa` maps those binders to AV, vehicle-information, camera and video interfaces.
-- The presence of a `civic` string in a car-model branch is not evidence that a 2019 Civic factory head unit exposes these services or that this APK can run on it.
+- The raw DEX fallback pass confirms `C0269ua.getMeterLayout()` returns `meter_civic` for `civic`/`clarity`, `meter_crv` for `crv`/`breeze`, and `meter_avancier` for `avancier`/`avancier240`/`urv`/`cdx`. This proves the APK has a Civic-specific meter layout branch, but not that a 2019 Civic factory head unit exposes the required vendor services or can install/run the APK.
 
 ### 6. Navigation and audio integration
 
