@@ -45,7 +45,7 @@ public final class MainActivity extends Activity {
 
         addSection("Feature preview");
         addFeature("Steering key mapping", "Demo only — no vehicle key interception");
-        addFeature("Instrument meter", "Speed: 0 km/h · Coolant: 82 °C · Fuel: 68%");
+        addMeterPreview();
         addFeature("Navigation state", "Waiting for a supported navigation integration");
         addFeature("Audio focus", "No audio changes until explicitly enabled");
         addFeature("Storage diagnostics", "Read-only checks; no system file modifications");
@@ -70,6 +70,27 @@ public final class MainActivity extends Activity {
         label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         label.setPadding(0, dp(20), 0, dp(8));
         content.addView(label);
+    }
+
+    private void addMeterPreview() {
+        try {
+            MeterPreset preset = MeterPresetRepository.loadDemo(this);
+            TextView preview = new TextView(this);
+            preview.setText(preset.name + "\\n" +
+                    preset.primaryView.renderMock(0, 850, 68, 82) +
+                    "\\nRPM: 850 · Fuel: 68% · Coolant: 82 °C");
+            preview.setTextSize(20);
+            preview.setGravity(Gravity.CENTER);
+            preview.setPadding(dp(14), dp(20), dp(14), dp(20));
+            preview.setTextColor(0xFFFFFFFF);
+            preview.setBackgroundColor(0xFF263746);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(140));
+            lp.bottomMargin = dp(8);
+            content.addView(preview, lp);
+        } catch (Exception error) {
+            addFeature("Instrument meter", "Demo preset unavailable: " + error.getMessage());
+        }
     }
 
     private void addFeature(String name, String detail) {
