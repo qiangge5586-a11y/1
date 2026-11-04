@@ -1,5 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 56 — Explicit return-home phrase guard (CI pending)
+
+- Replaced substring matching for `回家` with an explicit allowlist of home-navigation phrases.
+- Supports direct/polite variants such as `回家`, `我想回家`, `请带我回家` and `导航回家`.
+- Negated/question-like phrases such as `我不回家`, `不要回家` and `回家吗` do not create a navigation action.
+- Still requires a saved home destination and a separate confirmation tap before the public map chooser opens.
+- Added tests for positive phrases and false-positive rejection.
+- Details: `docs/VOICE_NAVIGATION_HANDOFF.md`.
+- Source/test commits: `3a015cee7f77a29446779b064933943ff19d9c4f`, `702d908ff97937dd24f9633df5ae1e3ad808b7e0`; CI pending.
+
 ## Phase 55 — Saved destination input hardening (CI verified)
 
 - Rejects embedded non-whitespace ISO control characters before saving a home destination.
