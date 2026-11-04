@@ -29,6 +29,7 @@ public final class BluetoothObdController {
         void onTelemetry(Integer speedKph, Integer engineRpm,
                 Integer coolantTempC, Integer fuelPercent);
         void onDiagnosticCodes(String command, List<String> codes);
+        void onEngineStatus(ObdReadinessDecoder.Status status);
         void onSupportedPids(List<String> commands);
     }
 
@@ -91,6 +92,13 @@ public final class BluetoothObdController {
             return false;
         }
         pendingDiagnosticCommand = command.trim().toUpperCase(java.util.Locale.ROOT);
+        return true;
+    }
+
+    /** Queues one explicit Mode 01 PID 01 status read on the session worker. */
+    public synchronized boolean requestEngineStatus() {
+        if (stopped || !readyForCommands || pendingDiagnosticCommand != null) return false;
+        pendingDiagnosticCommand = ObdReadOnlyCommands.ENGINE_STATUS;
         return true;
     }
 
@@ -164,15 +172,19 @@ public final class BluetoothObdController {
                 if (diagnosticCommand != null && isActive(session)) {
                     pendingDiagnosticCommand = null;
                     String response = sendCommand(input, output, diagnosticCommand, 2500, session);
-                    List<String> codes;
-                    if (ObdReadOnlyCommands.STORED_DTC.equals(diagnosticCommand)) {
-                        codes = ObdDtcDecoder.decodeStoredCodes(response);
-                    } else if (ObdReadOnlyCommands.PENDING_DTC.equals(diagnosticCommand)) {
-                        codes = ObdDtcDecoder.decodePendingCodes(response);
+                    if (ObdReadOnlyCommands.ENGINE_STATUS.equals(diagnosticCommand)) {
+                        postEngineStatus(ObdReadinessDecoder.decode(response), session);
                     } else {
-                        codes = ObdDtcDecoder.decodePermanentCodes(response);
+                        List<String> codes;
+                        if (ObdReadOnlyCommands.STORED_DTC.equals(diagnosticCommand)) {
+                            codes = ObdDtcDecoder.decodeStoredCodes(response);
+                        } else if (ObdReadOnlyCommands.PENDING_DTC.equals(diagnosticCommand)) {
+                            codes = ObdDtcDecoder.decodePendingCodes(response);
+                        } else {
+                            codes = ObdDtcDecoder.decodePermanentCodes(response);
+                        }
+                        postDiagnosticCodes(diagnosticCommand, codes, session);
                     }
-                    postDiagnosticCodes(diagnosticCommand, codes, session);
                 }
                 Thread.sleep(1000L);
             }
@@ -212,7 +224,8 @@ public final class BluetoothObdController {
         if (!ObdReadOnlyCommands.isAllowed(command)
                 && !ObdReadOnlyCommands.isAdapterSetupCommand(command)
                 && !ObdReadOnlyCommands.isAdapterInfoCommand(command)
-                && !ObdReadOnlyCommands.isDiagnosticReadCommand(command)) {
+                && !ObdReadOnlyCommands.isDiagnosticReadCommand(command)
+                && !ObdReadOnlyCommands.isStatusReadCommand(command)) {
             throw new SecurityException("Only allowlisted adapter setup and read-only PIDs are permitted");
         }
         if (!isActive(session)) return "";
@@ -254,6 +267,14 @@ public final class BluetoothObdController {
                     : Collections.unmodifiableList(new ArrayList<>(commands));
             mainHandler.post(() -> {
                 if (session == generation) listener.onSupportedPids(safeCommands);
+            });
+        }
+    }
+
+    private void postEngineStatus(ObdReadinessDecoder.Status status, long session) {
+        if (listener != null) {
+            mainHandler.post(() -> {
+                if (session == generation) listener.onEngineStatus(status);
             });
         }
     }
