@@ -20,6 +20,8 @@ public final class MainActivity extends Activity {
     private int meterColor = 0xFF263746;
     private int meterTextSize = 32;
     private int meterTextColor = 0xFFFFFFFF;
+    private AudioFocusController audioFocusController;
+    private TextView audioFocusStatus;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -55,7 +57,7 @@ public final class MainActivity extends Activity {
         addPresetManagement();
         addKeyMappingDemo();
         addNavigationDemo();
-        addFeature("Audio focus", "No audio changes until explicitly enabled");
+        addAudioFocusDemo();
         addFeature("Storage diagnostics", "Read-only checks; no system file modifications");
 
         Button refresh = new Button(this);
@@ -70,7 +72,7 @@ public final class MainActivity extends Activity {
         content.addView(safety);
     }
 
-    private void addSection(String text) {
+    @Override protected void onStop() {\n        if (audioFocusController != null) audioFocusController.release();\n        super.onStop();\n    }\n\n    private void addAudioFocusDemo() {\n        addSection("Audio focus · explicit demo");\n        audioFocusController = new AudioFocusController(this);\n        TextView note = new TextView(this);\n        note.setText("Audio focus is requested only after you enable this option and tap Request. No sound is played and system volume is not changed. Focus is released when this screen stops.");\n        note.setTextSize(13); content.addView(note);\n        android.widget.CheckBox optIn = new android.widget.CheckBox(this);\n        optIn.setText("I allow this app to request temporary navigation audio focus");\n        content.addView(optIn);\n        audioFocusStatus = new TextView(this);\n        audioFocusStatus.setText("Audio focus: not requested");\n        content.addView(audioFocusStatus);\n        Button request = new Button(this); request.setText("Request temporary audio focus");\n        request.setOnClickListener(v -> {\n            if (!optIn.isChecked()) { audioFocusStatus.setText("Enable the opt-in checkbox first."); return; }\n            boolean granted = audioFocusController.requestTransientFocus(change -> runOnUiThread(() -> {\n                String state = change == android.media.AudioManager.AUDIOFOCUS_GAIN ? "gained"\n                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS ? "lost"\n                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ? "temporarily lost"\n                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ? "may duck" : "changed";\n                audioFocusStatus.setText("Audio focus: " + state);\n            }));\n            audioFocusStatus.setText(granted ? "Audio focus: granted (temporary)" : "Audio focus: not granted");\n        });\n        content.addView(request, matchWrap());\n        Button release = new Button(this); release.setText("Release audio focus");\n        release.setOnClickListener(v -> { audioFocusController.release(); audioFocusStatus.setText("Audio focus: released"); });\n        content.addView(release, matchWrap());\n    }\n\n    private void addSection(String text) {
         TextView label = new TextView(this);
         label.setText(text);
         label.setTextSize(18);
