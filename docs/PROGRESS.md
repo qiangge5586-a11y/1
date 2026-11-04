@@ -11,7 +11,7 @@
 - Source/model commits: `142eeba245558c89d7843f17e6d61238d4d97f80`, `98fddd2c3a74d7ad7119fff59b260b05a1efcb20`; artifact ID: 13296738360; APK size: 75,187 bytes; SHA-256: `233c76239111cdd8781c3705b0093748c09b0ccd05bfc2955f16088856207f07`.
 
 
-## Phase 46 — Startup video preview playback controls (CI verified)
+## Phase 47 — Startup video preview playback controls (CI verified)
 
 - Audited original startup video settings: audio on by default, 0-second delay (0–30), max play 30 seconds (5–60), fade-out on by default.
 - Added those controls to the existing SAF-selected local-video preview only.
@@ -35,7 +35,7 @@
 - GitHub Actions run #131 (ID 41776032442) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776032442
 - Final source/test commit: `98fddd2c3a74d7ad7119fff59b260b05a1efcb20`; artifact ID: 13296738360; APK size: 75,187 bytes; SHA-256: `233c76239111cdd8781c3705b0093748c09b0ccd05bfc2955f16088856207f07`.
 
-## Phase 45 — Original screen-casting integration audit (analysis complete)
+## Phase 45A — Original screen-casting integration audit (analysis complete)
 
 - Confirmed original screen casting binds to the private SystemUI `TakeScreenshotService` through an Xposed process hook.
 - Verified the Messenger frame protocol: message 100 initializes a 400×240 ARGB_8888 buffer, 101 streams 384,000-byte frames, 102 releases resources; quality values 5/8/12/15 control the frame loop.
