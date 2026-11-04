@@ -26,7 +26,7 @@
 
 - Confirmed original speech recognition uploads recorded MP3 audio through an HTTP form request; it is not on-device ASR.
 - Mapped original command families: installed-app launch, Amap navigation/POI broadcasts, QQ Music Car playback and bundled spoken responses.
-- Rebuild keeps the existing Android on-device recognizer, explicit microphone opt-in and foreground-only lifecycle; it currently displays text only.
+- Rebuild keeps the Android on-device recognizer, explicit microphone opt-in and foreground-only lifecycle. Phase 51 adds only local meter/app actions with a separate confirmation tap; navigation and music remain unavailable.
 - No cloud audio upload, private navigation broadcasts, QQ Music internals, shared-storage recording, wake word or background service is copied.
 - Details: `docs/VOICE_ASSISTANT_ORIGINAL_AUDIT.md`.
 
