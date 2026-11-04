@@ -66,3 +66,8 @@ The intended first test target is a 2019 Honda Civic factory head unit. The reve
 ## Civic meter resource-derived fields
 
 The fresh resource audit identified a 584×215 px Civic layout and the original six vehicle-information keys. The rebuild now has a text-only, offline Civic layout template and mock token values for those fields, plus navigation/compass/speed-limit indicators. This is a preview of the resource field set, not a claim of pixel-perfect recreation or 2019 Civic head-unit compatibility. See `docs/CIVIC_METER_LAYOUT_AUDIT.md`.
+
+
+## Civic meter demo units
+
+The source-derived Civic template exposes explicit demo unit tokens for distance (km), fuel efficiency (L/100km) and coolant temperature (°C). These metric labels are fixed preview defaults only; they are not read from the vehicle's configuration. See `docs/CIVIC_METER_LAYOUT_AUDIT.md`.
