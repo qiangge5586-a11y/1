@@ -12,6 +12,7 @@ public final class ObdReadOnlyCommands {
     public static final String STORED_DTC = "03";
     public static final String PENDING_DTC = "07";
     public static final String PERMANENT_DTC = "0A";
+    public static final String ENGINE_STATUS = "0101";
     public static final int POLL_COUNT = 4;
 
     private ObdReadOnlyCommands() {}
@@ -44,6 +45,13 @@ public final class ObdReadOnlyCommands {
                 || PERMANENT_DTC.equals(normalized);
     }
 
+
+
+    /** Standard Mode 01 PID 01 read-only MIL/status query. */
+    public static boolean isStatusReadCommand(String command) {
+        return command != null && ENGINE_STATUS.equals(
+                command.trim().toUpperCase(java.util.Locale.ROOT));
+}
 
     /** Read-only ELM adapter identification commands; they do not alter protocol settings. */
     public static boolean isAdapterInfoCommand(String command) {
