@@ -12,6 +12,13 @@ public final class MeterCanvasView extends View {
  private int background=0xFF263746; private List<Widget> widgets;
  public MeterCanvasView(Context context){super(context);}
  public void setWidgets(List<Widget> value,int color){widgets=value;background=color;invalidate();}
+ @Override protected void onMeasure(int widthMeasureSpec,int heightMeasureSpec){
+  int widthMode=MeasureSpec.getMode(widthMeasureSpec),widthSize=MeasureSpec.getSize(widthMeasureSpec);
+  int width=widthMode==MeasureSpec.UNSPECIFIED?getSuggestedMinimumWidth():widthSize;
+  int desiredHeight=Math.max(1,Math.round(width*215f/584f));
+  int height=resolveSize(desiredHeight,heightMeasureSpec);
+  setMeasuredDimension(resolveSize(width,widthMeasureSpec),height);
+ }
  @Override protected void onDraw(Canvas canvas){
   super.onDraw(canvas);canvas.drawColor(background);if(widgets==null)return;
   float sx=getWidth()/100f,sy=getHeight()/100f;
