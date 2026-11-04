@@ -29,6 +29,26 @@ public final class VoiceCommandParserTest {
                 VoiceCommandParser.parse("播放周杰伦").type);
     }
 
+    @Test public void normalizesPoliteNavigationPhrasesAndTrailingPunctuation() {
+        VoiceCommandParser.Command command =
+                VoiceCommandParser.parse("请帮我导航到公司吧。");
+        assertEquals(VoiceCommandParser.Type.NAVIGATE_TO, command.type);
+        assertEquals("公司", command.target);
+        assertEquals("机场", VoiceCommandParser.parse("带我去机场好吗").target);
+        assertEquals("火车站", VoiceCommandParser.parse("前往火车站！").target);
+    }
+
+    @Test public void rejectsEmptyGenericAndOverlongNavigationTargets() {
+        assertEquals(VoiceCommandParser.Type.UNKNOWN,
+                VoiceCommandParser.parse("导航到").type);
+        assertEquals(VoiceCommandParser.Type.UNKNOWN,
+                VoiceCommandParser.parse("导航到导航").type);
+        StringBuilder longTarget = new StringBuilder("导航到");
+        for (int i = 0; i < 81; i++) longTarget.append('甲');
+        assertEquals(VoiceCommandParser.Type.UNKNOWN,
+                VoiceCommandParser.parse(longTarget.toString()).type);
+    }
+
     @Test public void unknownAndEmptyTextDoNotCreateActions() {
         assertEquals(VoiceCommandParser.Type.UNKNOWN,
                 VoiceCommandParser.parse("").type);
