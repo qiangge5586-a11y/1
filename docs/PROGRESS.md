@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 63 — Live OBD values in the meter preview (CI pending)
+## Phase 63 — Live OBD values in the meter preview (CI verified)
 
 - Connected OBD sessions now overlay live speed, RPM, coolant and fuel level into the meter tokens.
 - Converts OBD speed to mph and coolant to °F for US/Imperial display modes; RPM and fuel percent remain direct.
@@ -8,7 +8,8 @@
 - On disconnect or Activity pause, live values are cleared and the meter returns to demo values. Road, turn, ETA, trip/fuel economy and gear fields remain demo because the current standard PID set does not provide them.
 - Added unit tests for disconnected demo preservation, live overlay, unit conversions and missing-PID placeholders.
 - Details: `docs/OBD_LIVE_METER_OVERLAY.md`.
-- Source/test commits: `7b0fad31f644863d33c696f44c0d67c3990eb004`, `67a6a8955faa49e1c2c96285ec642a3b8669a87a`, `6fb622b60258e3fdfc9d8f3e1959529c340f5528`; CI pending.
+- GitHub Actions run #199 (ID 41779229675) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41779229675
+- Final source/test commit: `6e88b97f1d51083bfb83e8e74eb899703124a13d`; artifact ID: 13298646367; APK size: 100,546 bytes; SHA-256: `126f911d256e3b21020ea9ee891b647bda0f79c8a6d8a6fcb15eef226b88e20a`.
 
 ## Phase 62 — ECU-supported PID polling (CI verified)
 
