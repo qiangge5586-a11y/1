@@ -6,7 +6,7 @@ This checklist is required before claiming compatibility with any vehicle head u
 
 - Use a spare Android phone or bench head unit, not the vehicle's production head unit.
 - Install the debug APK through Android's package installer and review the requested permissions.
-- Confirm the app launches and the capability report shows the expected Android version, model, board, hardware, ABI, build fingerprint and display profile.
+- Confirm the app launches and the default capability report shows manufacturer/model, Android version/API, ABI and display profile. Enable detailed identifiers only when needed for a trusted diagnostic recipient.
 - Export the compatibility report and keep a copy with the device test notes.
 
 ## 2. Exercise local features
