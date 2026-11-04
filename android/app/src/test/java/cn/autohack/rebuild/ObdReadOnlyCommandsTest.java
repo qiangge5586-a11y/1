@@ -23,6 +23,8 @@ public final class ObdReadOnlyCommandsTest {
         assertFalse(ObdReadOnlyCommands.isAllowed(null));
         assertTrue(ObdReadOnlyCommands.isDiagnosticReadCommand("03"));
         assertTrue(ObdReadOnlyCommands.isDiagnosticReadCommand(" 03 "));
+        assertTrue(ObdReadOnlyCommands.isDiagnosticReadCommand("07"));
+        assertTrue(ObdReadOnlyCommands.isDiagnosticReadCommand("0A"));
         assertFalse(ObdReadOnlyCommands.isDiagnosticReadCommand("04"));
         assertFalse(ObdReadOnlyCommands.isDiagnosticReadCommand("010D"));
         assertFalse(ObdReadOnlyCommands.isDiagnosticReadCommand("ATZ"));
