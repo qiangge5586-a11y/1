@@ -619,6 +619,10 @@ public final class MainActivity extends Activity {
 
     private void addMeterPreview() {
         addSection("Multi-widget offline meter editor");
+        TextView offlineMeterNote = new TextView(this);
+        offlineMeterNote.setText("Civic template values are simulated. Metric units shown are demo defaults; no vehicle, GPS or live navigation source is connected.");
+        offlineMeterNote.setTextSize(12);
+        content.addView(offlineMeterNote);
         try {
             MeterPreset preset = MeterPresetRepository.loadDemo(this);
             android.content.SharedPreferences prefs = getSharedPreferences("meter_editor", MODE_PRIVATE);
