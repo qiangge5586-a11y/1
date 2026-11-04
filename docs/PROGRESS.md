@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 43 — Civic compass and track-up options (CI pending)
+
+- Added the original compass enable (default on) and dependent track-up (default off) controls.
+- Disabling compass hides the compass widget, disables track-up and resets it off.
+- Track-up changes only the static sample compass label; UI explicitly states orientation is simulated and no compass sensor/GPS/live map is connected.
+- Added tests for visibility, label behavior and demo-only status.
+- Details: `docs/CIVIC_COMPASS_OPTIONS.md`.
+- Source/test commits: `472ec6aa4504210a2b90ab6a937019a1c4145fa2`, `59fdd6dd0967cfea49bc2d1b1faddbe8bebdc20e`, `7de1068d4f4b1bf60936c468473350ef59bbfadd`; CI pending.
+
 ## Phase 42 — Source-derived Civic telemetry decoder (CI pending)
 
 - Added a pure decoder for the original Civic meter's integer fields: speed, distance-to-empty, Trip A distance, average fuel efficiency, unit codes and coolant temperature.
