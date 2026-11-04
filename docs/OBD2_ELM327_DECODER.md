@@ -1,0 +1,37 @@
+# Standard OBD-II / ELM327 decoder (offline protocol layer)
+
+## Scope
+
+This phase adds a pure parser for ELM327 text responses and common SAE J1979 Mode 01 PIDs. It does not open Bluetooth, USB, Wi-Fi, CAN or any vehicle connection.
+
+## Supported values
+
+| PID | Value | Formula |
+|---|---|---|
+| 010D | Vehicle speed | A km/h |
+| 010C | Engine RPM | (256 × A + B) / 4 |
+| 0105 | Coolant temperature | A − 40 °C |
+| 012F | Fuel level | A × 100 / 255 % |
+| 0104 | Calculated engine load | A × 100 / 255 % |
+| 0111 | Throttle position | A × 100 / 255 % |
+| 0110 | MAF air flow | (256 × A + B) / 100 g/s |
+| 010F | Intake air temperature | A − 40 °C |
+| 015C | Engine oil temperature | A − 40 °C |
+| 010B | Intake manifold absolute pressure | A kPa |
+| 0133 | Barometric pressure | A kPa |
+| 010E | Timing advance | A / 2 − 64 degrees |
+| 015E | Fuel rate | (256 × A + B) / 20 L/h |
+
+The parser accepts spaced or compact positive responses, optional 11-bit CAN headers, ELM command echo, SEARCHING text and the `>` prompt. Unsupported, negative or truncated responses return null rather than fabricated values.
+
+## Important limitations
+
+- Standard PID support varies by vehicle ECU; a null result means the response was absent or invalid, not that the vehicle has no such sensor.
+- These are generic OBD-II PIDs, not Honda-specific enhanced PIDs.
+- OBD speed is not the same as GPS speed. OBD engine/fuel values must not be replaced with GPS values.
+- No gear position is decoded because it is not a universally supported standard Mode 01 PID.
+- No live connection, Bluetooth permission or pairing UI is included in this phase. The current in-app vehicle panel remains clearly labelled demo data until a physical adapter and connection workflow are validated.
+
+## Validation
+
+Unit tests cover common PID formulas, CAN headers, ELM echo/prompt, no-data responses, truncated frames and unsupported PIDs.
