@@ -1,5 +1,12 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 49 — Original startup automation audit (analysis complete)
+
+- Traced original delayed app launch, optional media keyevent 126 injection, agreement auto-confirm and restore-last-function Xposed hook.
+- Agreement auto-confirm can dismiss an OEM legal/safety prompt without user review; restore-last-function modifies a host-process method.
+- These behaviors are not public Android APIs and are not copied. The rebuild keeps user-initiated app launch and its own local landing-position preference.
+- Details: `docs/STARTUP_AUTOMATION_AUDIT.md`.
+
 ## Phase 48 — Startup app selection (CI verified)
 
 - Added a picker for installed user apps with public launcher activities.
