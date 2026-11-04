@@ -1437,8 +1437,7 @@ public final class MainActivity extends Activity {
         importFile.setText("Import preset JSON file");
         importFile.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("*/*");
-            intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
-                    new String[]{"application/json", "text/json", "text/plain"});
+            addMimeTypes(intent, new String[]{"application/json", "text/json", "text/plain"});
             intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivityForResult(intent, 7602);
         });
@@ -1916,8 +1915,7 @@ public final class MainActivity extends Activity {
         choose.setText("Choose APK to install");
         choose.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("*/*");
-            intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
-                    new String[]{"application/vnd.android.package-archive", "application/octet-stream"});
+            addMimeTypes(intent, new String[]{"application/vnd.android.package-archive", "application/octet-stream"});
             intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivityForResult(intent, 7604);
         });
@@ -1998,8 +1996,7 @@ public final class MainActivity extends Activity {
         importSnapshot.setText("Import vehicle snapshot JSON");
         importSnapshot.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("*/*");
-            intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
-                    new String[]{"application/json", "text/json", "application/octet-stream"});
+            addMimeTypes(intent, new String[]{"application/json", "text/json", "application/octet-stream"});
             intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivityForResult(intent, 7608);
         });
