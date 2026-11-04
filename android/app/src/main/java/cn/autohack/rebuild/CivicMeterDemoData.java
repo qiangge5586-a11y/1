@@ -37,7 +37,7 @@ public final class CivicMeterDemoData {
         v.put("rpm", String.valueOf(850 + speed * 32));
         v.put("fuel", "68");
         v.put("coolant", format0(coolant));
-        v.put("distance_to_empty", format1(dte));
+        v.put("distance_to_empty", format0(dte));
         v.put("current_distance", format1(driveDistance));
         v.put("avg_fuel_eff", format1(average));
         v.put("trip_a_distance", format1(tripA));
