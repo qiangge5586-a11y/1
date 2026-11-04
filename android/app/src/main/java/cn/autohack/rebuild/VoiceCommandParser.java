@@ -10,6 +10,7 @@ public final class VoiceCommandParser {
         SHOW_METER,
         OPEN_APP,
         NAVIGATE_TO,
+        NAVIGATE_HOME,
         NAVIGATION_UNAVAILABLE,
         MUSIC_UNAVAILABLE,
         UNKNOWN
@@ -42,7 +43,10 @@ public final class VoiceCommandParser {
         if (destination.matches()) {
             return new Command(Type.NAVIGATE_TO, destination.group(1));
         }
-        if (containsAny(text, "回家", "打开导航", "开始导航")) {
+        if (text.contains("回家")) {
+            return new Command(Type.NAVIGATE_HOME, "");
+        }
+        if (containsAny(text, "打开导航", "开始导航")) {
             return new Command(Type.NAVIGATION_UNAVAILABLE, "");
         }
         if (containsAny(text, "播放", "来一首", "音乐", "听歌", "playmusic")) {
