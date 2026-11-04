@@ -1,6 +1,17 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-Last updated: 2026-11-04  
+Last updated: 2026-11-04
+
+## Phase 16 — Multi-widget meter editor
+
+- Parser now validates every views[] entry (up to 32 widgets), not just the first.
+- Preview canvas draws all widgets and supports per-widget alignment, size and color.
+- Editor supports selecting, adding and removing widgets, plus editing x/y position and width/height using normalized coordinates.
+- Save widget layout stores widget count and widget settings locally; reset restores the bundled preset.
+- Unit tests now cover multiple widgets, rendering, alignment and invalid layouts.
+- This phase is implemented in source; the new CI run is pending and must pass before the updated APK is marked build-verified.
+
+Details: MULTI_WIDGET_METER_EDITOR.md (phase notes are also recorded in this progress entry).  
 Repository: https://github.com/qiangge5586-a11y/1  
 Target: independent Android rebuild based on the user's supplied HondaHack 7.6.0 APK and reverse-analysis notes.
 
@@ -56,6 +67,14 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 - The debug APK has not yet been tested on the user's vehicle or factory head unit.
 
 ## Next steps
+
+1. Obtain readable JADX output and review high-value original methods (MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService).
+2. Add named preset save/rename/duplicate/import/export.
+3. Add safe, explicit audio-focus controls and startup preferences using public Android APIs.
+4. Build a compatibility matrix for the exact Civic factory head-unit model/firmware.
+5. Test the debug APK on a spare Android device first; do not modify the live vehicle head unit until a documented interface and rollback path are confirmed.
+
+<!-- Previous roadmap retained below for historical context. -->
 
 1. Obtain readable JADX output and review high-value original methods, especially `MyService`, `MeterActivity`, `NavigatorActivity`, `RemapKeysActivity`, `StartupActivity` and `VoiceAssistantService`.
 2. Extend the meter editor to multiple widgets, drag positioning, font/alignment/stroke/shadow/background assets and named presets with import/export.
