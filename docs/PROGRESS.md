@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 53 — Navigation phrase normalization and destination validation (CI pending)
+## Phase 54 — Navigation phrase normalization and destination validation (CI pending)
 
 - Added polite Chinese navigation phrase variants and cleanup of spoken trailing particles/punctuation.
 - Empty, generic and over-80-character destinations are rejected before the confirmation button can be enabled.
@@ -24,8 +24,8 @@
 
 - Extended the on-device voice parser to extract a destination from navigation phrases.
 - After a separate confirmation tap, opens a public Android geo URI through the system map-app chooser.
-- Does not target Amap/Baidu directly, send private broadcasts, read location, set a home address or start background guidance.
-- “回家” remains unavailable until a home destination is explicitly configured.
+- Does not target Amap/Baidu directly, send private broadcasts, read current location or start background guidance.
+- Phase 53 adds a user-entered local home destination; “回家” opens the public map chooser only after confirmation when one is configured.
 - Added parser tests and documentation.
 - Details: `docs/VOICE_NAVIGATION_HANDOFF.md`.
 - The first parser update run #144 failed because the previous test still expected the old unsupported-navigation classification; the test was updated to assert destination extraction.
