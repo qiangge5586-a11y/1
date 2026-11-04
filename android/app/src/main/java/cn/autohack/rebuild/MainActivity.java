@@ -190,6 +190,20 @@ public final class MainActivity extends Activity {
             });
             content.addView(textColor, matchWrap());
 
+            Button reset = new Button(this);
+            reset.setText("Reset meter editor");
+            reset.setOnClickListener(v -> {
+                speed.setProgress(0);
+                size.setProgress(Math.max(0, Math.min(38, spec.textSize - 18)));
+                left.setProgress(spec.left);
+                top.setProgress(spec.top);
+                meterColor = 0xFF263746;
+                meterTextColor = 0xFFFFFFFF;
+                prefs.edit().clear().apply();
+                update.run();
+            });
+            content.addView(reset, matchWrap());
+
             update.run();
         } catch (Exception error) {
             addFeature("Instrument meter", "Demo preset unavailable: " + error.getMessage());
