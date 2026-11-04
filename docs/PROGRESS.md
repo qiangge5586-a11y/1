@@ -1,5 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 44 — Road information and offline voice demo (CI pending)
+
+- Added the original road-information and voice-alert preference controls to the Civic meter demo.
+- Road/turn values are fixed sample content; no Amap app, private broadcast, location feed or vendor API is accessed.
+- Voice output requires both explicit opt-ins and a manual button tap. It selects only an installed TTS voice marked as not requiring network access; if unavailable, it refuses network speech.
+- TTS is stopped and released with the Activity. No background announcement service or copyrighted bundled voice assets are used.
+- Added tests for road display and spoken sample strings.
+- Details: `docs/ROAD_INFORMATION_OFFLINE_VOICE_DEMO.md`.
+- Source/test commits: `5d75a64b5a2185f256af2e603de67666e724cf23`, `4a34e43b37400aa63ff9abc3644072958f239a34`, `767f5d7370a1e8e6a6d8f4030b072c1ac42ecf06`; CI pending.
+
 ## Phase 43 — Civic compass and track-up options (CI verified)
 
 - Added the original compass enable (default on) and dependent track-up (default off) controls.
