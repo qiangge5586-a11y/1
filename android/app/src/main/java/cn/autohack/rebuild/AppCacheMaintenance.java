@@ -10,7 +10,12 @@ public final class AppCacheMaintenance {
     public static long calculateSize(File cacheRoot) {
         if (cacheRoot == null || !cacheRoot.isDirectory()) return 0L;
         try {
-            return calculate(cacheRoot, cacheRoot.getCanonicalPath());
+            String root = cacheRoot.getCanonicalPath();
+            File[] children = cacheRoot.listFiles();
+            if (children == null) return 0L;
+            long total = 0L;
+            for (File child : children) total += calculate(child, root);
+            return total;
         } catch (IOException e) {
             return 0L;
         }
