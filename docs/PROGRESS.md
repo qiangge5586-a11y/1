@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 53 — Navigation phrase normalization and destination validation (CI pending)
+
+- Added polite Chinese navigation phrase variants and cleanup of spoken trailing particles/punctuation.
+- Empty, generic and over-80-character destinations are rejected before the confirmation button can be enabled.
+- Public Android geo URI chooser and separate user confirmation remain required.
+- Added parser tests; no geocoding, location access, private map APIs or automatic route start.
+- Details: `docs/VOICE_NAVIGATION_HANDOFF.md`.
+
+
 ## Phase 53 — Saved home destination (CI pending)
 
 - Added a user-entered home place/address stored only in app-private preferences, with clear and length/whitespace validation.
