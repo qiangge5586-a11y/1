@@ -6,10 +6,12 @@ import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -53,7 +55,7 @@ public final class MainActivity extends Activity {
         addSection("Feature preview");
         addMeterPreview();
         addKeyMappingDemo();
-        addFeature("Navigation state", "Waiting for a supported navigation integration");
+        addNavigationDemo();
         addFeature("Audio focus", "No audio changes until explicitly enabled");
         addFeature("Storage diagnostics", "Read-only checks; no system file modifications");
 
@@ -218,6 +220,43 @@ public final class MainActivity extends Activity {
         label.setTextSize(14);
         content.addView(label);
         content.addView(control, matchWrap());
+    }
+
+    private void addNavigationDemo() {
+        addSection("Navigation app integration");
+        TextView note = new TextView(this);
+        note.setText("Only detects and opens installed navigation apps after you tap. It never force-stops or changes another app.");
+        note.setTextSize(13);
+        content.addView(note);
+
+        String[][] candidates = {
+                {"Amap Auto", "com.autonavi.amapauto"},
+                {"Baidu Map Auto", "com.baidu.BaiduMap.auto"},
+                {"Baidu Navi Auto", "com.baidu.naviauto"}
+        };
+        for (String[] candidate : candidates) {
+            String label = candidate[0];
+            String packageName = candidate[1];
+            boolean installed = NavigationAppHelper.isLaunchable(this, packageName);
+            TextView state = new TextView(this);
+            state.setText(label + " · " + (installed ? "Launchable" : "Not installed / no launcher")
+                    + "\n" + packageName);
+            state.setTextSize(14);
+            state.setPadding(dp(10), dp(8), dp(10), dp(4));
+            content.addView(state);
+
+            Button launch = new Button(this);
+            launch.setText("Open " + label);
+            launch.setEnabled(installed);
+            launch.setOnClickListener(v -> {
+                try {
+                    NavigationAppHelper.launch(this, packageName);
+                } catch (RuntimeException error) {
+                    state.setText(label + " could not be opened: " + error.getMessage());
+                }
+            });
+            content.addView(launch, matchWrap());
+        }
     }
 
     private void addKeyMappingDemo() {
