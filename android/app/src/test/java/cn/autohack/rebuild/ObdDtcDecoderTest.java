@@ -2,7 +2,7 @@ package cn.autohack.rebuild;
 
 import org.junit.Test;
 import java.util.Arrays;
-import import java.util.Collections;
+import java.util.Collections;
 import static org.junit.Assert.*;
 
 public final class ObdDtcDecoderTest {
