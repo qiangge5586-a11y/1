@@ -1,10 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 55 — Saved destination input hardening (CI pending; test correction committed)
+## Phase 55 — Saved destination input hardening (CI verified)
 
 - Rejects embedded non-whitespace ISO control characters before saving a home destination.
 - Preserves ordinary whitespace normalization and the 160-character limit.
 - Added tests for NUL/control characters and newline/space normalization. The first test draft used escaped text rather than actual control characters; corrected to construct control chars explicitly and use a real newline.
+- Normalization now uses an explicit whitespace pass and rejects ASCII/ISO control characters (except ordinary whitespace) before persistence.
+- GitHub Actions run #159 (ID 41777567961) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41777567961
+- Final source commit: `8db5e082fd8324e9b1b19b9f8a931773f7c1b799`; artifact ID: 13297991332; APK size: 84,756 bytes; SHA-256: `02c2979e828ddd86dfe9cd376f540527d427d808af5189bdb8ce07ac295dc2a0`.
 - Details: `docs/SAVED_HOME_DESTINATION.md`.
 
 ## Phase 54 — Navigation phrase normalization and destination validation (CI verified)
