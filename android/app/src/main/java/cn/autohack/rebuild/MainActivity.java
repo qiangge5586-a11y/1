@@ -2123,7 +2123,7 @@ public final class MainActivity extends Activity {
     private void connectObdAdapter(android.bluetooth.BluetoothDevice device) {
         if (obdController != null) obdController.disconnect();
         clearLiveObdOverlay();
-        obdController = new BluetoothObdController(new BluetoothObdController.Listener() {
+        obdController = new BluetoothObdController(this, new BluetoothObdController.Listener() {
             @Override public void onState(String state) {
                 if (isFinishing() || isDestroyed()) return;
                 if (state.startsWith("Connected.")) {
