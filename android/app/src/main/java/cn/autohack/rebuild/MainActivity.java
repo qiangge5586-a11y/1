@@ -76,9 +76,9 @@ public final class MainActivity extends Activity {
         try {
             MeterPreset preset = MeterPresetRepository.loadDemo(this);
             TextView preview = new TextView(this);
-            preview.setText(preset.name + "\\n" +
+            preview.setText(preset.name + "\n" +
                     preset.primaryView.renderMock(0, 850, 68, 82) +
-                    "\\nRPM: 850 · Fuel: 68% · Coolant: 82 °C");
+                    "\nRPM: 850 · Fuel: 68% · Coolant: 82 °C");
             preview.setTextSize(20);
             preview.setGravity(Gravity.CENTER);
             preview.setPadding(dp(14), dp(20), dp(14), dp(20));
