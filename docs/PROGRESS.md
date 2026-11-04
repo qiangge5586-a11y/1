@@ -1,11 +1,20 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 36 — Fresh source-level audit of original APK (analysis complete; DEX follow-up pending)
+
+- Regenerated the original APK's JADX 1.5.3 source tree from the verified Library APK.
+- Reviewed the main entry/menu, root/Xposed bootstrap path, modified licensing stubs, steering-key remapping, vendor service binding, navigation/audio hooks, startup video and voice-assistant entry points.
+- Confirmed the setup path contains persistent ADB, system remount/app_process replacement, Xposed bridge deployment, platform.xml replacement and privileged component changes. These are explicitly excluded from the rebuild.
+- Confirmed the supplied modified sample has unconditional registration success and a disabled revoke stub; this is not a clean vendor baseline.
+- Full findings and remaining DEX review targets: `docs/ORIGINAL_APK_METHOD_AUDIT_2026-11-04.md`.
+- Standard JADX mode: 1,286 Java files, 381 under `cn/autohack`, 31 fallback methods across 23 files; debug bad-code pass emits bodies but they remain subject to DEX validation.
+
 ## Phase 35 — Reproducible original APK decompilation setup (CI verified)
 
 - Added a pinned JADX 1.5.3 CLI script with SHA-256 checks for both the original APK and official decompiler release archive.
 - Requires WSL2 ext4 output because the APK contains case-colliding class names such as `d.java` and `D.java`; warns/refuses a case-insensitive workspace by default.
 - Keeps the original APK unchanged, avoids overwriting existing decompilation output, and records analysis metadata.
-- Added a CI shell-syntax validation step. Actual full decompilation remains pending local WSL2 execution; no claim of fresh method-level review yet.
+- Added a CI shell-syntax validation step. The verified toolchain was retrieved by GitHub Actions run #1 (ID 41772005669), then the APK was successfully decompiled in an ext4 Linux workspace. The WSL2 helper remains available for repeatable local reproduction.
 - Details: `docs/JADX_REPRODUCIBLE_DECOMPILATION.md`.
 - GitHub Actions run #85 (ID 41771880665) passed the helper shell-syntax check, unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41771880665
 - Final workflow commit: `b183b2bdf5c0bf64fbff823f185ac912c47ac420`; artifact ID: 13295291240; APK size: 58,116 bytes; SHA-256: `da37bb70c9d1516ab72d5654ff2b36dc14a052897ee99ed7f2af7762b9fbd7d3`.
