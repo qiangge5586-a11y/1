@@ -9,13 +9,14 @@
 - Details: `docs/APP_PRIVATE_CACHE_MAINTENANCE.md`.
 - Source/test commits: `521e6f9bcf80228f349a776103edacb37261884f`, `c77d96b3017a974d230fd62796b3f63ccc8bab20`, `aaa595e646bd266b8263fcdbd247787328f40450`, `662b6deaaf9930616d9ebcdae4b5f0bc561784e1`; CI pending.
 
-## Phase 29 — Head-unit compatibility diagnostics (CI pending)
+## Phase 29 — Head-unit compatibility diagnostics (CI verified)
 
 - Extended read-only device identity with board, hardware and Android build fingerprint.
 - Added real display resolution and density information plus a user-invoked share report.
 - No root probes, protected file reads, OEM service calls or settings changes.
 - Details: `docs/HEAD_UNIT_COMPATIBILITY_DIAGNOSTICS.md`.
-- Source commits: `d599dc05b8dff806a55270fa569ff66d00d3db69`, `2cea6a364aca070c6cb608216286d011c0ac81f7`; CI pending.
+- GitHub Actions run #72 (ID 41763378628) passed debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41763378628
+- Final source commit: `2cea6a364aca070c6cb608216286d011c0ac81f7`.
 
 ## Phase 28 — Foreground hardware key event monitor (CI verified)
 
