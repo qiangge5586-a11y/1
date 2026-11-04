@@ -38,7 +38,7 @@ This is a third-party/repackaging certificate, not evidence of an original Honda
 
 ## Manifest string-pool findings
 
-The binary manifest was confirmed present and its UTF-16 string pool was inspected. The following package, version, permission, component and intent strings were recovered. A full decoded XML export is still pending because apktool/aapt/jadx are not installed in the current analysis environment; therefore this is a string-pool inventory, not a complete semantic manifest decode.
+The binary manifest was confirmed present and its UTF-16 string pool was inspected. The following package, version, permission, component and intent strings were recovered. Binary XML element/attribute parsing is documented separately in `MANIFEST_COMPONENT_AUDIT.md`; that report supersedes the string-pool-only limitation for package, version, SDK, permissions, components and intent-filter data.
 
 ### Permission strings observed
 
@@ -108,7 +108,7 @@ The binary manifest was confirmed present and its UTF-16 string pool was inspect
 2. The app is a single-DEX, ARMv7-native application with Xposed-related payload markers.
 3. The manifest string pool exposes a broad privileged permission surface, including log reading, microphone, location, overlay, storage and superuser-related permissions.
 4. The signer is the NP repackaging certificate described by the report, not a trustworthy original publisher identity.
-5. A full XML manifest decode and DEX method-level mapping remain pending; no claims are made that the current string-pool inventory is a complete manifest parse.
+5. Binary manifest component decoding and DEX structural/bytecode-reference audits are documented in the companion audit files. Fresh JADX source-level review of the high-value classes remains outstanding.
 
 ## Safety / rebuild implications
 
