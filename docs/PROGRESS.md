@@ -1,13 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 48 — Startup app selection (CI pending)
+## Phase 48 — Startup app selection (CI verified)
 
 - Added a picker for installed user apps with public launcher activities.
 - Saves the selected package and launches only after an explicit tap.
 - Excludes system apps and the rebuild app. No boot-time automation or private app access.
 - Added unit coverage for eligibility rules.
 - Details: `docs/STARTUP_APP_SELECTION.md`.
-- Commits: `92cc1fbf65638e9626e05dfca668840c82e99153`, `b5a4bac85acce038bba5025029d22aa9d7d50081`, `cff839b06583e00d626f51401c30581014f48126`; CI pending.
+- GitHub Actions run #136 (ID 41776272254) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776272254
+- Final source/test commit: `cff839b06583e00d626f51401c30581014f48126`; artifact ID: 13297027510; APK size: 77,543 bytes; SHA-256: `880ecaa7a822705058d55d8870a2396e94d7cc25d843fc08e3d02434b0aee0ba`.
 
 ## Phase 47 — Bounded startup-video preview options (CI verified)
 
