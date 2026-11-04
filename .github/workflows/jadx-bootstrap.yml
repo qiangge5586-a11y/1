@@ -1,0 +1,27 @@
+name: Prepare pinned JADX toolchain
+
+on:
+  push:
+    paths:
+      - '.github/workflows/jadx-bootstrap.yml'
+  workflow_dispatch:
+
+jobs:
+  package-jadx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download official JADX 1.5.3 release
+        run: |
+          curl -fL --retry 3 \
+            https://github.com/skylot/jadx/releases/download/v1.5.3/jadx-1.5.3.zip \
+            -o jadx-1.5.3.zip
+      - name: Verify official release checksum
+        run: |
+          echo "8280f3799c0273fe797a2bcd90258c943e451fd195f13d05400de5e6451d15ec  jadx-1.5.3.zip" | sha256sum -c -
+      - name: Upload verified JADX toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: jadx-1.5.3-verified
+          path: jadx-1.5.3.zip
+          if-no-files-found: error
+          retention-days: 7
