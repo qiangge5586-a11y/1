@@ -18,7 +18,7 @@
 - No cloud audio upload, private navigation broadcasts, QQ Music internals, shared-storage recording, wake word or background service is copied.
 - Details: `docs/VOICE_ASSISTANT_ORIGINAL_AUDIT.md`.
 
-## Phase 49 — Ten-slot foreground steering-key mapping (CI pending)
+## Phase 49 — Ten-slot foreground steering-key mapping (CI verified)
 
 - Replaced the simulator-only mapping with ten configurable foreground key slots.
 - User explicitly enables monitoring, captures a key delivered to the Activity, and assigns a local action: show meter editor, navigation app list, voice-assistant settings or road-information demo.
@@ -27,9 +27,10 @@
 - Added unit tests for slot lookup, duplicate reassignment, invalid slots and system-key filtering.
 - Does not use root, Xposed, vendor logcat, private broadcasts, CAN or global input injection. Physical steering-wheel event delivery remains unverified.
 - Details: `docs/FOREGROUND_STEERING_KEY_MAPPING.md` and `docs/FOREGROUND_KEY_EVENT_MONITOR.md`.
-- Source/test/doc commits: `c6801b19e5304e5f2748d8d4d51bf262cba7545c`, `0046deecb9c85201258fe0b728f6d8e50b9ae278`, `59294ff11aad5103002a756c511929f1f7607610`, `f1a3c7ab1df018e9ce13f90e765bdfb0007732c7`, `2f1d3ece6b72011ec1c621727e39d578881b4386`, `1802070244d8c9eb9ca99b43fb7c4e8d8ab4f835`; CI pending.
+- GitHub Actions run #141 (ID 41776603787) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776603787
+- Final source commit: `d362e867fb0d662daa746e7fa45a04752f978472`; artifact ID: 13296883225; APK size: 80,857 bytes; SHA-256: `1e424f24b57c61f19f24f659627d968bb6a35ebd97050e09c7a296129430c197`.
 
-## Phase 49 — Original startup automation audit (analysis complete)
+## Phase 48A — Original startup automation audit (analysis complete)
 
 - Traced original delayed app launch, optional media keyevent 126 injection, agreement auto-confirm and restore-last-function Xposed hook.
 - Agreement auto-confirm can dismiss an OEM legal/safety prompt without user review; restore-last-function modifies a host-process method.
