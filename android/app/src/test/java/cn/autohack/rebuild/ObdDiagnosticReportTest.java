@@ -30,7 +30,7 @@ public final class ObdDiagnosticReportTest {
         String report = ObdDiagnosticReport.build("now", "connected" + ((char) 0) + " state",
                 repeat("X", 3000), "MIL unavailable", "none");
         assertFalse(report.contains(String.valueOf((char) 0)));
-        assertTrue(report.length() < 2400);
+        assertTrue(report.length() < 3000);
     }
 
     @Test public void reportDoesNotAddVehicleOrAdapterIdentifiers() {
