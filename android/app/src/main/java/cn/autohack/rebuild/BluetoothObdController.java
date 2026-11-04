@@ -215,7 +215,7 @@ public final class BluetoothObdController {
             throw new SecurityException("Only allowlisted adapter setup and read-only PIDs are permitted");
         }
         if (!isActive(session)) return "";
-        output.write((command + "\r").getBytes(StandardCharsets.US_ASCII));
+        output.write((command + "\r").getBytes(Charset.forName("US-ASCII")));
         output.flush();
         ByteArrayOutputStream response = new ByteArrayOutputStream();
         long deadline = System.currentTimeMillis() + timeoutMs;
