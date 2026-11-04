@@ -1,5 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 52 — Confirmed public navigation handoff (CI pending)
+
+- Extended the on-device voice parser to extract a destination from navigation phrases.
+- After a separate confirmation tap, opens a public Android geo URI through the system map-app chooser.
+- Does not target Amap/Baidu directly, send private broadcasts, read location, set a home address or start background guidance.
+- “回家” remains unavailable until a home destination is explicitly configured.
+- Added parser tests and documentation.
+- Details: `docs/VOICE_NAVIGATION_HANDOFF.md`.
+- Source/test commits: `b456f1b9a1f41c0cf2bb073b17cb6d56da2db103`, `cacddead9d37004511fd4bb034f07f3a24dcefdd`, `aa67d7347bebd2a4625a776c668dd5c75d97ac6f`; CI pending.
+
 ## Phase 51 — Confirmed local voice commands (CI verified)
 
 - Added a conservative parser for local meter-editor and user-app launch phrases.
