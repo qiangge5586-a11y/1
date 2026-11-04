@@ -7,7 +7,7 @@ import org.json.JSONException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 
 /** Loads bundled demo presets only; it never reads vehicle or system files. */
 public final class MeterPresetRepository {
@@ -19,7 +19,7 @@ public final class MeterPresetRepository {
             byte[] buffer = new byte[1024];
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return MeterPreset.fromJson(new String(output.toByteArray(), StandardCharsets.UTF_8));
+            return MeterPreset.fromJson(new String(output.toByteArray(), Charset.forName("UTF-8")));
         }
     }
 
