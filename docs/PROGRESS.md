@@ -26,6 +26,13 @@ Target: independent Android rebuild based on the user's supplied HondaHack 7.6.0
 - Navigation-app detection and explicit launch buttons implemented for package IDs found in the original APK.
 - Unit tests for meter preset parsing and validation are included in CI.
 
+## Phase 16 build verification
+
+- GitHub Actions run #36 (ID 41757049880) completed successfully: https://github.com/qiangge5586-a11y/1/actions/runs/41757049880
+- Artifact ID: 13288183434; APK size: 25,793 bytes.
+- APK SHA-256: 525122662bb4968844c7152ef3f8cd9c161a603338d929edf8e8c58e15e53502.
+- Multi-widget parser, canvas, editor and tests are included in this successful build.
+
 ## Latest build verification
 
 GitHub Actions run #31:
