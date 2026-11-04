@@ -1982,21 +1982,39 @@ public final class MainActivity extends Activity {
         obdDtcStatus.setText("Stored trouble codes: not requested");
         obdDtcStatus.setTextSize(13);
         content.addView(obdDtcStatus);
-        Button readDtc = new Button(this);
-        readDtc.setText("Read stored fault codes (Mode 03)");
-        readDtc.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
-                .setTitle("Read stored diagnostic codes?")
-                .setMessage("Sends one standard read-only Mode 03 request after confirmation. This does not clear codes, reset the ECU or change vehicle settings.")
+        Button readStored = new Button(this);
+        readStored.setText("Read stored fault codes (Mode 03)");
+        readStored.setOnClickListener(v ->
+                confirmDiagnosticRead(ObdReadOnlyCommands.STORED_DTC, "stored"));
+        content.addView(readStored, matchWrap());
+
+        Button readPending = new Button(this);
+        readPending.setText("Read pending fault codes (Mode 07)");
+        readPending.setOnClickListener(v ->
+                confirmDiagnosticRead(ObdReadOnlyCommands.PENDING_DTC, "pending"));
+        content.addView(readPending, matchWrap());
+
+        Button readPermanent = new Button(this);
+        readPermanent.setText("Read permanent fault codes (Mode 0A)");
+        readPermanent.setOnClickListener(v ->
+                confirmDiagnosticRead(ObdReadOnlyCommands.PERMANENT_DTC, "permanent"));
+        content.addView(readPermanent, matchWrap());
+    }
+
+    private void confirmDiagnosticRead(String command, String category) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Read " + category + " trouble codes?")
+                .setMessage("Sends one standard read-only OBD request after confirmation. It does not clear codes, reset the ECU or change vehicle settings.")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Read codes", (dialog, which) -> {
-                    if (obdController == null || !obdController.requestStoredCodes()) {
-                        obdDtcStatus.setText("Connect to a paired OBD-II adapter before reading stored codes.");
+                    if (obdController == null
+                            || !obdController.requestDiagnosticCodes(command)) {
+                        obdDtcStatus.setText("Connect to a paired OBD-II adapter and wait until it is ready before reading codes.");
                     } else {
-                        obdDtcStatus.setText("Reading stored trouble codes…");
+                        obdDtcStatus.setText("Reading " + category + " trouble codes…");
                     }
                 })
-                .show());
-        content.addView(readDtc, matchWrap());
+                .show();
     }
 
     private void choosePairedObdAdapter() {
@@ -2105,13 +2123,15 @@ public final class MainActivity extends Activity {
                         + "\\nFuel level: " + displayObdValue(fuelPercent, "%")
                         + "\\nFour live meter fields are overlaid; unsupported route, distance and economy tokens show --.");
             }
-            @Override public void onStoredCodes(java.util.List<String> codes) {
+            @Override public void onDiagnosticCodes(String command, java.util.List<String> codes) {
                 if (isFinishing() || isDestroyed() || obdDtcStatus == null) return;
+                String category = ObdReadOnlyCommands.STORED_DTC.equals(command) ? "Stored"
+                        : ObdReadOnlyCommands.PENDING_DTC.equals(command) ? "Pending" : "Permanent";
                 if (codes == null || codes.isEmpty()) {
-                    obdDtcStatus.setText("Stored trouble codes: none returned (or the ECU response contained no valid codes).");
+                    obdDtcStatus.setText(category + " trouble codes: none returned (or the ECU response contained no valid codes).");
                     return;
                 }
-                StringBuilder result = new StringBuilder("Stored trouble codes:");
+                StringBuilder result = new StringBuilder(category + " trouble codes:");
                 for (String code : codes) result.append("\\n").append(code)
                         .append(" · ").append(ObdDtcDescriptions.describe(code));
                 result.append("\\nRead only · no codes were cleared.");
