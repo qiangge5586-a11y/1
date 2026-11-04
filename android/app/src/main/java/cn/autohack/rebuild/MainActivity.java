@@ -656,6 +656,16 @@ public final class MainActivity extends Activity {
             speed.setProgress(Math.max(0, Math.min(240, speedValue[0])));
             addLabeledControl("Demo speed", speedLabel, speed);
 
+            TextView unitLabel = new TextView(this);
+            unitLabel.setText("Demo unit system");
+            content.addView(unitLabel);
+            String[] unitOptions = {"Metric (km, L/100km, °C)", "Metric (km, km/L, °C)",
+                    "US (mi, mpg, °F)", "Imperial (mi, mpg, °F)"};
+            Spinner unitSelector = new Spinner(this);
+            unitSelector.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, unitOptions));
+            unitSelector.setSelection(Math.max(0, Math.min(3, prefs.getInt("unit_system", 0))));
+            content.addView(unitSelector, matchWrap());
+
             String[] labels = new String[specs.size()];
             for (int i = 0; i < labels.length; i++) labels[i] = "Widget " + (i + 1);
             Spinner selector = new Spinner(this);
@@ -678,13 +688,14 @@ public final class MainActivity extends Activity {
             Runnable render = () -> {
                 java.util.List<MeterCanvasView.Widget> widgets = new java.util.ArrayList<>();
                 int value = speed.getProgress();
-                java.util.Map<String, String> demoValues = CivicMeterDemoData.forSpeed(value).asTokenMap();
+                MeterUnitSystem unitSystem = MeterUnitSystem.fromIndex(unitSelector.getSelectedItemPosition());
+                java.util.Map<String, String> demoValues = CivicMeterDemoData.forSpeed(value, unitSystem).asTokenMap();
                 for (MeterPreset.ViewSpec spec : specs) {
                     widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(demoValues)));
                 }
                 display.setWidgets(widgets, meterColor);
                 status.setText("Preset: " + activePresetName[0] + " · " + specs.size() + " widgets");
-                speedLabel.setText("Demo speed: " + value + " km/h");
+                speedLabel.setText("Demo speed: " + value + " " + unitSystem.speedUnit());
                 MeterPreset.ViewSpec s = specs.get(selected[0]);
                 sizeLabel.setText("Text size: " + s.textSize + " sp");
                 leftLabel.setText("Horizontal position: " + s.left + "%");
@@ -702,6 +713,14 @@ public final class MainActivity extends Activity {
             selector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override public void onItemSelected(AdapterView<?> parent, android.view.View view,
                         int position, long id) { selected[0] = position; loadSelected.run(); }
+                @Override public void onNothingSelected(AdapterView<?> parent) {}
+            });
+            unitSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override public void onItemSelected(AdapterView<?> parent, android.view.View view,
+                        int position, long id) {
+                    prefs.edit().putInt("unit_system", position).apply();
+                    render.run();
+                }
                 @Override public void onNothingSelected(AdapterView<?> parent) {}
             });
             speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
