@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 66 — Offline generic DTC descriptions (CI pending)
+## Phase 66 — Offline generic DTC descriptions (CI verified)
 
 - Added a small offline dictionary for common generic powertrain codes: P0101, P0113, P0128, P0133, P0171, P0300, P0420, P0442, P0455, P0500 and P0700.
 - DTC results now show a short Chinese generic description beside each code.
@@ -8,7 +8,8 @@
 - Descriptions are not repair advice and are not claimed to be Honda-specific. Exact interpretation must be checked against model-specific service information.
 - Added tests for common descriptions, unknown category fallback and malformed code rejection.
 - Details: `docs/OBD2_DTC_READ.md`.
-- Source/test commits: `a692607c19c135156abc912ec25248aae0be3a09`, `be14f23f066fdaf118b27fd7653eaec056a6ea03`, `901529da45e74c78bc4c19f61e3bec6803e65700`; CI pending.
+- Source/test commits: `a692607c19c135156abc912ec25248aae0be3a09`, `be14f23f066fdaf118b27fd7653eaec056a6ea03`, `901529da45e74c78bc4c19f61e3bec6803e65700`.
+- GitHub Actions run #214 (ID 41779977077) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41779977077. Artifact ID: 13298980840; APK artifact ZIP size: 100,023 bytes.
 
 
 ## Phase 65 — Explicit read-only stored fault-code request (CI verified)
