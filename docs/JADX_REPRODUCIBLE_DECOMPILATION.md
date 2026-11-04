@@ -59,4 +59,7 @@ Do not commit the complete decompiled source tree to the app repository by defau
 
 ## Current status
 
-The script and its CI syntax check are committed. The full local decompilation has not yet been executed in this environment because the JADX release archive could not be downloaded here. Method-level review remains pending until the script is run in WSL2 and the output is available.
+- The official archive was fetched and checksum-verified by GitHub Actions run #1: https://github.com/qiangge5586-a11y/1/actions/runs/41772005669.
+- The original APK was successfully decompiled in an ext4 Linux workspace in this session. Standard output contains 1,286 Java source files; 31 methods across 23 files remain fallback placeholders in normal mode.
+- A second pass using `--show-bad-code --comments-level debug` emitted bodies for the fallback methods, but these may be inconsistent and require DEX/smali checks.
+- The Windows 11/WSL2 helper remains committed for repeatable reproduction on the user's computer. A fresh source-level audit is recorded in `docs/ORIGINAL_APK_METHOD_AUDIT_2026-11-04.md`.
