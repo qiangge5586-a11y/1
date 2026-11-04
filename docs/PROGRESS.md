@@ -15,7 +15,7 @@
 ## Phase 51 — Confirmed local voice commands (CI verified)
 
 - Added a conservative parser for local meter-editor and user-app launch phrases.
-- Recognized navigation/music phrases are explicitly marked unavailable; unknown speech creates no action.
+- Recognized navigation destinations are handled by the separate Phase 52 public map-app chooser; navigation shortcuts without a destination and music remain unavailable. Unknown speech creates no action.
 - Every supported action requires a separate Confirm button tap. App launches require exactly one matching installed user app.
 - Added parser unit tests and documentation.
 - No vehicle command, private Amap/QQ Music integration, media-key injection, wake word or background listening.
