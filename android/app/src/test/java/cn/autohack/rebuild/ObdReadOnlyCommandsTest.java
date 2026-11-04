@@ -37,5 +37,9 @@ public final class ObdReadOnlyCommandsTest {
         assertFalse(ObdReadOnlyCommands.isAdapterSetupCommand("ATSH7E0"));
         assertFalse(ObdReadOnlyCommands.isAdapterSetupCommand("ATPP"));
         assertFalse(ObdReadOnlyCommands.isAdapterSetupCommand("010D"));
+        assertTrue(ObdReadOnlyCommands.isAdapterInfoCommand("ATDP"));
+        assertTrue(ObdReadOnlyCommands.isAdapterInfoCommand(" atdpn "));
+        assertFalse(ObdReadOnlyCommands.isAdapterInfoCommand("ATSP0"));
+        assertFalse(ObdReadOnlyCommands.isAdapterInfoCommand("ATSH7E0"));
     }
 }
