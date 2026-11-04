@@ -44,3 +44,15 @@ Fresh JADX resource extraction identified:
 ## Unit handling
 
 The original renderer maps its unit codes to kilometres/miles, fuel-efficiency formats (km/L, mpg, imperial mpg or L/100km), and Celsius/Fahrenheit. The rebuild's Civic demo explicitly chooses metric display labels (km, L/100km, °C) as sample defaults. These are not read from the vehicle and are not asserted to match the user's actual cluster settings.
+
+
+## Selectable demo unit systems
+
+The editor now offers four display-only choices based on the original unit-code mappings:
+
+- Metric: km, L/100km, °C, km/h.
+- Metric economy: km, km/L, °C, km/h.
+- US customary: mi, mpg, °F, mph.
+- Imperial: mi, imperial mpg, °F, mph.
+
+Conversions are applied only to fixed demo values. They are not vehicle telemetry and do not read or change the vehicle's own unit settings.
