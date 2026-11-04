@@ -27,6 +27,13 @@ public final class ObdLiveMeterValues {
                     ? coolantTempC * 9.0 / 5.0 + 32.0 : coolantTempC;
             result.put("coolant", format(temperature));
         }
+
+        String[] unavailable = {
+                "distance_to_empty", "current_distance", "avg_fuel_eff",
+                "trip_a_distance", "avg_fuel_eff_a", "next_road", "cur_road",
+                "route_remain", "seg_dist", "speed_limit", "camera_dist"
+        };
+        for (String token : unavailable) result.put(token, "--");
         return Collections.unmodifiableMap(result);
     }
 
