@@ -4,6 +4,10 @@ android {
     namespace 'cn.autohack.rebuild'
     compileSdk 35
 
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     defaultConfig {
         applicationId 'cn.autohack.rebuild'
         minSdk 23
@@ -11,4 +15,10 @@ android {
         versionCode 1
         versionName '0.1.0'
     }
+}
+
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
 }
