@@ -1,11 +1,12 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 19 — Startup preferences (CI pending)
+## Phase 19 — Startup preferences and local video preview (CI pending)
 
 - Added a disabled-by-default checkbox to open the offline meter editor when the app launches.
 - Persists the choice locally and scrolls to the editor after layout; no boot receiver, boot permission, background startup, or third-party launch.
-- Details: `docs/STARTUP_PREFERENCES.md`.
-- The initial run #44 (ID 41760539194) failed because earlier newline cleanup split several Java string literals. Follow-up source fixes are committed; run #46 (ID 41760683021) is the current full-source validation and remains pending.
+- Added local video selection through Android's document picker, persisted read-only URI access, explicit in-app VideoView preview, and clear-selection control. No automatic playback, boot receiver, broad storage permission, or background service.
+- Details: `docs/STARTUP_PREFERENCES.md` and `docs/STARTUP_VIDEO_PREVIEW.md`.
+- The initial run #44 failed because earlier newline cleanup split Java string literals. Follow-up fixes passed CI run #46 (ID 41760683021): unit tests and debug APK assembly succeeded. The video-preview addition is a new change and awaits its own CI run.
 
 ## Phase 18 — Explicit audio-focus management
 
