@@ -77,7 +77,7 @@ public final class MainActivity extends Activity {
         addNavigationDemo();
         addLocalApkInstaller();
         addAudioFocusDemo();
-        addFeature("Storage diagnostics", "Read-only checks; no system file modifications");
+        addStorageDiagnostics();
 
         Button refresh = new Button(this);
         refresh.setText("Refresh device information");
@@ -673,6 +673,69 @@ public final class MainActivity extends Activity {
         label.setTextSize(14);
         content.addView(label);
         content.addView(control, matchWrap());
+    }
+
+    private void addStorageDiagnostics() {
+        addSection("Storage diagnostics · read-only");
+        TextView report = new TextView(this);
+        report.setTextSize(13);
+        report.setPadding(dp(12), dp(12), dp(12), dp(12));
+        report.setBackgroundColor(0xFFF5F6F7);
+        Runnable refresh = () -> report.setText(buildStorageReport());
+        refresh.run();
+        content.addView(report, matchWrap());
+
+        Button refreshButton = new Button(this);
+        refreshButton.setText("Refresh storage diagnostics");
+        refreshButton.setOnClickListener(v -> refresh.run());
+        content.addView(refreshButton, matchWrap());
+
+        Button share = new Button(this);
+        share.setText("Share storage report");
+        share.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(android.content.Intent.EXTRA_TEXT, buildStorageReport());
+            startActivity(android.content.Intent.createChooser(intent, "Share storage diagnostics"));
+        });
+        content.addView(share, matchWrap());
+
+        TextView note = new TextView(this);
+        note.setText("This diagnostic checks app-accessible storage only. It does not request all-files access, change platform.xml, remount partitions, or modify shared storage.");
+        note.setTextSize(12);
+        content.addView(note);
+    }
+
+    private String buildStorageReport() {
+        StringBuilder report = new StringBuilder();
+        report.append("HondaHack Rebuild · storage report\n");
+        report.append("Android API: ").append(android.os.Build.VERSION.SDK_INT).append("\n");
+        report.append("Shared storage state: ")
+                .append(android.os.Environment.getExternalStorageState()).append("\n");
+        report.append("Internal app files: ").append(getFilesDir().getAbsolutePath()).append("\n");
+        report.append("Internal available: ").append(formatStorageBytes(getFilesDir().getUsableSpace())).append("\n");
+        report.append("App cache available: ").append(formatStorageBytes(getCacheDir().getUsableSpace())).append("\n");
+        java.io.File external = getExternalFilesDir(null);
+        if (external == null) {
+            report.append("App-specific external storage: unavailable\n");
+        } else {
+            report.append("App-specific external: ").append(external.getAbsolutePath()).append("\n");
+            report.append("External available: ").append(formatStorageBytes(external.getUsableSpace())).append("\n");
+        }
+        report.append("External storage emulated: ")
+                .append(android.os.Environment.isExternalStorageEmulated()).append("\n");
+        report.append("All-files access: not requested by this app\n");
+        report.append("System partition changes: none");
+        return report.toString();
+    }
+
+    private String formatStorageBytes(long bytes) {
+        if (bytes < 0) return "unknown";
+        if (bytes >= 1024L * 1024L * 1024L)
+            return String.format(java.util.Locale.US, "%.2f GiB", bytes / (1024.0 * 1024.0 * 1024.0));
+        if (bytes >= 1024L * 1024L)
+            return String.format(java.util.Locale.US, "%.1f MiB", bytes / (1024.0 * 1024.0));
+        return String.format(java.util.Locale.US, "%.1f KiB", bytes / 1024.0);
     }
 
     private void addLocalApkInstaller() {
