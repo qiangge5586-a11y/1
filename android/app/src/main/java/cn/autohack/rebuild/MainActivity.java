@@ -24,6 +24,7 @@ public final class MainActivity extends Activity {
     private TextView audioFocusStatus;
     private TextView startupVideoStatus;
     private String pendingPresetExportName;
+    private android.net.Uri pendingApkUri;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -74,6 +75,7 @@ public final class MainActivity extends Activity {
         addPresetManagement();
         addKeyMappingDemo();
         addNavigationDemo();
+        addLocalApkInstaller();
         addAudioFocusDemo();
         addFeature("Storage diagnostics", "Read-only checks; no system file modifications");
 
@@ -203,8 +205,20 @@ public final class MainActivity extends Activity {
     @Override protected void onActivityResult(int requestCode, int resultCode,
             android.content.Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 7605) {
+            android.net.Uri uri = pendingApkUri;
+            pendingApkUri = null;
+            if (uri != null && android.os.Build.VERSION.SDK_INT >= 26
+                    && getPackageManager().canRequestPackageInstalls()) {
+                launchApkInstaller(uri);
+            } else {
+                toast("Install permission was not enabled. No APK was installed.");
+            }
+            return;
+        }
         if (resultCode != RESULT_OK || data == null || data.getData() == null) {
             if (requestCode == 7603) pendingPresetExportName = null;
+            if (requestCode == 7604) pendingApkUri = null;
             return;
         }
         android.net.Uri uri = data.getData();
@@ -249,6 +263,33 @@ public final class MainActivity extends Activity {
             } catch (Exception e) {
                 toast("JSON export failed: " + e.getMessage());
             }
+        } else if (requestCode == 7604) {
+            launchApkInstaller(uri);
+        }
+    }
+
+    private void launchApkInstaller(android.net.Uri uri) {
+        if (android.os.Build.VERSION.SDK_INT >= 26
+                && !getPackageManager().canRequestPackageInstalls()) {
+            pendingApkUri = uri;
+            android.content.Intent settings = new android.content.Intent(
+                    android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    android.net.Uri.parse("package:" + getPackageName()));
+            try {
+                startActivityForResult(settings, 7605);
+            } catch (RuntimeException e) {
+                pendingApkUri = null;
+                toast("Open this app's Install unknown apps setting manually, then retry.");
+            }
+            return;
+        }
+        android.content.Intent install = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+        install.setDataAndType(uri, "application/vnd.android.package-archive");
+        install.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            startActivity(install);
+        } catch (RuntimeException e) {
+            toast("Unable to open the system package installer: " + e.getMessage());
         }
     }
 
@@ -617,6 +658,27 @@ public final class MainActivity extends Activity {
         label.setTextSize(14);
         content.addView(label);
         content.addView(control, matchWrap());
+    }
+
+    private void addLocalApkInstaller() {
+        addSection("Local APK installer · system confirmation");
+        TextView note = new TextView(this);
+        note.setText("Choose an APK from a document provider. Android's package installer handles the installation and displays its own confirmation. This app never installs silently or uses root.");
+        note.setTextSize(13);
+        content.addView(note);
+        Button choose = new Button(this);
+        choose.setText("Choose APK to install");
+        choose.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(
+                    android.content.Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
+                    new String[]{"application/vnd.android.package-archive", "application/octet-stream"});
+            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(intent, 7604);
+        });
+        content.addView(choose, matchWrap());
     }
 
     private void addNavigationDemo() {
