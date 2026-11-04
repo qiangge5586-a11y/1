@@ -20,3 +20,8 @@ Only the exact standard command `03` is allowed for this diagnostic read. No `04
 ## Validation
 
 Unit tests cover P/C/B/U code families, order/deduplication, zero padding, optional CAN header, echoed command, negative/no-data responses and malformed/truncated/oversized input.
+
+
+## Generic offline descriptions
+
+The result list includes a small offline dictionary for common generic codes such as P0101, P0113, P0128, P0133, P0171, P0300, P0420, P0442, P0455, P0500 and P0700. Unknown but syntactically valid codes are shown without an invented explanation. Descriptions are generic OBD-II meanings, not Honda-specific repair procedures; exact interpretation and diagnosis must be checked against the vehicle's service information.
