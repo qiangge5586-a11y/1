@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 26 — Navigation state provider contract and demo (CI pending)
+
+- Added immutable, validated `NavigationState` snapshots and a read-only `NavigationStateProvider` interface.
+- Added deterministic mock navigation states (maneuver, distance, ETA, inactive) and UI controls to advance/reset them.
+- The UI labels these values as demo data. No undocumented Amap/Baidu APIs, notification scraping, location tracking, or vehicle bus connection is used.
+- Added unit tests for state validation, route cycling, reset and inactive-state display.
+- Details: `docs/NAVIGATION_STATE_ADAPTER.md`.
+- Source/test commits: `8e53a80cca25240781f3931fe9d3c8899c5af1e1`, `36224317955a343a7d8d8ef9dfa86375d576f2fd`, `fefe200f745e53686111a07780764eb04424fcf5`, `d46526e779e47ee5429ee45f87baf2455939e85f`, `f717914e1814b38c9b638a97bcef625b9acb6b34`; CI pending.
+
 ## Phase 25 — Shareable meter preview image (CI verified)
 
 - Added an explicit button to render the app's own meter preview into a PNG in private cache and share it via Android's share sheet.
