@@ -7,11 +7,11 @@
     {"left":41,"top":32,"width":18,"height":20,"text":"{compass}","alignment":"center","textSize":16,"textColor":"#ffffd54f"},
     {"left":78,"top":34,"width":20,"height":12,"text":"Limit {speed_limit}","alignment":"center","textSize":12,"textColor":"#ffffd54f"},
     {"left":78,"top":49,"width":20,"height":12,"text":"Camera {camera_dist}","alignment":"center","textSize":11,"textColor":"#ffffd54f"},
-    {"left":1,"top":78,"width":15,"height":18,"text":"DTE\n{distance_to_empty}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
-    {"left":17,"top":78,"width":15,"height":18,"text":"Drive\n{current_distance}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
-    {"left":33,"top":78,"width":16,"height":18,"text":"Avg\n{avg_fuel_eff}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
-    {"left":50,"top":78,"width":16,"height":18,"text":"Trip A\n{trip_a_distance}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
-    {"left":67,"top":78,"width":16,"height":18,"text":"Avg A\n{avg_fuel_eff_a}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
-    {"left":84,"top":78,"width":15,"height":18,"text":"Coolant\n{coolant}°","alignment":"center","textSize":11,"textColor":"#ffcccccc"}
+    {"left":1,"top":78,"width":15,"height":18,"text":"DTE\n{distance_to_empty} {distance_unit}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
+    {"left":17,"top":78,"width":15,"height":18,"text":"Drive\n{current_distance} {distance_unit}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
+    {"left":33,"top":78,"width":16,"height":18,"text":"Avg\n{avg_fuel_eff} {fuel_eff_unit}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
+    {"left":50,"top":78,"width":16,"height":18,"text":"Trip A\n{trip_a_distance} {distance_unit}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
+    {"left":67,"top":78,"width":16,"height":18,"text":"Avg A\n{avg_fuel_eff_a} {fuel_eff_unit}","alignment":"center","textSize":11,"textColor":"#ffcccccc"},
+    {"left":84,"top":78,"width":15,"height":18,"text":"Coolant\n{coolant}{coolant_unit}","alignment":"center","textSize":11,"textColor":"#ffcccccc"}
   ]
 }
