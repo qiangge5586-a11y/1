@@ -9,14 +9,16 @@
 - Details: `docs/VOICE_NAVIGATION_HANDOFF.md`.
 
 
-## Phase 53 — Saved home destination (CI pending)
+## Phase 53 — Saved home destination (CI verified)
 
 - Added a user-entered home place/address stored only in app-private preferences, with clear and length/whitespace validation.
 - “回家” now proposes the saved destination and still requires the Confirm button before opening the public map chooser.
 - Without a saved destination, no navigation action is created. No GPS, contacts, location permission or cloud lookup.
 - Added parser and destination validation tests.
 - Details: `docs/SAVED_HOME_DESTINATION.md`.
-- Source/test commits: `b76ec479de89ae43e92c5319e40f035c1958da30`, `ced66991cd71e799ccd37e73a094ae9355fbc4d1`, `57931a8742ff3a46233d1f4751199c8d98a41bef`, `8bf90189652fd8f203e2977f78dbeb0f8340d80f`, `0a8e598f0f582896390ebe81bf84b891690955e0`, `279f908105a24ab802cb57ef6952fdaab0feceb4`; CI pending.
+- Early builds exposed a voice-phrase parser mismatch and test expectation drift; destination parsing was hardened for direct/polite phrases, trailing punctuation and bounded target length.
+- GitHub Actions run #155 (ID 41777206607) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41777206607
+- Final source/test commit: `a3dc4a7ad3662f7ad41793383401cce664b5e6ce`; artifact ID: 13298010640; APK size: 84,489 bytes; SHA-256: `811951e39f7795c919428d4453fc03aa1de95953818f92ef6492713907877df6`.
 
 ## Phase 52 — Confirmed public navigation handoff (CI verified)
 
