@@ -23,7 +23,7 @@ public final class BluetoothObdController {
         void onState(String state);
         void onTelemetry(Integer speedKph, Integer engineRpm,
                 Integer coolantTempC, Integer fuelPercent);
-        void onStoredCodes(List<String> codes);
+        void onDiagnosticCodes(String command, List<String> codes);
     }
 
     private static final UUID SPP_UUID =
@@ -34,7 +34,7 @@ public final class BluetoothObdController {
     private volatile long generation;
     private volatile BluetoothSocket socket;
     private volatile boolean readyForCommands;
-    private volatile boolean dtcReadRequested;
+    private volatile String pendingDiagnosticCommand;
     private ExecutorService worker;
 
     public BluetoothObdController(Listener listener) {
@@ -50,7 +50,7 @@ public final class BluetoothObdController {
         final long session = generation;
         stopped = false;
         readyForCommands = false;
-        dtcReadRequested = false;
+        pendingDiagnosticCommand = null;
         worker = Executors.newSingleThreadExecutor();
         worker.execute(() -> runSession(device, session));
     }
@@ -59,7 +59,7 @@ public final class BluetoothObdController {
         generation++;
         stopped = true;
         readyForCommands = false;
-        dtcReadRequested = false;
+        pendingDiagnosticCommand = null;
         BluetoothSocket active = socket;
         socket = null;
         closeSocket(active);
@@ -69,10 +69,13 @@ public final class BluetoothObdController {
         }
     }
 
-    /** Queues one Mode 03 read on the session worker; never performs socket I/O on the UI thread. */
-    public synchronized boolean requestStoredCodes() {
-        if (stopped || !readyForCommands || dtcReadRequested) return false;
-        dtcReadRequested = true;
+    /** Queues one allowlisted diagnostic read on the session worker. */
+    public synchronized boolean requestDiagnosticCodes(String command) {
+        if (!ObdReadOnlyCommands.isDiagnosticReadCommand(command)
+                || stopped || !readyForCommands || pendingDiagnosticCommand != null) {
+            return false;
+        }
+        pendingDiagnosticCommand = command.trim().toUpperCase(java.util.Locale.ROOT);
         return true;
     }
 
@@ -130,11 +133,19 @@ public final class BluetoothObdController {
                         ? decode(ObdReadOnlyCommands.FUEL_LEVEL, input, output, session, 3) : null;
                 if (!isActive(session)) break;
                 postTelemetry(speed, rpm, coolant, fuel, session);
-                if (dtcReadRequested && isActive(session)) {
-                    dtcReadRequested = false;
-                    String dtcResponse = sendCommand(input, output,
-                            ObdReadOnlyCommands.STORED_DTC, 2500, session);
-                    postStoredCodes(ObdDtcDecoder.decodeStoredCodes(dtcResponse), session);
+                String diagnosticCommand = pendingDiagnosticCommand;
+                if (diagnosticCommand != null && isActive(session)) {
+                    pendingDiagnosticCommand = null;
+                    String response = sendCommand(input, output, diagnosticCommand, 2500, session);
+                    List<String> codes;
+                    if (ObdReadOnlyCommands.STORED_DTC.equals(diagnosticCommand)) {
+                        codes = ObdDtcDecoder.decodeStoredCodes(response);
+                    } else if (ObdReadOnlyCommands.PENDING_DTC.equals(diagnosticCommand)) {
+                        codes = ObdDtcDecoder.decodePendingCodes(response);
+                    } else {
+                        codes = ObdDtcDecoder.decodePermanentCodes(response);
+                    }
+                    postDiagnosticCodes(diagnosticCommand, codes, session);
                 }
                 Thread.sleep(1000L);
             }
@@ -147,7 +158,7 @@ public final class BluetoothObdController {
             if (session == generation) {
                 stopped = true;
                 readyForCommands = false;
-                dtcReadRequested = false;
+                pendingDiagnosticCommand = null;
                 if (socket == activeSocket) socket = null;
                 postState(terminalState, session);
             }
@@ -208,13 +219,13 @@ public final class BluetoothObdController {
         });
     }
 
-    private void postStoredCodes(List<String> codes, long session) {
+    private void postDiagnosticCodes(String command, List<String> codes, long session) {
         if (listener != null) {
             List<String> safeCodes = codes == null
                     ? Collections.<String>emptyList()
                     : Collections.unmodifiableList(new ArrayList<>(codes));
             mainHandler.post(() -> {
-                if (session == generation) listener.onStoredCodes(safeCodes);
+                if (session == generation) listener.onDiagnosticCodes(command, safeCodes);
             });
         }
     }
