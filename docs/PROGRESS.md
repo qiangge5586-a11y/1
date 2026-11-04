@@ -1,5 +1,27 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 61 — Paired Bluetooth ELM327 read-only session (CI pending)
+
+- Added a manual picker for already-paired Bluetooth devices; no discovery scan or automatic pairing is performed.
+- Requires explicit adapter selection and a second Connect confirmation. Android 12+ requests BLUETOOTH_CONNECT only when the user opens the picker; legacy Bluetooth permissions are limited to Android 11 and below.
+- The foreground-only SPP client performs an explicit allowlisted ELM setup sequence and polls only four allowlisted standard Mode 01 PIDs (speed, RPM, coolant and fuel level).
+- Session generation checks prevent stale callbacks; sockets and worker threads are closed on disconnect and when MainActivity pauses. No background reconnect.
+- The UI keeps demo snapshots separate from live adapter readings; missing/invalid PIDs display as unavailable, not invented values.
+- Tests cover strict PID and adapter-setup allowlists. Run #185 exposed a compile-time mismatch during allowlist refactoring; the follow-up polling-loop correction and test run #187 passed. Final permission/build check is Run #188 and remains pending.
+- Details: `docs/OBD2_ELM327_DECODER.md`, `docs/OBD2_READ_ONLY_QUERY_PLAN.md`.
+- Source/permission commits: `35de13ec1dfb95016b103cd458da18173f3669e0`, `7e459945d0ec12c928bd428b583be1c09c42d1a1`, `3f92ed968e5c5a68139d8896c498df79b746ed87`, `e3b89d782b6b769684f3822483ac25ebebfb50f4`, `31f5998d8898501dd8dfc909da69c1b096f1ca34`, `6f1720a83a56cc21136dbdffd853a8cba263691c`, `bf93b0515bdd82a82c3ae3868293472ae079c9d9`; CI pending final permission check.
+
+## Phase 60 — Read-only OBD-II PID query planning (CI verified)
+
+- Added a transport-independent query planner that starts with Mode 01 PID bitmap 0100 and follows 0120/0140 only when the ECU advertises the extension.
+- Generates commands only for supported common dashboard PIDs, in stable order; missing or malformed bitmaps do not invent supported values.
+- The planner generates standard read-only Mode 01 requests only; no DTC clearing, actuator control, programming, ECU reset or manufacturer-specific PID is included.
+- Added tests for bitmap bit ordering, extension discovery, supported PID scheduling, malformed responses and PID-range validation.
+- Details: `docs/OBD2_READ_ONLY_QUERY_PLAN.md`.
+- GitHub Actions run #187 (ID 41778681165) passed the combined unit-test suite, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41778681165
+- Source/test commits: `16df646bf778bfcb172e90c019fcd64453c47cad`, `01b8f839046646e755db9795acf88dc999d58377`; final verification includes allowlist hardening commits `31f5998d8898501dd8dfc909da69c1b096f1ca34`, `6f1720a83a56cc21136dbdffd853a8cba263691c`.
+
+
 ## Phase 59 — Paired Bluetooth ELM327 read-only adapter (CI pending)
 
 - Added manual selection from already paired Bluetooth Classic devices; no scanning or in-app pairing.
