@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 65 — Explicit read-only stored fault-code request (CI pending)
+
+- Added a separate exact allowlist for standard Mode 03 command `03`; Mode 04 clear-DTC and all other commands remain blocked.
+- Added a user-visible “Read stored fault codes” button with a second confirmation dialog. The request is queued on the Bluetooth worker so it cannot write to the socket concurrently with the telemetry poller.
+- Results are decoded with `ObdDtcDecoder` and shown in memory only. Reading is never automatic on connect; no clear/reset/write action exists.
+- If there is no active paired adapter session, the UI asks the user to connect first.
+- Tests cover the exact Mode 03 allowlist boundary; parser tests remain in Phase 64.
+- Details: `docs/OBD2_DTC_READ.md`.
+- Source/test commits: `c2b0e719c6726424aab5502b16690cc25319f906`, `2d82b192d5eaed7ca1e42091c5edcbcc5862a0f4`, `45506dd455b6651776ef3a3c1987a16845f5f082`, `0a61396365226ffbf09506da4fc37959df850d22`; CI pending.
+
+
 ## Phase 64 — Standard OBD-II stored trouble-code decoder (CI verified)
 
 - Added a parser for positive Mode 03 `43` responses and standard P/C/B/U trouble-code categories.
