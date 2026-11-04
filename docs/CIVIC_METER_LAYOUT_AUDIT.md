@@ -24,6 +24,11 @@ Fresh JADX resource extraction identified:
 - The preview canvas preserves the 584:215 aspect ratio.
 - The new template is text-only and uses independently authored geometry; it does not copy original resource images, audio, Xposed code or vendor service calls.
 
+## Runtime path caveat
+
+- `C0269ua.getMeterLayout()` maps the `civic` and `clarity` model strings to the internal `CIVIC` enum, but the decompiled method's final return value is `meter_none` for all paths. The meter renderer later checks the enum and inflates the returned layout. This mismatch may be a modified-sample defect or a decompilation/control-flow issue; it must be checked against DEX before claiming the original APK actually activates `meter_civic.xml` at runtime.
+- Therefore this rebuild's Civic template is based on the presence and contents of the original XML resources, not on a verified runtime layout selection path.
+
 ## Compatibility and data boundaries
 
 - The original XML resource proves that the APK contains a Civic-specific meter layout, not that it works on every Civic year/trim or that the 2019 Civic factory center display can host this APK.
