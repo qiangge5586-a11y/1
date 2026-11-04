@@ -8,14 +8,15 @@
 - Details: `docs/HEAD_UNIT_COMPATIBILITY_DIAGNOSTICS.md`.
 - Source commits: `d599dc05b8dff806a55270fa569ff66d00d3db69`, `2cea6a364aca070c6cb608216286d011c0ac81f7`; CI pending.
 
-## Phase 28 — Foreground hardware key event monitor (CI pending)
+## Phase 28 — Foreground hardware key event monitor (CI verified)
 
 - Added an opt-in, foreground-only Android key event monitor in the steering-key simulator section.
 - Displays key name/code and passes the event through unchanged; it does not execute mapped vehicle actions.
 - Disabled by default and not persisted across launches. No accessibility service, global interception, root or Xposed hooks.
 - Steering keys are observable only if the head unit routes them to this Activity.
 - Details: `docs/FOREGROUND_KEY_EVENT_MONITOR.md`.
-- Source commit: `8910155cc952919f82ab5df619df0b7fa67711f7`; CI pending.
+- GitHub Actions run #70 (ID 41763278421) passed debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41763278421
+- Source commit: `8910155cc952919f82ab5df619df0b7fa67711f7`.
 
 ## Phase 27 — Vehicle telemetry adapter contract and demo (CI verified)
 
