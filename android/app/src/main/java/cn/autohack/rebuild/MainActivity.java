@@ -756,6 +756,7 @@ public final class MainActivity extends Activity {
         return android.net.Uri.fromFile(destination);
     }
 
+    @android.annotation.TargetApi(19)
     private void releaseSelectedContent(String value) {
         if (value == null || value.isEmpty()) return;
         android.net.Uri uri = android.net.Uri.parse(value);
@@ -2114,6 +2115,7 @@ public final class MainActivity extends Activity {
         showPairedObdAdapters();
     }
 
+    @android.annotation.TargetApi(18)
     private void showPairedObdAdapters() {
         try {
             android.bluetooth.BluetoothAdapter adapter;
