@@ -24,7 +24,7 @@ public final class CivicMeterDemoDataTest {
         Map<String, String> values = CivicMeterDemoData.forSpeed(100, MeterUnitSystem.US_CUSTOMARY).asTokenMap();
         assertEquals("62", values.get("speed"));
         assertEquals("mph", values.get("speed_unit"));
-        assertEquals("261.0", values.get("distance_to_empty"));
+        assertEquals("261", values.get("distance_to_empty"));
         assertEquals("mi", values.get("distance_unit"));
         assertEquals("32.7", values.get("avg_fuel_eff"));
         assertEquals("mpg", values.get("fuel_eff_unit"));
