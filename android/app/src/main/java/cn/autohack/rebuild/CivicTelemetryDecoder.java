@@ -6,9 +6,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Decodes the original Civic meter's integer telemetry fields into display strings.
- * This class only transforms caller-supplied values; it does not access vehicle IPC,
- * privileged files, broadcasts, CAN, OBD or ECU services.
+ * Decodes original Civic meter integer fields into display strings.
+ * This is a pure transformation; it never accesses vehicle IPC, privileged files,
+ * broadcasts, CAN, OBD or ECU services.
  */
 public final class CivicTelemetryDecoder {
     public static final int MISSING = Integer.MIN_VALUE;
@@ -16,29 +16,25 @@ public final class CivicTelemetryDecoder {
     private CivicTelemetryDecoder() {}
 
     public static Map<String, String> decode(
-            int speed,
-            int distanceToEmpty,
-            int tripDistanceRaw,
-            int tripDistanceUnit,
-            int averageFuelRaw,
-            int averageFuelUnit,
-            int tripAAverageFuelRaw,
-            int tripAAverageFuelUnit,
-            int coolantRaw,
-            int coolantUnit) {
+            int speed, int distanceToEmpty, int tripDistanceRaw, int tripDistanceUnit,
+            int averageFuelRaw, int averageFuelUnit, int tripAAverageFuelRaw,
+            int tripAAverageFuelUnit, int coolantRaw, int coolantUnit) {
         Map<String, String> result = new LinkedHashMap<>();
         String distanceUnit = tripDistanceUnit < 0 ? "unknown" : distanceUnit(tripDistanceUnit);
         result.put("speed", speed < 0 ? "--" : Integer.toString(speed));
-        result.put("distance_to_empty", distanceToEmpty < 0
+        result.put("distance_to_empty", distanceToEmpty < 0 || tripDistanceUnit < 0
                 ? "---" : distanceToEmpty + " " + distanceUnit);
-        result.put("trip_a_distance", tripDistanceUnit < 0 ? "--.-"\n                : scaledTenth(tripDistanceRaw, distanceUnit, true));
-        result.put("avg_fuel_eff", averageFuelUnit < 0 ? "--.-"\n                : scaledTenth(averageFuelRaw, fuelUnit(averageFuelUnit), false));
-        result.put("avg_fuel_eff_a", scaledTenth(tripAAverageFuelRaw,
-                fuelUnit(tripAAverageFuelUnit)));
+        result.put("trip_a_distance", tripDistanceUnit < 0 ? "--.-"
+                : scaledTenth(tripDistanceRaw, distanceUnit, true));
+        result.put("avg_fuel_eff", averageFuelUnit < 0 ? "--.-"
+                : scaledTenth(averageFuelRaw, fuelUnit(averageFuelUnit), false));
+        result.put("avg_fuel_eff_a", tripAAverageFuelUnit < 0 ? "--.-"
+                : scaledTenth(tripAAverageFuelRaw, fuelUnit(tripAAverageFuelUnit), false));
         result.put("coolant", coolant(coolantRaw, coolantUnit));
         result.put("distance_unit", distanceUnit);
         result.put("avg_fuel_eff_unit", averageFuelUnit < 0 ? "unknown" : fuelUnit(averageFuelUnit));
-        result.put("avg_fuel_eff_a_unit", tripAAverageFuelUnit < 0 ? "unknown" : fuelUnit(tripAAverageFuelUnit));
+        result.put("avg_fuel_eff_a_unit", tripAAverageFuelUnit < 0
+                ? "unknown" : fuelUnit(tripAAverageFuelUnit));
         result.put("coolant_unit", coolantUnit < 0 ? "unknown" : coolantUnit == 0 ? "°C" : "°F");
         return Collections.unmodifiableMap(result);
     }
@@ -59,7 +55,7 @@ public final class CivicTelemetryDecoder {
     private static String scaledTenth(int raw, String unit, boolean truncateLargeDistance) {
         if (raw < 0) return "--.-";
         double value = raw / 10.0;
-        String formatted = raw > 10000
+        String formatted = truncateLargeDistance && raw > 10000
                 ? Integer.toString(raw / 10)
                 : String.format(Locale.US, "%.1f", value);
         return formatted + " " + unit;
