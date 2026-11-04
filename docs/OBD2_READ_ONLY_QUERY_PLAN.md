@@ -17,8 +17,9 @@ The selected display PIDs are 04, 05, 0B, 0C, 0D, 0E, 0F, 10, 11, 2F, 33, 5C and
 
 - Only standard read-only Mode 01 current-data requests are generated.
 - No Mode 04 clear-diagnostic-trouble-codes, actuator control, programming, ECU reset or manufacturer-specific PID is included.
-- This class does not connect to Bluetooth, USB, Wi-Fi or the vehicle. It only builds command strings for a future explicitly selected adapter transport.
-- The vehicle UI must continue to show demo values until a real adapter session returns validated ECU responses.
+- The planner itself is transport-independent. The paired Bluetooth ELM327 controller now calls it after the user explicitly selects and confirms an adapter, then polls only the intersection of the ECU-advertised PIDs and the controller's strict four-PID read allowlist.
+- If the ECU bitmap is missing or malformed, no dashboard PID is polled and unavailable values remain `--`.
+- Physical adapter/vehicle validation is still required; CI does not prove that a specific adapter or vehicle responds correctly.
 
 ## Validation
 
