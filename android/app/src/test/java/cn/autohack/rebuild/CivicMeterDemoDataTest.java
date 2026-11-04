@@ -15,6 +15,9 @@ public final class CivicMeterDemoDataTest {
         assertEquals("125.6", values.get("trip_a_distance"));
         assertEquals("6.8", values.get("avg_fuel_eff_a"));
         assertEquals("82", values.get("coolant"));
+        assertEquals("km", values.get("distance_unit"));
+        assertEquals("L/100km", values.get("fuel_eff_unit"));
+        assertEquals(" °C", values.get("coolant_unit"));
     }
 
     @Test public void speedInputIsClampedToDemoRange() {
@@ -25,10 +28,10 @@ public final class CivicMeterDemoDataTest {
     @Test public void presetCanRenderSourceDerivedCivicTokens() throws Exception {
         MeterPreset preset = MeterPreset.fromJson("{\"name\":\"Civic\",\"views\":["
                 + "{\"left\":0,\"top\":0,\"width\":100,\"height\":20,"
-                + "\"text\":\"DTE {distance_to_empty} · Avg {avg_fuel_eff}\","
+                + "\"text\":\"DTE {distance_to_empty} {distance_unit} · Avg {avg_fuel_eff} {fuel_eff_unit}\","
                 + "\"alignment\":\"center\",\"textSize\":18,\"textColor\":\"#ffffffff\"}]}");
         String rendered = preset.primaryView.renderMock(CivicMeterDemoData.forSpeed(40).asTokenMap());
-        assertEquals("DTE 420 · Avg 7.2", rendered);
+        assertEquals("DTE 420 km · Avg 7.2 L/100km", rendered);
     }
 
     @Test(expected = JSONException.class)
