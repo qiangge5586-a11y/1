@@ -39,3 +39,8 @@ Fresh JADX resource extraction identified:
 - The original XML resource proves that the APK contains a Civic-specific meter layout, not that it works on every Civic year/trim or that the 2019 Civic factory center display can host this APK.
 - No live vehicle telemetry is connected. Every value in the Civic template is sample data.
 - The six fields are vehicle-computer trip/consumption data; they are not interchangeable with generic OBD speed/RPM/fuel values. A real adapter requires a documented read-only source and unit/calibration validation.
+
+
+## Unit handling
+
+The original renderer maps its unit codes to kilometres/miles, fuel-efficiency formats (km/L, mpg, imperial mpg or L/100km), and Celsius/Fahrenheit. The rebuild's Civic demo explicitly chooses metric display labels (km, L/100km, °C) as sample defaults. These are not read from the vehicle and are not asserted to match the user's actual cluster settings.
