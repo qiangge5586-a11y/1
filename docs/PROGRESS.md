@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 73 — Explicit MIL / check-engine status read (CI pending)
+
+- Added a parser for standard Mode 01 PID 01 response `41 01`.
+- Extracts MIL on/off from bit 7 of the first data byte and stored DTC count from the lower 7 bits; retains remaining monitor bytes without claiming a full readiness interpretation.
+- Added an exact `0101` read-command allowlist and a separate confirmed “Read check-engine light status” UI action.
+- Request is serialized on the Bluetooth worker with PID polling and DTC reads. No automatic query, DTC clearing, ECU reset or write command.
+- Added unit tests for MIL on/off, DTC count, CAN header, no-data, negative and truncated responses. Local diagnostic report now includes the MIL result.
+- Details: `docs/OBD_ENGINE_STATUS.md`.
+- Source/test commits: `1354383ab4469565a2fdaf89de0ed7c1da75dd68`, `9d9b1e3fd7b74f47fba079af6b5de0569c1a25d1`, `edccbfa4f61abe3fa716eec0fc12aca9e1316f9d`, `b139b1eb177f3b8d21a3cc81624d6e1ab2badffb`, `928da245de215b22f7b31aa65b6157ec7f4db13c`, `8a187b848cb54ee0f1ed279ca2695908d1ac8de1`, `4ef546c30d247b3038a9eeb362db78a87d00c3d0`, `2c6a59d36bdf15c133e21019c8f6b5e7c115b588`; CI pending.
+
+
 ## Phase 72 — APK manifest verification and build metadata (CI verified)
 
 - CI now inspects the packaged APK with `aapt dump badging` after assembly.
