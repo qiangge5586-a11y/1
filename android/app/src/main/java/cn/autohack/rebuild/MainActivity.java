@@ -788,8 +788,14 @@ public final class MainActivity extends Activity {
         }
         if (gpsCourseOptInEnabled && foregroundGpsController != null) {
             if (foregroundGpsController.hasFinePermission()) startForegroundGpsCourse();
-            else if (gpsCourseStatus != null)
-                gpsCourseStatus.setText("Precise location permission is no longer available.");
+            else {
+                gpsCourseOptInEnabled = false;
+                getSharedPreferences("navigation_preferences", MODE_PRIVATE)
+                        .edit().putBoolean("gps_course_enabled", false).apply();
+                if (gpsCourseOptInCheckbox != null) gpsCourseOptInCheckbox.setChecked(false);
+                if (gpsCourseStatus != null)
+                    gpsCourseStatus.setText("Precise location permission is no longer available.");
+            }
         }
     }
 
@@ -982,8 +988,8 @@ public final class MainActivity extends Activity {
                         && foregroundGpsController.hasFinePermission()) {
                     startForegroundGpsCourse();
                 } else {
-                    requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                            7608);
+                    requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION,
+                            android.Manifest.permission.ACCESS_COARSE_LOCATION}, 7608);
                 }
             });
             content.addView(gpsCourseOptInCheckbox);
