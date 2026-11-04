@@ -29,6 +29,7 @@ public final class MainActivity extends Activity {
     private android.net.Uri pendingApkUri;
     private android.speech.SpeechRecognizer speechRecognizer;
     private TextView voiceAssistantStatus;
+    private TextView vehicleSnapshotStatus;
     private boolean foregroundKeyMonitorEnabled;
     private TextView foregroundKeyStatus;
 
@@ -400,7 +401,19 @@ public final class MainActivity extends Activity {
             return;
         }
         android.net.Uri uri = data.getData();
-        if (requestCode == 7607) {
+        if (requestCode == 7608) {
+            try {
+                String json = readSmallJsonDocument(uri);
+                VehicleSnapshot snapshot = VehicleSnapshot.fromJson(json);
+                getSharedPreferences("vehicle_data_demo", MODE_PRIVATE).edit()
+                        .putString("imported_snapshot_json", json).apply();
+                if (vehicleSnapshotStatus != null)
+                    vehicleSnapshotStatus.setText(snapshot.toDisplayString());
+                toast("Imported one-time vehicle snapshot");
+            } catch (Exception error) {
+                toast("Vehicle snapshot import failed: " + error.getMessage());
+            }
+        } else if (requestCode == 7607) {
             try {
                 int granted = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
                 if (granted == 0) throw new SecurityException("Read permission was not granted");
@@ -489,6 +502,22 @@ public final class MainActivity extends Activity {
             startActivity(install);
         } catch (RuntimeException e) {
             toast("Unable to open the system package installer: " + e.getMessage());
+        }
+    }
+
+    private String readSmallJsonDocument(android.net.Uri uri) throws java.io.IOException {
+        try (java.io.InputStream input = getContentResolver().openInputStream(uri);
+             java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream()) {
+            if (input == null) throw new java.io.IOException("Unable to open selected file");
+            byte[] buffer = new byte[4096];
+            int total = 0;
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                total += count;
+                if (total > 65536) throw new java.io.IOException("Snapshot JSON exceeds 64 KiB");
+                output.write(buffer, 0, count);
+            }
+            return new String(output.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
@@ -1222,18 +1251,51 @@ public final class MainActivity extends Activity {
         content.addView(note);
 
         VehicleDataProvider provider = new MockVehicleDataProvider();
-        TextView snapshot = new TextView(this);
-        snapshot.setText(provider.getLatestSnapshot().toDisplayString());
-        snapshot.setTextSize(14);
-        snapshot.setPadding(dp(12), dp(12), dp(12), dp(12));
-        snapshot.setBackgroundColor(0xFFF5F6F7);
-        content.addView(snapshot, matchWrap());
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("vehicle_data_demo", MODE_PRIVATE);
+        vehicleSnapshotStatus = new TextView(this);
+        String imported = prefs.getString("imported_snapshot_json", null);
+        if (imported == null) {
+            vehicleSnapshotStatus.setText(provider.getLatestSnapshot().toDisplayString());
+        } else {
+            try {
+                vehicleSnapshotStatus.setText(VehicleSnapshot.fromJson(imported).toDisplayString());
+            } catch (org.json.JSONException invalid) {
+                prefs.edit().remove("imported_snapshot_json").apply();
+                vehicleSnapshotStatus.setText(provider.getLatestSnapshot().toDisplayString());
+            }
+        }
+        vehicleSnapshotStatus.setTextSize(14);
+        vehicleSnapshotStatus.setPadding(dp(12), dp(12), dp(12), dp(12));
+        vehicleSnapshotStatus.setBackgroundColor(0xFFF5F6F7);
+        content.addView(vehicleSnapshotStatus, matchWrap());
 
         Button refresh = new Button(this);
         refresh.setText("Refresh demo vehicle values");
-        refresh.setOnClickListener(v ->
-                snapshot.setText(provider.getLatestSnapshot().toDisplayString()));
+        refresh.setOnClickListener(v -> {
+            prefs.edit().remove("imported_snapshot_json").apply();
+            vehicleSnapshotStatus.setText(provider.getLatestSnapshot().toDisplayString());
+        });
         content.addView(refresh, matchWrap());
+
+        Button importSnapshot = new Button(this);
+        importSnapshot.setText("Import vehicle snapshot JSON");
+        importSnapshot.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(
+                    android.content.Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
+                    new String[]{"application/json", "text/json", "application/octet-stream"});
+            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(intent, 7608);
+        });
+        content.addView(importSnapshot, matchWrap());
+
+        TextView importNote = new TextView(this);
+        importNote.setText("Imported data is a one-time snapshot, not a live car connection. Expected JSON fields: speedKph, engineRpm, fuelPercent, coolantTempC and gear. Values are range-checked before display.");
+        importNote.setTextSize(12);
+        content.addView(importNote);
     }
 
     private void addNavigationDemo() {
