@@ -32,9 +32,13 @@ public final class CivicCompassOptionsTest {
         assertEquals("↑ --", CivicCompassOptions.compassLabel(null, true));
     }
 
-    @Test public void modeDescriptionDoesNotClaimLiveSensorIntegration() {
+    @Test public void modeDescriptionDistinguishesGpsCourseAndFallback() {
         assertEquals("Compass disabled", CivicCompassOptions.modeDescription(false, false));
-        assertTrue(CivicCompassOptions.modeDescription(true, true).contains("simulated"));
-        assertTrue(CivicCompassOptions.modeDescription(true, false).contains("simulated"));
+        assertEquals("Track-up · using GPS direction of travel",
+                CivicCompassOptions.modeDescription(true, true, true));
+        assertEquals("Track-up fallback · waiting for a stable GPS course",
+                CivicCompassOptions.modeDescription(true, true, false));
+        assertEquals("North-up · device compass heading when available",
+                CivicCompassOptions.modeDescription(true, false, false));
     }
 }
