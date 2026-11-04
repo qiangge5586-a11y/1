@@ -31,8 +31,8 @@ public final class CivicTelemetryDecoder {
         result.put("speed", speed < 0 ? "--" : Integer.toString(speed));
         result.put("distance_to_empty", distanceToEmpty < 0
                 ? "---" : distanceToEmpty + " " + distanceUnit);
-        result.put("trip_a_distance", scaledTenth(tripDistanceRaw, distanceUnit));
-        result.put("avg_fuel_eff", scaledTenth(averageFuelRaw, fuelUnit(averageFuelUnit)));
+        result.put("trip_a_distance", scaledTenth(tripDistanceRaw, distanceUnit, true));
+        result.put("avg_fuel_eff", scaledTenth(averageFuelRaw, fuelUnit(averageFuelUnit), false));
         result.put("avg_fuel_eff_a", scaledTenth(tripAAverageFuelRaw,
                 fuelUnit(tripAAverageFuelUnit)));
         result.put("coolant", coolant(coolantRaw, coolantUnit));
@@ -56,7 +56,7 @@ public final class CivicTelemetryDecoder {
         }
     }
 
-    private static String scaledTenth(int raw, String unit) {
+    private static String scaledTenth(int raw, String unit, boolean truncateLargeDistance) {
         if (raw < 0) return "--.-";
         double value = raw / 10.0;
         String formatted = raw > 10000
