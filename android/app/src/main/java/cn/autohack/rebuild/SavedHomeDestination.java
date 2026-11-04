@@ -8,23 +8,33 @@ public final class SavedHomeDestination {
 
     public static String normalize(String value) {
         String raw = value == null ? "" : value;
+        StringBuilder normalized = new StringBuilder();
+        boolean pendingSpace = false;
         for (int i = 0; i < raw.length(); i++) {
             char ch = raw.charAt(i);
-            if (Character.isISOControl(ch) && !Character.isWhitespace(ch)) {
-                throw new IllegalArgumentException("Destination contains unsupported control characters");
+            boolean whitespace = Character.isWhitespace(ch);
+            boolean isoControl = ch <= 0x1F || (ch >= 0x7F && ch <= 0x9F);
+            if (isoControl && !whitespace) {
+                throw new IllegalArgumentException(
+                        "Destination contains unsupported control characters");
             }
+            if (whitespace) {
+                if (normalized.length() > 0) pendingSpace = true;
+                continue;
+            }
+            if (pendingSpace) normalized.append(' ');
+            normalized.append(ch);
+            pendingSpace = false;
         }
-        String result = raw.trim().replaceAll("\\s+", " ");
-        if (result.length() > MAX_LENGTH) {
+        if (normalized.length() > MAX_LENGTH) {
             throw new IllegalArgumentException("Destination is too long");
         }
-        return result;
+        return normalized.toString();
     }
 
     public static boolean isValid(String value) {
         try {
-            String normalized = normalize(value);
-            return !normalized.isEmpty();
+            return !normalize(value).isEmpty();
         } catch (IllegalArgumentException error) {
             return false;
         }
