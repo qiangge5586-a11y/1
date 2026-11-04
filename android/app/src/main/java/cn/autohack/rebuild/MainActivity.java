@@ -64,6 +64,8 @@ public final class MainActivity extends Activity {
     private float gpsAccuracyMeters = -1f;
     private TextView gpsCourseStatus;
     private android.widget.CheckBox gpsCourseOptInCheckbox;
+    private BluetoothObdController obdController;
+    private TextView obdStatus;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -777,6 +779,14 @@ public final class MainActivity extends Activity {
                     gpsCourseStatus.setText("Precise location permission denied; GPS course is off.");
             }
         }
+        if (requestCode == 7610) {
+            if (grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                showPairedObdAdapters();
+            } else if (obdStatus != null) {
+                obdStatus.setText("Bluetooth connect permission denied; no adapter was accessed.");
+            }
+        }
     }
 
     @Override protected void onResume() {
@@ -802,6 +812,7 @@ public final class MainActivity extends Activity {
     @Override protected void onPause() {
         if (deviceCompassController != null) deviceCompassController.stop();
         if (foregroundGpsController != null) foregroundGpsController.stop();
+        if (obdController != null) obdController.disconnect();
         compassSensorAvailable = false;
         gpsCourseAvailable = false;
         super.onPause();
@@ -1921,6 +1932,122 @@ public final class MainActivity extends Activity {
         importNote.setText("Imported data is a one-time snapshot, not a live car connection. Expected JSON fields: speedKph, engineRpm, fuelPercent, coolantTempC and gear. Values are range-checked before display.");
         importNote.setTextSize(12);
         content.addView(importNote);
+
+        addSection("OBD-II Bluetooth adapter · optional read-only");
+        TextView obdNote = new TextView(this);
+        obdNote.setText("Pair an ELM327-compatible Bluetooth SPP adapter in Android Settings first. This app only reads four standard Mode 01 PIDs (speed, RPM, coolant and fuel level). It sends no ECU control, clear-code or write commands. Connection is manual and ends when this Activity leaves the foreground.");
+        obdNote.setTextSize(12);
+        content.addView(obdNote);
+        obdStatus = new TextView(this);
+        obdStatus.setText("OBD-II adapter: disconnected · demo values above remain separate");
+        obdStatus.setTextSize(14);
+        content.addView(obdStatus);
+        Button chooseObd = new Button(this);
+        chooseObd.setText("Choose paired OBD-II adapter");
+        chooseObd.setOnClickListener(v -> choosePairedObdAdapter());
+        content.addView(chooseObd, matchWrap());
+        Button disconnectObd = new Button(this);
+        disconnectObd.setText("Disconnect OBD-II adapter");
+        disconnectObd.setOnClickListener(v -> {
+            if (obdController != null) obdController.disconnect();
+            obdStatus.setText("OBD-II adapter disconnected by user.");
+        });
+        content.addView(disconnectObd, matchWrap());
+    }
+
+    private void choosePairedObdAdapter() {
+        if (android.os.Build.VERSION.SDK_INT >= 31
+                && checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.BLUETOOTH_CONNECT}, 7610);
+            return;
+        }
+        showPairedObdAdapters();
+    }
+
+    private void showPairedObdAdapters() {
+        try {
+            android.bluetooth.BluetoothManager manager =
+                    (android.bluetooth.BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
+            android.bluetooth.BluetoothAdapter adapter = manager == null
+                    ? android.bluetooth.BluetoothAdapter.getDefaultAdapter() : manager.getAdapter();
+            if (adapter == null) {
+                obdStatus.setText("This device has no Bluetooth adapter.");
+                return;
+            }
+            if (!adapter.isEnabled()) {
+                obdStatus.setText("Turn Bluetooth on in Android Settings, then pair the OBD adapter.");
+                return;
+            }
+            java.util.ArrayList<android.bluetooth.BluetoothDevice> devices =
+                    new java.util.ArrayList<>(adapter.getBondedDevices());
+            java.util.Collections.sort(devices, (left, right) -> {
+                String a = left.getName() == null ? "" : left.getName();
+                String b = right.getName() == null ? "" : right.getName();
+                return a.compareToIgnoreCase(b);
+            });
+            if (devices.isEmpty()) {
+                obdStatus.setText("No paired Bluetooth devices. Pair the ELM327 adapter in Android Settings first.");
+                return;
+            }
+            String[] labels = new String[devices.size()];
+            for (int i = 0; i < devices.size(); i++) {
+                android.bluetooth.BluetoothDevice device = devices.get(i);
+                String name = device.getName();
+                String address = device.getAddress();
+                String suffix = address == null || address.length() < 4
+                        ? "????" : address.substring(address.length() - 4);
+                labels[i] = (name == null || name.trim().isEmpty()
+                        ? "Bluetooth device" : name) + " · ••" + suffix;
+            }
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Select a paired OBD-II adapter")
+                    .setItems(labels, (dialog, which) -> {
+                        if (which >= 0 && which < devices.size())
+                            confirmObdAdapter(devices.get(which), labels[which]);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        } catch (SecurityException error) {
+            obdStatus.setText("Bluetooth permission is required to list paired devices.");
+        } catch (RuntimeException error) {
+            obdStatus.setText("Unable to list paired Bluetooth devices: " + error.getMessage());
+        }
+    }
+
+    private void confirmObdAdapter(android.bluetooth.BluetoothDevice device, String label) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Connect to " + label + "?")
+                .setMessage("The adapter will receive only the allowlisted ELM setup commands and read-only standard OBD-II Mode 01 requests. No vehicle control or diagnostic clearing command is sent.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Connect", (dialog, which) -> connectObdAdapter(device))
+                .show();
+    }
+
+    private void connectObdAdapter(android.bluetooth.BluetoothDevice device) {
+        if (obdController != null) obdController.disconnect();
+        obdController = new BluetoothObdController(new BluetoothObdController.Listener() {
+            @Override public void onState(String state) {
+                if (!isFinishing() && !isDestroyed() && obdStatus != null)
+                    obdStatus.setText(state);
+            }
+            @Override public void onTelemetry(Integer speedKph, Integer engineRpm,
+                    Integer coolantTempC, Integer fuelPercent) {
+                if (isFinishing() || isDestroyed() || obdStatus == null) return;
+                obdStatus.setText("OBD-II live read-only snapshot"
+                        + "\\nSpeed: " + displayObdValue(speedKph, "km/h")
+                        + "\\nEngine RPM: " + displayObdValue(engineRpm, "rpm")
+                        + "\\nCoolant: " + displayObdValue(coolantTempC, "°C")
+                        + "\\nFuel level: " + displayObdValue(fuelPercent, "%")
+                        + "\\nUnavailable PIDs remain --; values are not stored.");
+            }
+        });
+        obdController.connect(device);
+        obdStatus.setText("Connecting to paired OBD-II adapter…");
+    }
+
+    private String displayObdValue(Integer value, String unit) {
+        return value == null ? "--" : value + " " + unit;
     }
 
     private void addNavigationDemo() {
