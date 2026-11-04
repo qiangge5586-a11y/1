@@ -39,7 +39,7 @@ public final class VoiceCommandParser {
             return new Command(Type.SHOW_METER, "");
         }
         String navigationText = text.replaceAll("^[，,。.!！?？、]+|[，,。.!！?？、]+$", "");
-        Matcher destination = Pattern.compile("^(?:请帮我|帮我|请)(?:导航带我去|导航去|导航到|带我去|带我到|我要去|前往|去)(.+)$")
+        Matcher destination = Pattern.compile("^(?:请帮我|帮我|请)?(?:导航带我去|导航去|导航到|带我去|带我到|我要去|前往|去)(.+)$")
                 .matcher(navigationText);
         if (destination.matches()) {
             String target = cleanDestination(destination.group(1));
