@@ -1,5 +1,17 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 68 — Read-only ELM protocol identification (CI pending)
+
+- After explicit adapter connection, the client queries `ATDP` and `ATDPN` to report the adapter's detected protocol description and protocol number.
+- Added an exact allowlist for these read-only adapter-info commands; they do not change protocol settings.
+- The detected protocol is shown in connection status before ECU PID discovery and polling.
+- Adapter text is trimmed, line breaks normalized and bounded to 80 characters.
+- Added tests for normal, missing, unknown, multiline and overlong responses plus exact command allowlisting.
+- This reports the adapter's protocol detection only; it does not prove vehicle-specific PID support or real-car compatibility.
+- Details: `docs/ELM_PROTOCOL_DETECTION.md`.
+- Source/test commits: `9468ccd19f73e363fb6837f295f6479d0728ebc9`, `d89ec892213d484444f9624568e0248c28ffc293`, `ba9799eb26059ab2adb712492205ad1c809a31ea`, `faa3cbde6d0dde616530cc2069a351d9389526a3`, `f9d8c3359651e68b8e7b8b255d71d7f77a5d7fa0`; CI pending.
+
+
 ## Phase 67 — Pending and permanent DTC reads (CI verified)
 
 - Extended the decoder to parse Mode 07 positive responses (`47`) and Mode 0A positive responses (`4A`) in addition to stored Mode 03 (`43`).
