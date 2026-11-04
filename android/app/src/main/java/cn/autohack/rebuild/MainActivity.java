@@ -430,12 +430,15 @@ public final class MainActivity extends Activity {
         video.setVideoURI(uri);
         android.content.SharedPreferences prefs =
                 getSharedPreferences("startup_preferences", MODE_PRIVATE);
-        boolean audioEnabled = prefs.getBoolean("startup_video_audio_enabled", true);
-        boolean fadeEnabled = prefs.getBoolean("startup_video_fade_out", true);
-        int delaySeconds = Math.max(0, Math.min(30,
-                prefs.getInt("startup_video_delay_seconds", 0)));
-        int maxSeconds = Math.max(5, Math.min(60,
-                prefs.getInt("startup_video_max_seconds", 30)));
+        StartupVideoPreviewOptions options = new StartupVideoPreviewOptions(
+                prefs.getBoolean("startup_video_audio_enabled", true),
+                prefs.getBoolean("startup_video_fade_out", true),
+                prefs.getInt("startup_video_delay_seconds", 0),
+                prefs.getInt("startup_video_max_seconds", 30));
+        boolean audioEnabled = options.audioEnabled;
+        boolean fadeEnabled = options.fadeOut;
+        int delaySeconds = options.delaySeconds;
+        int maxSeconds = options.maxSeconds;
         android.os.Handler playbackHandler =
                 new android.os.Handler(android.os.Looper.getMainLooper());
         LinearLayout frame = new LinearLayout(this);
