@@ -1,5 +1,12 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 33 — Physical device validation checklist (documentation)
+
+- Added a structured checklist for spare-device installation, local feature checks, head-unit identity capture and vehicle-integration gates.
+- Explicitly blocks sideloading to proprietary factory infotainment platforms and prohibits root/Xposed/system-file modifications as compatibility workarounds.
+- Clarifies that GitHub Actions is build/unit-test evidence only; no physical head unit or vehicle has yet been tested.
+- Details: `docs/DEVICE_VALIDATION_CHECKLIST.md`.
+
 ## Phase 32 — One-time vehicle snapshot JSON import (CI verified)
 
 - Added document-picker import for vehicle telemetry snapshots, capped at 64 KiB.
