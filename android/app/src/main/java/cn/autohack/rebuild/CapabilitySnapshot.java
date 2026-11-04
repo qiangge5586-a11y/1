@@ -14,7 +14,15 @@ public final class CapabilitySnapshot {
     public final String fingerprint = Build.FINGERPRINT;
     public final int sdk = Build.VERSION.SDK_INT;
     public final String release = Build.VERSION.RELEASE;
-    public final String[] abis = Build.SUPPORTED_ABIS.clone();
+    public final String[] abis = Build.VERSION.SDK_INT >= 21
+            ? Build.SUPPORTED_ABIS.clone() : legacyAbis();
+
+    private static String[] legacyAbis() {
+        String primary = Build.CPU_ABI == null ? "" : Build.CPU_ABI;
+        String secondary = Build.CPU_ABI2 == null ? "" : Build.CPU_ABI2;
+        if (secondary.isEmpty() || secondary.equals(primary)) return new String[]{primary};
+        return new String[]{primary, secondary};
+    }
 
     public String toDisplayString() {
         return "Manufacturer: " + manufacturer
