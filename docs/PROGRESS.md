@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 62 — ECU-supported PID polling (CI pending)
+## Phase 62 — ECU-supported PID polling (CI verified)
 
 - Integrated `ObdPidQueryPlan` into the paired Bluetooth ELM327 session.
 - On connection, the client queries `0100`, and requests `0120` / `0140` only when the previous bitmap advertises that extension.
@@ -8,7 +8,9 @@
 - Added only the three explicit read-only bitmap commands to the command allowlist; no other Mode 01 PID, DTC clearing, actuator control, coding, reset or ECU write command is enabled.
 - Added allowlist tests for the bitmap discovery commands and explicit rejection of other PIDs.
 - Details: `docs/OBD2_READ_ONLY_QUERY_PLAN.md`.
-- Source/test commits: `ba985889100cacc10c0d01e21db28727b7c27260`, `d56e4a5f3cb9b0c874680a60309d67d4cf16dc6c`, `6dfa46d181f3907158eb271955b15ec725666c0e`; CI pending.
+- The first two integration attempts exposed a mismatch between the query planner and the command allowlist; the final allowlist test verifies only `0100`, `0120`, `0140` discovery plus four data PIDs are enabled.
+- GitHub Actions run #194 (ID 41778921208) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41778921208
+- Final source/test commit: `6dfa46d181f3907158eb271955b15ec725666c0e`; artifact ID: 13298301695; APK size: 99,092 bytes; SHA-256: `81c1562c5ff67b01c87de762b2a2677fd28ee32e50bdec9060a10898d7bce8e9`.
 
 
 ## Phase 61 — Paired Bluetooth ELM327 read-only session (CI verified)
