@@ -56,7 +56,7 @@ public final class MeterPreset {
    String rendered=template;
    String[] tokens={"speed","rpm","fuel","coolant","distance_to_empty","current_distance",
     "avg_fuel_eff","trip_a_distance","avg_fuel_eff_a","compass","next_road","cur_road",
-    "route_remain","seg_dist","speed_limit","camera_dist","distance_unit","fuel_eff_unit","coolant_unit"};
+    "route_remain","seg_dist","speed_limit","camera_dist","distance_unit","fuel_eff_unit","coolant_unit","speed_unit"};
    for(String token:tokens){String value=values==null?null:values.get(token);
     rendered=rendered.replace("{"+token+"}",value==null?"--":value);}
    return rendered;
