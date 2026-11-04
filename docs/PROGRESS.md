@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 70 — Local OBD diagnostic report copy (CI pending)
+## Phase 70 — Local OBD diagnostic report copy (CI verified)
 
 - Added a user-initiated clipboard report containing current connection/protocol status, ECU-supported dashboard PIDs and the latest DTC result.
 - Report is copied locally only; no upload, email or automatic sharing.
@@ -8,7 +8,8 @@
 - Includes an explicit read-only/no-ECU-write safety note. Users are asked to review before sharing.
 - Added tests for report sections, missing values, control-character cleanup, size bounds and identifier exclusion.
 - Details: `docs/OBD_DIAGNOSTIC_REPORT.md`.
-- Source/test commits: `6cabb8066f002ce1ebc6ce6ce030456bc8563c8b`, `69da4da239b2cc97435fc60861f7bd429791fb76`, `d4332040ec85e829baf39f53f36f2dcd311deec1`; CI pending.
+- Source/test commits: `6cabb8066f002ce1ebc6ce6ce030456bc8563c8b`, `69da4da239b2cc97435fc60861f7bd429791fb76`, `d4332040ec85e829baf39f53f36f2dcd311deec1`.
+- GitHub Actions run #230 (ID 41780897551) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41780897551. Artifact ID: 13298842580; APK artifact ZIP size: 103,252 bytes.
 
 
 ## Phase 69 — ECU-supported dashboard PID visibility (CI verified)
