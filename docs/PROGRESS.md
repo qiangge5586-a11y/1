@@ -1,13 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 30 — App-private cache maintenance (CI pending)
+## Phase 30 — App-private cache maintenance (CI verified)
 
 - Added a cache-size report and user-confirmed cleanup restricted to the app's private cache directory.
 - Canonical-path checks keep traversal within the cache root; the root directory is retained.
 - Presets, preferences, app files, user documents, shared storage, downloads, other apps and system files are not deleted. Temporary preview-share files may be removed.
 - Added unit tests for nested size calculation, cleanup scope and missing directories.
 - Details: `docs/APP_PRIVATE_CACHE_MAINTENANCE.md`.
-- Source/test commits: `521e6f9bcf80228f349a776103edacb37261884f`, `c77d96b3017a974d230fd62796b3f63ccc8bab20`, `aaa595e646bd266b8263fcdbd247787328f40450`, `662b6deaaf9930616d9ebcdae4b5f0bc561784e1`; CI pending.
+- GitHub Actions run #76 (ID 41763472411) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41763472411
+- Final source/test commit: `662b6deaaf9930616d9ebcdae4b5f0bc561784e1`; artifact ID: 13291915148; APK size: 53,351 bytes; SHA-256: `04b4971276d99615e6e37a9df14ddef499d13a3dc6ca2e1b210625dea63ec6c9`.
 
 ## Phase 29 — Head-unit compatibility diagnostics (CI verified)
 
