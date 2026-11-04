@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 75 — Chinese wording coverage expansion (CI pending)
+
+- Expanded the central translation dictionary to cover import/export errors, APK installer guidance, speech engine states, audio-focus states, preset management, preview failures, Bluetooth and GPS permission states, and storage diagnostics.
+- Technical protocol identifiers and user-entered names remain unchanged.
+- Source commit: `ee1c8af6c34d8048d7acfba74cd8390db440bc4c`; CI pending.
+- This is a wording-coverage follow-up to Phase 74; physical device visual QA remains outstanding.
+
+
 ## Phase 74 — Simplified Chinese app localization (CI verified)
 
 - Launcher label changed to **本田黑科技** with a Chinese string resource.
