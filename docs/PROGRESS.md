@@ -24,7 +24,7 @@ GitHub Actions run #31:
 - The `Assemble debug APK` step completed successfully. That command runs `:app:testDebugUnitTest` followed by `:app:assembleDebug`.
 - The `Upload debug APK` step completed successfully.
 - Artifact ID: `13287766903`; artifact name: `hondahack-rebuild-debug`.
-- Downloaded APK size: 23,222 bytes (approx. 23 KB).
+- Downloaded APK size: 22,646 bytes (approx. 22.6 KB).
 - APK SHA-256: `c26c2a8f0c70682459e43807ec868da363e98d3d90f30ef74339d43403196921`.
 
 The workflow's post-job cleanup was still running when this status was recorded; the actual test/build and artifact-upload steps had succeeded. This artifact is a debug prototype, not a complete or pixel-identical HondaHack clone.
