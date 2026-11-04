@@ -7,7 +7,14 @@ public final class SavedHomeDestination {
     private SavedHomeDestination() {}
 
     public static String normalize(String value) {
-        String result = value == null ? "" : value.trim().replaceAll("\\s+", " ");
+        String raw = value == null ? "" : value;
+        for (int i = 0; i < raw.length(); i++) {
+            char ch = raw.charAt(i);
+            if (Character.isISOControl(ch) && !Character.isWhitespace(ch)) {
+                throw new IllegalArgumentException("Destination contains unsupported control characters");
+            }
+        }
+        String result = raw.trim().replaceAll("\\s+", " ");
         if (result.length() > MAX_LENGTH) {
             throw new IllegalArgumentException("Destination is too long");
         }
