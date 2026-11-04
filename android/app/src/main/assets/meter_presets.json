@@ -6,7 +6,7 @@
       "top": 5,
       "width": 90,
       "height": 90,
-      "text": "{speed} km/h",
+      "text": "{speed} {speed_unit}",
       "alignment": "center",
       "textSize": 48,
       "textColor": "#ffffffff"
