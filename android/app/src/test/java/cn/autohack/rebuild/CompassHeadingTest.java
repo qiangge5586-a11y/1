@@ -25,7 +25,7 @@ public final class CompassHeadingTest {
     @Test public void roundsAtCompassSectorBoundaries() {
         assertEquals("N", CompassHeading.fromAzimuth(22.49f));
         assertEquals("NE", CompassHeading.fromAzimuth(22.5f));
-        assertEquals("N", CompassHeading.fromAzimuth(337.49f));
+        assertEquals("NW", CompassHeading.fromAzimuth(337.49f));
         assertEquals("N", CompassHeading.fromAzimuth(337.5f));
     }
 
