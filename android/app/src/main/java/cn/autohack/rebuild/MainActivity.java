@@ -392,13 +392,7 @@ public final class MainActivity extends Activity {
         clear.setOnClickListener(v -> {
             releaseStartupAudioPlayer();
             String value = prefs.getString("startup_audio_uri", null);
-            if (value != null) {
-                try {
-                    getContentResolver().releasePersistableUriPermission(
-                            android.net.Uri.parse(value),
-                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                } catch (SecurityException ignored) {}
-            }
+            releaseSelectedContent(value);
             prefs.edit().remove("startup_audio_uri").apply();
             updateStartupAudioStatus(null);
         });
@@ -1995,10 +1989,7 @@ public final class MainActivity extends Activity {
         Button importSnapshot = new Button(this);
         importSnapshot.setText("Import vehicle snapshot JSON");
         importSnapshot.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(
-                    android.content.Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
+            android.content.Intent intent = createOpenablePicker("*/*");
             intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
                     new String[]{"application/json", "text/json", "application/octet-stream"});
             intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
