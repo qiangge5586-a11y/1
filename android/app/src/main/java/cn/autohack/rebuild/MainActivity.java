@@ -1477,7 +1477,7 @@ public final class MainActivity extends Activity {
     }
 
     private void presetActions(String name) {
-        String[] actions={"Load","Rename","Duplicate","Share JSON","Save JSON file","Delete"};
+        String[] actions=ChineseText.translateArray(new String[]{"Load","Rename","Duplicate","Share JSON","Save JSON file","Delete"});
         new android.app.AlertDialog.Builder(this).setTitle(name).setItems(actions,(d,which)->{
             android.content.SharedPreferences p=getSharedPreferences("named_meter_presets",MODE_PRIVATE);
             String library=p.getString("library","");
@@ -1520,8 +1520,8 @@ public final class MainActivity extends Activity {
     private interface NameResult { void accept(String name); }
     private void askPresetName(String title,NameResult callback){
         android.widget.EditText field=new android.widget.EditText(this);field.setSingleLine(true);
-        new android.app.AlertDialog.Builder(this).setTitle(title).setView(field)
-            .setNegativeButton("Cancel",null).setPositiveButton("OK",(d,w)->callback.accept(field.getText().toString())).show();
+        new android.app.AlertDialog.Builder(this).setTitle(ChineseText.translate(title)).setView(field)
+            .setNegativeButton("取消",null).setPositiveButton("确定",(d,w)->callback.accept(field.getText().toString())).show();
     }
     private void toast(String value){android.widget.Toast.makeText(this,ChineseText.translate(value),android.widget.Toast.LENGTH_LONG).show();}
 
@@ -2078,10 +2078,10 @@ public final class MainActivity extends Activity {
 
     private void confirmDiagnosticRead(String command, String category) {
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Read " + category + " trouble codes?")
+                .setTitle(ChineseText.translate("Read " + category + " trouble codes?"))
                 .setMessage(ChineseText.translate("Sends one standard read-only OBD request after confirmation. It does not clear codes, reset the ECU or change vehicle settings."))
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Read codes", (dialog, which) -> {
+                .setPositiveButton("读取故障码", (dialog, which) -> {
                     boolean isEngineStatus = ObdReadOnlyCommands.ENGINE_STATUS.equals(command);
                     boolean queued = obdController != null && (isEngineStatus
                             ? obdController.requestEngineStatus()
@@ -2192,7 +2192,7 @@ public final class MainActivity extends Activity {
 
     private void confirmObdAdapter(android.bluetooth.BluetoothDevice device, String label) {
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Connect to " + label + "?")
+                .setTitle(ChineseText.translate("Connect to " + label + "?"))
                 .setMessage(ChineseText.translate("The adapter will receive only the allowlisted ELM setup commands and read-only standard OBD-II Mode 01 requests. No vehicle control or diagnostic clearing command is sent."))
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Connect", (dialog, which) -> connectObdAdapter(device))
