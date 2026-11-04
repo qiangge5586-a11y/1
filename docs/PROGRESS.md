@@ -1,12 +1,19 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 19 — Startup preferences and local video preview (CI pending)
+## Phase 20 — Direct JSON preset file import and export (CI pending)
+
+- Added Android document-picker import for JSON presets; files are read through content URIs with a 1 MiB limit and validated before storage.
+- Added Save JSON file export through Android's create-document flow; existing paste import and share-sheet export remain available.
+- Details: `docs/JSON_FILE_IMPORT_EXPORT.md`.
+- CI validation is pending for this phase.
+
+## Phase 19 — Startup preferences and local video preview (CI verified)
 
 - Added a disabled-by-default checkbox to open the offline meter editor when the app launches.
 - Persists the choice locally and scrolls to the editor after layout; no boot receiver, boot permission, background startup, or third-party launch.
 - Added local video selection through Android's document picker, persisted read-only URI access, explicit in-app VideoView preview, and clear-selection control. No automatic playback, boot receiver, broad storage permission, or background service.
 - Details: `docs/STARTUP_PREFERENCES.md` and `docs/STARTUP_VIDEO_PREVIEW.md`.
-- The initial run #44 failed because earlier newline cleanup split Java string literals. Follow-up fixes passed CI run #46 (ID 41760683021): unit tests and debug APK assembly succeeded. The video-preview addition is a new change and awaits its own CI run.
+- The initial run #44 failed because earlier newline cleanup split Java string literals. Follow-up fixes passed CI run #46 (ID 41760683021), and the local video-preview addition passed CI run #47 (ID 41760974386): unit tests and debug APK assembly succeeded.
 
 ## Phase 18 — Explicit audio-focus management
 
@@ -18,6 +25,11 @@
 
 
 Last updated: 2026-11-04
+
+## Phase 20 implementation status
+
+- Source implementation committed in `a168d7c5353e43822d8ecc1cc770aa86ddc32ca2`.
+- Direct file import/export is implemented; CI and device-level document-provider checks remain pending.
 
 ## Phase 17 — Named meter preset management
 
