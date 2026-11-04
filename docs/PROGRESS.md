@@ -1,5 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 46 — Startup video preview playback controls (CI pending)
+
+- Audited original startup video settings: audio on by default, 0-second delay (0–30), max play 30 seconds (5–60), fade-out on by default.
+- Added those controls to the existing SAF-selected local-video preview only.
+- Preview remains manually launched; no boot playback, background service, online video picker, unrestricted storage scan, file deletion or copy to fixed paths.
+- Preview stops at its time limit; optional one-second volume fade is used when audio is enabled. Closing the dialog cancels pending callbacks.
+- Added bounded options model and unit tests.
+- Details: `docs/STARTUP_VIDEO_PREVIEW_OPTIONS.md`.
+- Source/test commits: `142eeba245558c89d7843f17e6d61238d4d97f80`, `98fddd2c3a74d7ad7119fff59b260b05a1efcb20`, `6753de156a84867d2e41a398b51818e968ff782f`, `7fb6ee0dab316c22155190b157b9e66725f905d1`; CI pending.
+
 ## Phase 46 — Foreground device compass sensor (CI pending)
 
 - Added Android public `TYPE_ROTATION_VECTOR` support for the Civic meter compass when the sensor exists.
