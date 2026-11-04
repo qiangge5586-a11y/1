@@ -11,7 +11,7 @@
 - Source commits: `64fd3c719ff14e39ec2674aaa9ff76b7d51fd703`, `f9872883501e2b76ba750eba1f97df10c403bc05`, `af2904db2db9bec2b255170514c31750a72b6228`; CI pending.
 
 
-## Phase 58 — Standard OBD-II / ELM327 protocol decoder (CI pending)
+## Phase 58 — Standard OBD-II / ELM327 protocol decoder (CI verified)
 
 - Added a pure ELM327 positive-response parser for compact/spaced responses, optional CAN headers, command echo, SEARCHING text and prompt.
 - Added common Mode 01 PID decoders for speed, RPM, coolant, fuel level, engine load, throttle, MAF, intake/oil temperature, manifold/barometric pressure, timing advance and fuel rate.
@@ -19,7 +19,8 @@
 - No Bluetooth/USB/Wi-Fi connection, pairing, vehicle command, Honda enhanced PID or new permission is added. The UI remains demo data until a real adapter is selected and tested.
 - Added unit tests for formulas, framing and malformed/no-data cases.
 - Details: `docs/OBD2_ELM327_DECODER.md`.
-- Source/test commits: `fad073b4d3125212873dd6fdfdecbd04f79244fb`, `5d6e68277898a0b534b5699cfa486c57f0236c26`, `d3c775b7c6bc4b047ec0c1999c98ad381f88fe92`; CI pending.
+- GitHub Actions run #175 (ID 41778407286) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41778407286
+- Final source/test commit: `d3c775b7c6bc4b047ec0c1999c98ad381f88fe92`; artifact ID: 13297542896; APK size: 89,703 bytes; SHA-256: `c5b6754d07baad5678932421359e02f28d363c3de0999ea0f4502323923ebcaf`.
 
 
 ## Phase 57 — Opt-in foreground GPS course (CI verified)
