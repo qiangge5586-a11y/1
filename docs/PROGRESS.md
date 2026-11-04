@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 22 — Read-only storage diagnostics (CI pending)
+
+- Replaced the placeholder storage card with a live diagnostic report for Android API level, shared-storage state, app-private files/cache capacity, app-specific external storage and emulation state.
+- Added refresh and user-invoked share controls.
+- No broad storage permission, arbitrary file enumeration, SD-card repair, platform.xml modification, partition remount, or deletion is performed.
+- Details: `docs/READ_ONLY_STORAGE_DIAGNOSTICS.md`.
+- Source commit: `26ca5112ba0954602d48caddbf1bce0f4baf2610`; CI validation pending.
+
 ## Phase 21 — User-confirmed local APK installer (CI verified)
 
 - Added document-picker selection for a local APK and handoff to Android's package installer.
