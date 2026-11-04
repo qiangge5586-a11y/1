@@ -19,6 +19,6 @@
 
 The rebuild's current prototype uses Android 12+ `SpeechRecognizer.createOnDeviceSpeechRecognizer`, requires microphone permission after a user tap, refuses cloud fallback, and stops when the Activity leaves the foreground.
 
-It currently displays recognized text only. It does not automatically execute speech as a vehicle command.
+As of Phase 51, the rebuild parses only two local action families: show the meter editor, or launch a uniquely matched user-installed app. Both require a separate Confirm button tap. Navigation and music commands are explicitly reported as unavailable; unknown phrases create no action. It still does not execute speech as a vehicle or media command.
 
-The rebuild will not copy the original cloud audio-upload endpoint, record to shared storage, private Amap broadcasts, QQ Music internal commands, bundled copyrighted voice clips or background/wake-word service. A safe local command subset may be added only with explicit user confirmation before actions.
+The rebuild will not copy the original cloud audio-upload endpoint, record to shared storage, private Amap broadcasts, QQ Music internal commands, bundled copyrighted voice clips or background/wake-word service. The implemented local command subset and confirmation rules are documented in `docs/VOICE_COMMAND_CONFIRMATION.md`.
