@@ -49,6 +49,14 @@
 - `ServiceConnectionC0279wa` maps those binders to AV, vehicle-information, camera and video interfaces.
 - The raw DEX fallback pass confirms `C0269ua.getMeterLayout()` returns `meter_civic` for `civic`/`clarity`, `meter_crv` for `crv`/`breeze`, and `meter_avancier` for `avancier`/`avancier240`/`urv`/`cdx`. This proves the APK has a Civic-specific meter layout branch, but not that a 2019 Civic factory head unit exposes the required vendor services or can install/run the APK.
 
+### 5a. Vehicle telemetry file bridge
+
+- `RunnableC0284xa.run()` creates `/data/local/tmp/shared_files`, touches the telemetry files and applies `chmod -R 777`.
+- `C0185dc` uses `RandomAccessFile` plus file locks to exchange integer values through that directory.
+- `C0269ua` polls `SET_SPEED`, `DISTANCE_TO_EMPTY`, `TRIP_A_DISTANCE`, unit codes, average fuel-efficiency values and coolant temperature.
+- Xposed callback classes write selected values such as average fuel efficiency and coolant temperature into the same files.
+- This is a privileged local file bridge, not a public Honda/OBD-II interface. It is excluded from the rebuild. See `docs/VEHICLE_DATA_TRANSPORT_AUDIT.md`.
+
 ### 6. Navigation and audio integration
 
 - `C0170b` contains process hooks for Amap (`com.autonavi.amapauto`) and Waze, and hooks audio-focus request/abandon methods.
