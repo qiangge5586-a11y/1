@@ -197,9 +197,10 @@ public final class MainActivity extends Activity {
                 String[] updated = new String[specs.size()];
                 for (int i=0;i<updated.length;i++) updated[i]="Widget "+(i+1);
                 selector.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,updated));
-                selector.setSelection(specs.size()-1);
+                selected[0] = specs.size()-1;
+                selector.setSelection(selected[0]);
+                loadSelected.run();
                 status.setText("Widget added. Press Save widget layout to store it.");
-                render.run();
             });
             content.addView(add, matchWrap());
             Button remove = new Button(this);
@@ -210,8 +211,9 @@ public final class MainActivity extends Activity {
                 String[] updated = new String[specs.size()];
                 for (int i=0;i<updated.length;i++) updated[i]="Widget "+(i+1);
                 selector.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,updated));
-                selected[0]=Math.min(selected[0],specs.size()-1); selector.setSelection(selected[0]);
-                render.run();
+                selected[0]=Math.min(selected[0],specs.size()-1);
+                selector.setSelection(selected[0]);
+                loadSelected.run();
             });
             content.addView(remove, matchWrap());
 
