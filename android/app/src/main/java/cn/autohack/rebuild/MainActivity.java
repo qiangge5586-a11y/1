@@ -40,10 +40,20 @@ public final class MainActivity extends Activity {
     private boolean compassSensorAvailable;
     private String currentCompassHeading = "NE";
     private Runnable compassPreviewRefresh;
+    private ScrollView mainScroll;
+    private View meterEditorAnchor;
+    private View navigationAppsAnchor;
+    private View voiceAssistantAnchor;
+    private View roadInformationAnchor;
+    private int pendingKeyCaptureIndex = -1;
+    private int[] foregroundKeyBindings = new int[ForegroundKeyMapping.SLOT_COUNT];
+    private TextView[] foregroundKeyCodeLabels;
+    private android.content.SharedPreferences keyMappingPreferences;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         ScrollView scroll = new ScrollView(this);
+        mainScroll = scroll;
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(20), dp(24), dp(20), dp(24));
@@ -801,6 +811,10 @@ public final class MainActivity extends Activity {
         label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         label.setPadding(0, dp(20), 0, dp(8));
         content.addView(label);
+        if ("Multi-widget offline meter editor".equals(text)) meterEditorAnchor = label;
+        if ("Navigation app integration".equals(text)) navigationAppsAnchor = label;
+        if ("Voice assistant · on-device recognition".equals(text)) voiceAssistantAnchor = label;
+        if ("Road information (original preference options)".equals(text)) roadInformationAnchor = label;
     }
 
     private void addMeterPreview() {
@@ -1738,55 +1752,67 @@ public final class MainActivity extends Activity {
     }
 
     private void addKeyMappingDemo() {
-        addSection("Steering key mapping · simulator");
+        addSection("Steering key mapping · foreground actions");
         TextView status = new TextView(this);
-        status.setText("Assign actions to simulated steering keys. No physical key events are captured.");
+        status.setText("Capture up to ten Android hardware keys and map them to local app navigation. Mappings work only while this Activity is foregrounded and the monitor is enabled.");
         status.setTextSize(14);
         status.setPadding(dp(12), dp(12), dp(12), dp(12));
         status.setBackgroundColor(0xFFF5F6F7);
         content.addView(status);
 
+        keyMappingPreferences = getSharedPreferences("key_mapping_demo", MODE_PRIVATE);
+        String[] keyNames = {"Steering key 1", "Steering key 2", "Steering key 3",
+                "Steering key 4", "Steering key 5", "Steering key 6",
+                "Steering key 7", "Steering key 8", "Steering key 9", "Steering key 10"};
+        String[] actions = {"No action", "Show meter editor", "Open navigation app list",
+                "Show voice assistant settings", "Show road-information demo"};
+        foregroundKeyCodeLabels = new TextView[keyNames.length];
+        for (int i = 0; i < foregroundKeyBindings.length; i++) {
+            foregroundKeyBindings[i] = keyMappingPreferences.getInt("key_code_" + i,
+                    ForegroundKeyMapping.KEYCODE_UNKNOWN);
+        }
+
         android.widget.CheckBox monitor = new android.widget.CheckBox(this);
-        monitor.setText("Monitor hardware key events while this app is in foreground");
+        monitor.setText("Enable foreground hardware-key mapping");
         monitor.setChecked(false);
         monitor.setOnCheckedChangeListener((button, checked) -> {
             foregroundKeyMonitorEnabled = checked;
+            if (!checked) pendingKeyCaptureIndex = -1;
+            status.setText(checked
+                    ? "Foreground mapping enabled. Captured keys can trigger only the selected in-app navigation action."
+                    : "Foreground key mapping disabled. Hardware keys pass through unchanged.");
             foregroundKeyStatus.setText(checked
-                    ? "Foreground key monitor enabled. Press a hardware key; events are observed and passed through."
-                    : "Foreground key monitor disabled.");
+                    ? "Tap Capture beside a slot, then press the desired hardware key."
+                    : "Foreground key mapping disabled.");
             if (checked) {
                 content.setFocusableInTouchMode(true);
                 content.requestFocus();
             }
         });
         content.addView(monitor);
+
         foregroundKeyStatus = new TextView(this);
-        foregroundKeyStatus.setText("Foreground key monitor disabled.");
+        foregroundKeyStatus.setText("Foreground key mapping disabled.");
         foregroundKeyStatus.setTextSize(13);
         content.addView(foregroundKeyStatus);
 
-        android.content.SharedPreferences prefs =
-                getSharedPreferences("key_mapping_demo", MODE_PRIVATE);
-        String[] keyNames = {"Steering key A", "Steering key B",
-                "Steering key C", "Steering key D"};
-        String[] defaults = {"Volume up", "Next track", "Show meter", "Voice assistant"};
-        String[] actions = {"No action", "Volume up", "Volume down", "Next track",
-                "Previous track", "Play / pause", "Show meter", "Voice assistant",
-                "Open navigation"};
         for (int i = 0; i < keyNames.length; i++) {
-            final String keyName = keyNames[i];
-            final String preferenceKey = "mapping_" + i;
+            final int slot = i;
             TextView label = new TextView(this);
-            label.setText(keyName);
+            label.setText(keyNames[i]);
             label.setTextSize(14);
             content.addView(label);
+
+            foregroundKeyCodeLabels[i] = new TextView(this);
+            updateForegroundKeyCodeLabel(i);
+            content.addView(foregroundKeyCodeLabels[i]);
 
             Spinner selector = new Spinner(this);
             ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                     android.R.layout.simple_spinner_item, actions);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             selector.setAdapter(adapter);
-            String saved = prefs.getString(preferenceKey, defaults[i]);
+            String saved = keyMappingPreferences.getString("mapping_" + i, "No action");
             int selected = 0;
             for (int j = 0; j < actions.length; j++) {
                 if (actions[j].equals(saved)) selected = j;
@@ -1795,21 +1821,73 @@ public final class MainActivity extends Activity {
             selector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override public void onItemSelected(AdapterView<?> parent,
                         android.view.View view, int position, long id) {
-                    prefs.edit().putString(preferenceKey, actions[position]).apply();
-                    status.setText(keyName + " is assigned to: " + actions[position]
-                            + "\nSimulation only — no command is sent to the car.");
+                    keyMappingPreferences.edit().putString("mapping_" + slot, actions[position]).apply();
+                    status.setText(keyNames[slot] + " → " + actions[position]
+                            + "\\nAction runs only in this foreground Activity.");
                 }
                 @Override public void onNothingSelected(AdapterView<?> parent) {}
             });
             content.addView(selector, matchWrap());
 
+            Button capture = new Button(this);
+            capture.setText("Capture key for slot " + (i + 1));
+            capture.setOnClickListener(v -> {
+                if (!monitor.isChecked()) {
+                    foregroundKeyStatus.setText("Enable foreground key mapping before capture.");
+                    return;
+                }
+                pendingKeyCaptureIndex = slot;
+                foregroundKeyStatus.setText("Waiting for key input for " + keyNames[slot]
+                        + ". System navigation, power and volume keys are rejected.");
+                content.setFocusableInTouchMode(true);
+                content.requestFocus();
+            });
+            content.addView(capture, matchWrap());
+
             Button simulate = new Button(this);
-            simulate.setText("Simulate " + keyName);
-            simulate.setOnClickListener(v -> status.setText("Simulated " + keyName
-                    + " → " + selector.getSelectedItem()
-                    + "\nNo physical steering-wheel input was intercepted."));
+            simulate.setText("Simulate slot " + (i + 1));
+            simulate.setOnClickListener(v -> {
+                String action = String.valueOf(selector.getSelectedItem());
+                status.setText("Simulation: " + keyNames[slot] + " → " + action
+                        + "\\nNo hardware key or vehicle command was sent.");
+            });
             content.addView(simulate, matchWrap());
         }
+    }
+
+    private void updateForegroundKeyCodeLabel(int slot) {
+        if (foregroundKeyCodeLabels == null || slot < 0
+                || slot >= foregroundKeyCodeLabels.length) return;
+        int code = foregroundKeyBindings[slot];
+        foregroundKeyCodeLabels[slot].setText(code == ForegroundKeyMapping.KEYCODE_UNKNOWN
+                ? "Captured key: not assigned"
+                : "Captured key: " + android.view.KeyEvent.keyCodeToString(code)
+                        + " (" + code + ")");
+    }
+
+    private void scrollToSection(View anchor) {
+        if (mainScroll == null || anchor == null) return;
+        mainScroll.post(() -> mainScroll.smoothScrollTo(0, anchor.getTop()));
+    }
+
+    private boolean runForegroundKeyAction(String action) {
+        if ("Show meter editor".equals(action)) {
+            scrollToSection(meterEditorAnchor);
+            return meterEditorAnchor != null;
+        }
+        if ("Open navigation app list".equals(action)) {
+            scrollToSection(navigationAppsAnchor);
+            return navigationAppsAnchor != null;
+        }
+        if ("Show voice assistant settings".equals(action)) {
+            scrollToSection(voiceAssistantAnchor);
+            return voiceAssistantAnchor != null;
+        }
+        if ("Show road-information demo".equals(action)) {
+            scrollToSection(roadInformationAnchor);
+            return roadInformationAnchor != null;
+        }
+        return false;
     }
 
     private void speakRoadInformationDemo() {
@@ -1881,12 +1959,44 @@ public final class MainActivity extends Activity {
     }
 
     @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
-        if (foregroundKeyMonitorEnabled && event.getAction() == android.view.KeyEvent.ACTION_DOWN
-                && foregroundKeyStatus != null) {
-            foregroundKeyStatus.setText("Foreground key observed: "
-                    + android.view.KeyEvent.keyCodeToString(event.getKeyCode())
-                    + " (code " + event.getKeyCode() + ")"
-                    + "\\nEvent is passed through unchanged; no vehicle action is triggered.");
+        if (foregroundKeyMonitorEnabled
+                && event.getAction() == android.view.KeyEvent.ACTION_DOWN
+                && event.getRepeatCount() == 0) {
+            int keyCode = event.getKeyCode();
+            if (pendingKeyCaptureIndex >= 0) {
+                int slot = pendingKeyCaptureIndex;
+                pendingKeyCaptureIndex = -1;
+                if (!ForegroundKeyMapping.isCapturable(keyCode)) {
+                    foregroundKeyStatus.setText("That system key cannot be captured. Try a different key.");
+                    return true;
+                }
+                foregroundKeyBindings = ForegroundKeyMapping.assign(
+                        foregroundKeyBindings, slot, keyCode);
+                for (int i = 0; i < foregroundKeyBindings.length; i++) {
+                    keyMappingPreferences.edit().putInt("key_code_" + i,
+                            foregroundKeyBindings[i]).apply();
+                    updateForegroundKeyCodeLabel(i);
+                }
+                foregroundKeyStatus.setText("Captured "
+                        + android.view.KeyEvent.keyCodeToString(keyCode)
+                        + " for slot " + (slot + 1) + ". Press it again to test the mapping.");
+                return true;
+            }
+            int slot = ForegroundKeyMapping.findSlot(keyCode, foregroundKeyBindings);
+            if (slot >= 0) {
+                String action = keyMappingPreferences.getString("mapping_" + slot, "No action");
+                if (runForegroundKeyAction(action)) {
+                    foregroundKeyStatus.setText("Mapped "
+                            + android.view.KeyEvent.keyCodeToString(keyCode)
+                            + " → " + action + " (foreground app navigation only).");
+                    return true;
+                }
+            }
+            if (foregroundKeyStatus != null) {
+                foregroundKeyStatus.setText("Foreground key observed: "
+                        + android.view.KeyEvent.keyCodeToString(keyCode)
+                        + " (code " + keyCode + ") · passed through unchanged.");
+            }
         }
         return super.dispatchKeyEvent(event);
     }
