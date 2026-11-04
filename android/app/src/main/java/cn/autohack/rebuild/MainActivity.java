@@ -25,6 +25,8 @@ public final class MainActivity extends Activity {
     private TextView startupVideoStatus;
     private String pendingPresetExportName;
     private android.net.Uri pendingApkUri;
+    private android.speech.SpeechRecognizer speechRecognizer;
+    private TextView voiceAssistantStatus;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -79,6 +81,7 @@ public final class MainActivity extends Activity {
         addAudioFocusDemo();
         addStorageDiagnostics();
         addDisplayControls();
+        addOnDeviceVoiceAssistant();
 
         Button refresh = new Button(this);
         refresh.setText("Refresh device information");
@@ -333,7 +336,21 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 7606) {
+            if (grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                startOnDeviceVoiceRecognition();
+            } else if (voiceAssistantStatus != null) {
+                voiceAssistantStatus.setText("Microphone permission denied; voice recognition did not start.");
+            }
+        }
+    }
+
     @Override protected void onStop() {
+        releaseVoiceRecognizer();
         if (audioFocusController != null) audioFocusController.release();
         getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onStop();
@@ -683,6 +700,106 @@ public final class MainActivity extends Activity {
         label.setTextSize(14);
         content.addView(label);
         content.addView(control, matchWrap());
+    }
+
+    private void addOnDeviceVoiceAssistant() {
+        addSection("Voice assistant · on-device recognition");
+        TextView note = new TextView(this);
+        note.setText("Speech recognition starts only after you tap Start and grant microphone permission. This prototype uses Android's on-device recognizer only (Android 12+ where available); it does not fall back to cloud recognition, listen in the background, or send vehicle commands.");
+        note.setTextSize(12);
+        content.addView(note);
+
+        voiceAssistantStatus = new TextView(this);
+        voiceAssistantStatus.setText("Voice assistant: stopped");
+        content.addView(voiceAssistantStatus);
+        Button start = new Button(this);
+        start.setText("Start on-device voice recognition");
+        start.setOnClickListener(v -> requestOnDeviceVoiceRecognition());
+        content.addView(start, matchWrap());
+
+        Button stop = new Button(this);
+        stop.setText("Stop listening");
+        stop.setOnClickListener(v -> {
+            releaseVoiceRecognizer();
+            voiceAssistantStatus.setText("Voice assistant: stopped");
+        });
+        content.addView(stop, matchWrap());
+    }
+
+    private void requestOnDeviceVoiceRecognition() {
+        if (android.os.Build.VERSION.SDK_INT < 31) {
+            voiceAssistantStatus.setText("On-device recognition requires Android 12 or later.");
+            return;
+        }
+        if (!android.speech.SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
+            voiceAssistantStatus.setText("No on-device speech recognition service is available on this device.");
+            return;
+        }
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 7606);
+            return;
+        }
+        startOnDeviceVoiceRecognition();
+    }
+
+    private void startOnDeviceVoiceRecognition() {
+        if (android.os.Build.VERSION.SDK_INT < 31
+                || !android.speech.SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
+            if (voiceAssistantStatus != null)
+                voiceAssistantStatus.setText("On-device speech recognition is unavailable.");
+            return;
+        }
+        releaseVoiceRecognizer();
+        try {
+            speechRecognizer = android.speech.SpeechRecognizer.createOnDeviceSpeechRecognizer(this);
+            speechRecognizer.setRecognitionListener(new android.speech.RecognitionListener() {
+                @Override public void onReadyForSpeech(android.os.Bundle params) {
+                    voiceAssistantStatus.setText("Listening on device…");
+                }
+                @Override public void onBeginningOfSpeech() {}
+                @Override public void onRmsChanged(float rmsdB) {}
+                @Override public void onBufferReceived(byte[] buffer) {}
+                @Override public void onEndOfSpeech() {
+                    voiceAssistantStatus.setText("Processing on device…");
+                }
+                @Override public void onError(int error) {
+                    voiceAssistantStatus.setText("Recognition stopped (code " + error + "). Tap Start to retry.");
+                }
+                @Override public void onResults(android.os.Bundle results) {
+                    java.util.ArrayList<String> matches = results.getStringArrayList(
+                            android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
+                    voiceAssistantStatus.setText(matches == null || matches.isEmpty()
+                            ? "No speech recognized." : "Recognized: " + matches.get(0));
+                }
+                @Override public void onPartialResults(android.os.Bundle partialResults) {
+                    java.util.ArrayList<String> matches = partialResults.getStringArrayList(
+                            android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
+                    if (matches != null && !matches.isEmpty())
+                        voiceAssistantStatus.setText("Recognizing: " + matches.get(0));
+                }
+                @Override public void onEvent(int eventType, android.os.Bundle params) {}
+            });
+            android.content.Intent intent = new android.content.Intent(
+                    android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(android.speech.RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+            intent.putExtra(android.speech.RecognizerIntent.EXTRA_PREFER_OFFLINE, true);
+            speechRecognizer.startListening(intent);
+            voiceAssistantStatus.setText("Starting on-device recognition…");
+        } catch (RuntimeException e) {
+            releaseVoiceRecognizer();
+            voiceAssistantStatus.setText("Unable to start on-device recognition: " + e.getMessage());
+        }
+    }
+
+    private void releaseVoiceRecognizer() {
+        if (speechRecognizer != null) {
+            try { speechRecognizer.cancel(); } catch (RuntimeException ignored) {}
+            try { speechRecognizer.destroy(); } catch (RuntimeException ignored) {}
+            speechRecognizer = null;
+        }
     }
 
     private void addDisplayControls() {
