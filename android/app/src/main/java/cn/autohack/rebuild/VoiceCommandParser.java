@@ -38,10 +38,14 @@ public final class VoiceCommandParser {
                 "showmeter", "openmeter")) {
             return new Command(Type.SHOW_METER, "");
         }
-        Matcher destination = Pattern.compile("^(?:导航带我去|导航去|导航到|带我去|带我到|我要去|前往|去)(.+)$")
-                .matcher(text);
+        String navigationText = text.replaceAll("^[，,。.!！?？、]+|[，,。.!！?？、]+$", "");
+        Matcher destination = Pattern.compile("^(?:请帮我|帮我|请)(?:导航带我去|导航去|导航到|带我去|带我到|我要去|前往|去)(.+)$")
+                .matcher(navigationText);
         if (destination.matches()) {
-            return new Command(Type.NAVIGATE_TO, destination.group(1));
+            String target = cleanDestination(destination.group(1));
+            if (isValidDestination(target)) {
+                return new Command(Type.NAVIGATE_TO, target);
+            }
         }
         if (text.contains("回家")) {
             return new Command(Type.NAVIGATE_HOME, "");
@@ -58,6 +62,26 @@ public final class VoiceCommandParser {
             if (!target.isEmpty()) return new Command(Type.OPEN_APP, target);
         }
         return new Command(Type.UNKNOWN, "");
+    }
+
+    private static String cleanDestination(String value) {
+        String target = value == null ? "" : value;
+        target = target.replaceAll("[，,。.!！?？、]+$", "");
+        String[] politeEndings = {"可以吗", "好吗", "吧", "呀", "啊", "呢"};
+        for (String ending : politeEndings) {
+            if (target.endsWith(ending) && target.length() > ending.length()) {
+                target = target.substring(0, target.length() - ending.length());
+                break;
+            }
+        }
+        return target;
+    }
+
+    private static boolean isValidDestination(String target) {
+        if (target == null) return false;
+        String value = target.trim();
+        if (value.length() < 2 || value.length() > 80) return false;
+        return !containsAny(value, "打开导航", "开始导航", "导航", "随便", "不知道");
     }
 
     private static boolean containsAny(String text, String... phrases) {
