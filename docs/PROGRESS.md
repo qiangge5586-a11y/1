@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 70 — Local OBD diagnostic report copy (CI pending)
+
+- Added a user-initiated clipboard report containing current connection/protocol status, ECU-supported dashboard PIDs and the latest DTC result.
+- Report is copied locally only; no upload, email or automatic sharing.
+- Excludes VIN, adapter MAC address and location; removes embedded control characters and bounds each text section.
+- Includes an explicit read-only/no-ECU-write safety note. Users are asked to review before sharing.
+- Added tests for report sections, missing values, control-character cleanup, size bounds and identifier exclusion.
+- Details: `docs/OBD_DIAGNOSTIC_REPORT.md`.
+- Source/test commits: `6cabb8066f002ce1ebc6ce6ce030456bc8563c8b`, `69da4da239b2cc97435fc60861f7bd429791fb76`, `d4332040ec85e829baf39f53f36f2dcd311deec1`; CI pending.
+
+
 ## Phase 69 — ECU-supported dashboard PID visibility (CI verified)
 
 - The Bluetooth session now reports the intersection of ECU-advertised support bitmaps and the four live dashboard PIDs.
