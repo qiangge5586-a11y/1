@@ -1,12 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 54 — Navigation phrase normalization and destination validation (CI pending)
+## Phase 54 — Navigation phrase normalization and destination validation (CI verified)
 
 - Added polite Chinese navigation phrase variants and cleanup of spoken trailing particles/punctuation.
 - Empty, generic and over-80-character destinations are rejected before the confirmation button can be enabled.
 - Public Android geo URI chooser and separate user confirmation remain required.
 - Added parser tests; no geocoding, location access, private map APIs or automatic route start.
 - Details: `docs/VOICE_NAVIGATION_HANDOFF.md`.
+- GitHub Actions run #155 (ID 41777206607) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41777206607
+- Final parser/test commit: `a3dc4a7ad3662f7ad41793383401cce664b5e6ce`; artifact ID: 13298010640; APK size: 84,489 bytes; SHA-256: `811951e39f7795c919428d4453fc03aa1de95953818f92ef6492713907877df6`.
 
 
 ## Phase 53 — Saved home destination (CI verified)
