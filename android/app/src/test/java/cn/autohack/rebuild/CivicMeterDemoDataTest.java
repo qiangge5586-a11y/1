@@ -20,6 +20,29 @@ public final class CivicMeterDemoDataTest {
         assertEquals(" °C", values.get("coolant_unit"));
     }
 
+    @Test public void usCustomaryUnitsConvertSpeedDistanceFuelAndTemperature() {
+        Map<String, String> values = CivicMeterDemoData.forSpeed(100, MeterUnitSystem.US_CUSTOMARY).asTokenMap();
+        assertEquals("62", values.get("speed"));
+        assertEquals("mph", values.get("speed_unit"));
+        assertEquals("261.0", values.get("distance_to_empty"));
+        assertEquals("mi", values.get("distance_unit"));
+        assertEquals("32.7", values.get("avg_fuel_eff"));
+        assertEquals("mpg", values.get("fuel_eff_unit"));
+        assertEquals("180", values.get("coolant"));
+        assertEquals(" °F", values.get("coolant_unit"));
+    }
+
+    @Test public void alternativeFuelEfficiencyUnitsAreSupported() {
+        assertEquals("13.9", CivicMeterDemoData.forSpeed(0, MeterUnitSystem.KM_PER_LITER)
+                .asTokenMap().get("avg_fuel_eff"));
+        assertEquals("km/L", CivicMeterDemoData.forSpeed(0, MeterUnitSystem.KM_PER_LITER)
+                .asTokenMap().get("fuel_eff_unit"));
+        assertEquals("39.2", CivicMeterDemoData.forSpeed(0, MeterUnitSystem.IMPERIAL)
+                .asTokenMap().get("avg_fuel_eff"));
+        assertEquals("mpg (Imp)", CivicMeterDemoData.forSpeed(0, MeterUnitSystem.IMPERIAL)
+                .asTokenMap().get("fuel_eff_unit"));
+    }
+
     @Test public void speedInputIsClampedToDemoRange() {
         assertEquals("240", CivicMeterDemoData.forSpeed(999).asTokenMap().get("speed"));
         assertEquals("0", CivicMeterDemoData.forSpeed(-10).asTokenMap().get("speed"));
