@@ -8,11 +8,17 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 /** Safe, offline-first shell for the independent HondaHack rebuild. */
 public final class MainActivity extends Activity {
     private LinearLayout content;
+    private TextView meterDisplay;
+    private TextView speedLabel;
+    private TextView sizeLabel;
+    private int meterColor = 0xFF263746;
+    private int meterTextSize = 32;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -73,21 +79,80 @@ public final class MainActivity extends Activity {
     }
 
     private void addMeterPreview() {
+        addSection("Offline meter editor");
         try {
             MeterPreset preset = MeterPresetRepository.loadDemo(this);
-            TextView preview = new TextView(this);
-            preview.setText(preset.name + "\n" +
-                    preset.primaryView.renderMock(0, 850, 68, 82) +
-                    "\nRPM: 850 · Fuel: 68% · Coolant: 82 °C");
-            preview.setTextSize(20);
-            preview.setGravity(Gravity.CENTER);
-            preview.setPadding(dp(14), dp(20), dp(14), dp(20));
-            preview.setTextColor(0xFFFFFFFF);
-            preview.setBackgroundColor(0xFF263746);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(140));
-            lp.bottomMargin = dp(8);
-            content.addView(preview, lp);
+            android.content.SharedPreferences prefs =
+                    getSharedPreferences("meter_editor", MODE_PRIVATE);
+            meterColor = prefs.getInt("background", 0xFF263746);
+            meterTextSize = prefs.getInt("text_size", 32);
+            int initialSpeed = prefs.getInt("speed", 0);
+
+            meterDisplay = new TextView(this);
+            meterDisplay.setGravity(Gravity.CENTER);
+            meterDisplay.setPadding(dp(14), dp(18), dp(14), dp(18));
+            meterDisplay.setTextColor(0xFFFFFFFF);
+            meterDisplay.setBackgroundColor(meterColor);
+            LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(150));
+            displayParams.bottomMargin = dp(12);
+            content.addView(meterDisplay, displayParams);
+
+            speedLabel = new TextView(this);
+            content.addView(speedLabel);
+            SeekBar speed = new SeekBar(this);
+            speed.setMax(240);
+            speed.setProgress(initialSpeed);
+            content.addView(speed, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            sizeLabel = new TextView(this);
+            content.addView(sizeLabel);
+            SeekBar size = new SeekBar(this);
+            size.setMax(38);
+            size.setProgress(Math.max(0, Math.min(38, meterTextSize - 18)));
+            content.addView(size, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            Button theme = new Button(this);
+            theme.setText("Change meter theme");
+            theme.setOnClickListener(v -> {
+                if (meterColor == 0xFF263746) meterColor = 0xFF101820;
+                else if (meterColor == 0xFF101820) meterColor = 0xFF173D32;
+                else meterColor = 0xFF263746;
+                meterDisplay.setBackgroundColor(meterColor);
+                prefs.edit().putInt("background", meterColor).apply();
+            });
+            content.addView(theme, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            Runnable update = () -> {
+                int value = speed.getProgress();
+                int rpm = 850 + value * 32;
+                meterDisplay.setText(preset.name + "\\n" + value + " km/h"
+                        + "\\nRPM: " + rpm + " · Fuel: 68% · Coolant: 82 °C");
+                meterDisplay.setTextSize(meterTextSize);
+                speedLabel.setText("Demo speed: " + value + " km/h");
+                sizeLabel.setText("Meter text size: " + meterTextSize + " sp");
+            };
+            speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override public void onProgressChanged(SeekBar bar, int value, boolean user) {
+                    update.run();
+                    if (user) prefs.edit().putInt("speed", value).apply();
+                }
+                @Override public void onStartTrackingTouch(SeekBar bar) {}
+                @Override public void onStopTrackingTouch(SeekBar bar) {}
+            });
+            size.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override public void onProgressChanged(SeekBar bar, int value, boolean user) {
+                    meterTextSize = value + 18;
+                    update.run();
+                    if (user) prefs.edit().putInt("text_size", meterTextSize).apply();
+                }
+                @Override public void onStartTrackingTouch(SeekBar bar) {}
+                @Override public void onStopTrackingTouch(SeekBar bar) {}
+            });
+            update.run();
         } catch (Exception error) {
             addFeature("Instrument meter", "Demo preset unavailable: " + error.getMessage());
         }
