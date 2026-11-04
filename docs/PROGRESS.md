@@ -1,12 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 25 — Shareable meter preview image (CI pending)
+## Phase 25 — Shareable meter preview image (CI verified)
 
 - Added an explicit button to render the app's own meter preview into a PNG in private cache and share it via Android's share sheet.
 - Added a non-exported, read-only content provider with temporary URI grants and path validation.
 - Does not capture other apps/system UI, write to shared storage, or upload automatically.
 - Details: `docs/METER_PREVIEW_IMAGE_SHARING.md`.
-- Source/provider/manifest commits: `7896414df1b00aa54336c5bf1af340ec98741407`, `edb982cda85e10e0d0ef54e9e7b8145b28236efe`, `2931c525758d6274ef3c3d4a1b25ea69679d64e6`; CI pending.
+- GitHub Actions run #59 (ID 41762478075) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41762478075
+- Final source commit: `2931c525758d6274ef3c3d4a1b25ea69679d64e6`; artifact ID: 13291706134; APK size: 47,527 bytes; SHA-256: `4a17240f78e0779af97ae0c77238027238c3c09d5335af8e0c81f45ccbeb824a`.
 
 ## Phase 24 — Explicit on-device voice recognition (CI verified)
 
@@ -168,7 +169,7 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 3. Manually test phases 19–22 (startup video preview, JSON file import/export, local APK installation and storage diagnostics) on a spare Android device.
 4. Identify the exact 2019 Civic factory head-unit model, firmware, Android API level and ABI; do not infer compatibility from vendor intent strings.
 5. Implement navigation-state and vehicle-data adapters only after documented interfaces are verified; until then, keep meter/navigation values clearly marked as simulated.
-6. Add remaining safe feature modules (screenshot/share utilities and deeper display options) with permission explanations and tests.
+6. Add remaining safe feature modules (additional display preferences and navigation-state mock/adapter boundary) with permission explanations and tests.
 
 
 <!-- Previous roadmap retained below for historical context. -->
