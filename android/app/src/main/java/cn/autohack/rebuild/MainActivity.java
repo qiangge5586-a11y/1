@@ -257,12 +257,7 @@ public final class MainActivity extends Activity {
         Button choose = new Button(this);
         choose.setText("Choose local video");
         choose.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(
-                    android.content.Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-            intent.setType("video/*");
-            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            android.content.Intent intent = createOpenablePicker("video/*");
             startActivityForResult(intent, 7601);
         });
         content.addView(choose, matchWrap());
@@ -287,13 +282,7 @@ public final class MainActivity extends Activity {
         clear.setText("Clear selected video");
         clear.setOnClickListener(v -> {
             String value = prefs.getString("startup_video_uri", null);
-            if (value != null) {
-                try {
-                    getContentResolver().releasePersistableUriPermission(
-                            android.net.Uri.parse(value),
-                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                } catch (SecurityException ignored) {}
-            }
+            releaseSelectedContent(value);
             prefs.edit().remove("startup_video_uri").apply();
             updateStartupVideoStatus(null);
         });
@@ -369,12 +358,7 @@ public final class MainActivity extends Activity {
         Button choose = new Button(this);
         choose.setText("Choose local audio");
         choose.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(
-                    android.content.Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-            intent.setType("audio/*");
-            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            android.content.Intent intent = createOpenablePicker("audio/*");
             startActivityForResult(intent, 7607);
         });
         content.addView(choose, matchWrap());
@@ -637,28 +621,24 @@ public final class MainActivity extends Activity {
             }
         } else if (requestCode == 7607) {
             try {
-                int granted = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
-                if (granted == 0) throw new SecurityException("Read permission was not granted");
-                getContentResolver().takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } catch (SecurityException ignored) {
-                toast("The document provider did not grant persistent access. Choose a file from a supported provider.");
-                return;
+                android.net.Uri retained = retainSelectedContent(uri, data,
+                        "startup-audio.bin", 128L * 1024L * 1024L);
+                getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
+                        .putString("startup_audio_uri", retained.toString()).apply();
+                updateStartupAudioStatus(retained.toString());
+            } catch (Exception error) {
+                toast("Unable to retain selected audio: " + error.getMessage());
             }
-            getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
-                    .putString("startup_audio_uri", uri.toString()).apply();
-            updateStartupAudioStatus(uri.toString());
         } else if (requestCode == 7601) {
             try {
-                int granted = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
-                if (granted == 0) throw new SecurityException("Read permission was not granted");
-                getContentResolver().takePersistableUriPermission(uri, granted);
-            } catch (SecurityException ignored) {
-                toast("The document provider did not grant persistent access. Choose a file from a supported provider.");
-                return;
+                android.net.Uri retained = retainSelectedContent(uri, data,
+                        "startup-video.bin", 512L * 1024L * 1024L);
+                getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
+                        .putString("startup_video_uri", retained.toString()).apply();
+                updateStartupVideoStatus(retained.toString());
+            } catch (Exception error) {
+                toast("Unable to retain selected video: " + error.getMessage());
             }
-            getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
-                    .putString("startup_video_uri", uri.toString()).apply();
-            updateStartupVideoStatus(uri.toString());
         } else if (requestCode == 7602) {
             try {
                 String source = readJsonDocument(uri);
@@ -689,16 +669,15 @@ public final class MainActivity extends Activity {
                 toast("JSON export failed: " + e.getMessage());
             }
         } else if (requestCode == 7604) {
-            int readGrant = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
-            if (readGrant != 0) {
-                try {
-                    getContentResolver().takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                } catch (SecurityException ignored) {}
+            try {
+                android.net.Uri retained = retainSelectedContent(uri, data,
+                        "pending-install.apk", 512L * 1024L * 1024L);
+                getSharedPreferences("apk_installer", MODE_PRIVATE).edit()
+                        .putString("pending_uri", retained.toString()).apply();
+                launchApkInstaller(retained);
+            } catch (Exception error) {
+                toast("Unable to retain selected APK: " + error.getMessage());
             }
-            getSharedPreferences("apk_installer", MODE_PRIVATE).edit()
-                    .putString("pending_uri", uri.toString()).apply();
-            launchApkInstaller(uri);
-        }
     }
 
     private void launchApkInstaller(android.net.Uri uri) {
@@ -724,6 +703,75 @@ public final class MainActivity extends Activity {
             startActivity(install);
         } catch (RuntimeException e) {
             toast("Unable to open the system package installer: " + e.getMessage());
+        }
+    }
+
+    private android.content.Intent createOpenablePicker(String mimeType) {
+        int sdk = android.os.Build.VERSION.SDK_INT;
+        android.content.Intent intent = new android.content.Intent(sdk >= 19
+                ? android.content.Intent.ACTION_OPEN_DOCUMENT
+                : android.content.Intent.ACTION_GET_CONTENT);
+        intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+        intent.setType(mimeType);
+        int flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        if (sdk >= 19) flags |= android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION;
+        intent.addFlags(flags);
+        return intent;
+    }
+
+    @android.annotation.TargetApi(19)
+    private android.net.Uri retainSelectedContent(android.net.Uri source,
+            android.content.Intent result, String fileName, long maxBytes) throws java.io.IOException {
+        int flags = result.getFlags();
+        if ((flags & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) == 0) {
+            throw new java.io.IOException("Selected content did not grant read access");
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 19
+                && (flags & android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION) != 0) {
+            try {
+                getContentResolver().takePersistableUriPermission(source,
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                return source;
+            } catch (SecurityException ignored) {
+                // Fall back to an app-private copy if the provider refuses persistence.
+            }
+        }
+        java.io.File destination = new java.io.File(getFilesDir(), fileName);
+        try (java.io.InputStream input = getContentResolver().openInputStream(source);
+             java.io.OutputStream output = new java.io.FileOutputStream(destination)) {
+            if (input == null) throw new java.io.IOException("Unable to open selected content");
+            byte[] buffer = new byte[8192];
+            long total = 0;
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                total += count;
+                if (total > maxBytes) throw new java.io.IOException("Selected file exceeds size limit");
+                output.write(buffer, 0, count);
+            }
+            output.flush();
+        } catch (java.io.IOException error) {
+            destination.delete();
+            throw error;
+        }
+        return android.net.Uri.fromFile(destination);
+    }
+
+    private void releaseSelectedContent(String value) {
+        if (value == null || value.isEmpty()) return;
+        android.net.Uri uri = android.net.Uri.parse(value);
+        if (android.os.Build.VERSION.SDK_INT >= 19 && "content".equals(uri.getScheme())) {
+            try {
+                getContentResolver().releasePersistableUriPermission(uri,
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (SecurityException ignored) {}
+        } else if ("file".equals(uri.getScheme())) {
+            try {
+                java.io.File file = new java.io.File(uri.getPath()).getCanonicalFile();
+                java.io.File privateDir = getFilesDir().getCanonicalFile();
+                if (file.getParentFile() != null && privateDir.equals(file.getParentFile())) {
+                    file.delete();
+                }
+            } catch (java.io.IOException ignored) {}
         }
     }
 
@@ -1385,9 +1433,7 @@ public final class MainActivity extends Activity {
         Button importFile = new Button(this);
         importFile.setText("Import preset JSON file");
         importFile.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
+            android.content.Intent intent = createOpenablePicker("*/*");
             intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
                     new String[]{"application/json", "text/json", "text/plain"});
             intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -1453,6 +1499,10 @@ public final class MainActivity extends Activity {
                     share.setType("application/json");share.putExtra(android.content.Intent.EXTRA_TEXT,PresetLibrary.exportPreset(library,name));
                     startActivity(android.content.Intent.createChooser(share,"Share preset JSON"));
                 } else if(which==4) {
+                    if (android.os.Build.VERSION.SDK_INT < 19) {
+                        toast("Saving a JSON file requires Android 4.4 or newer. Use Share JSON instead.");
+                        return;
+                    }
                     pendingPresetExportName = name;
                     android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_CREATE_DOCUMENT);
                     intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
@@ -1862,10 +1912,7 @@ public final class MainActivity extends Activity {
         Button choose = new Button(this);
         choose.setText("Choose APK to install");
         choose.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(
-                    android.content.Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
+            android.content.Intent intent = createOpenablePicker("*/*");
             intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
                     new String[]{"application/vnd.android.package-archive", "application/octet-stream"});
             intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
