@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 37 — Source-derived Civic meter template (CI pending)
+
+- Resource audit found original `meter_civic.xml` layouts at 584×215 px and six vehicle-information fields.
+- Expanded validated meter preset tokens for distance-to-empty, current drive distance, average fuel efficiency, Trip A distance/efficiency, coolant, compass, navigation, speed limit and camera distance.
+- Added static `CivicMeterDemoData`, a loadable Civic 584×215 demo layout and aspect-ratio-preserving preview. All values remain mock data; no CAN/OBD/ECU access.
+- Added tests for token rendering, clamping and rejection of unknown tokens.
+- Details: `docs/CIVIC_METER_LAYOUT_AUDIT.md`.
+- Source/test commits: `4ae875def89b6d9cc9188ce4b0edb57001c4dc2b`, `e2af547ebc042db900ff368a184fda46fe37f95a`, `485c76afb64abaff1a80392b53fdd691cf03667b`, `5e828085dded082950fadd0138ecbe10ee2cf6b3`, `285f6a337c8791047760bee359a074848b70bdc2`, `c4a2448d238af44f0bed91b9701caf6756e1e3cb`, `899374e3603e8516edffa9c42c30400175843936`; CI pending.
+
 ## Phase 36 — Fresh source-level audit of original APK (analysis complete; DEX follow-up pending)
 
 - Regenerated the original APK's JADX 1.5.3 source tree from the verified Library APK.
