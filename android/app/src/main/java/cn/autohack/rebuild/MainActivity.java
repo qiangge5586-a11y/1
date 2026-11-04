@@ -415,6 +415,7 @@ public final class MainActivity extends Activity {
             }
             int[] speedValue = {prefs.getInt("speed", 0)};
             MeterCanvasView display = new MeterCanvasView(this);
+            meterDisplay = display;
             LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(190));
             displayParams.bottomMargin = dp(12);
@@ -557,6 +558,10 @@ public final class MainActivity extends Activity {
                 edit.apply(); status.setText("Saved "+specs.size()+" widgets on this device");
             });
             content.addView(save, matchWrap());
+            Button sharePreview = new Button(this);
+            sharePreview.setText("Share meter preview image");
+            sharePreview.setOnClickListener(v -> shareMeterPreview());
+            content.addView(sharePreview, matchWrap());
             Button reset = new Button(this);
             reset.setText("Reset meter editor");
             reset.setOnClickListener(v -> { prefs.edit().clear().apply(); recreate(); });
@@ -567,6 +572,42 @@ public final class MainActivity extends Activity {
         }
     }
 
+
+    private void shareMeterPreview() {
+        if (meterDisplay == null || meterDisplay.getWidth() <= 0 || meterDisplay.getHeight() <= 0) {
+            toast("Meter preview is not ready yet");
+            return;
+        }
+        java.io.File directory = new java.io.File(getCacheDir(), "shared_previews");
+        if (!directory.exists() && !directory.mkdirs()) {
+            toast("Unable to create preview cache");
+            return;
+        }
+        java.io.File output = new java.io.File(directory, "meter-preview-" + System.currentTimeMillis() + ".png");
+        android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
+                meterDisplay.getWidth(), meterDisplay.getHeight(),
+                android.graphics.Bitmap.Config.ARGB_8888);
+        try {
+            meterDisplay.draw(new android.graphics.Canvas(bitmap));
+            try (java.io.FileOutputStream stream = new java.io.FileOutputStream(output)) {
+                if (!bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream))
+                    throw new java.io.IOException("PNG encoding failed");
+                stream.flush();
+            }
+            android.net.Uri uri = android.net.Uri.parse("content://" + getPackageName()
+                    + ".meterpreview/" + output.getName());
+            android.content.Intent share = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            share.setType("image/png");
+            share.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+            share.setClipData(android.content.ClipData.newUri(getContentResolver(), "Meter preview", uri));
+            share.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(android.content.Intent.createChooser(share, "Share meter preview"));
+        } catch (Exception e) {
+            toast("Unable to share meter preview: " + e.getMessage());
+        } finally {
+            bitmap.recycle();
+        }
+    }
 
     private void addPresetManagement() {
         addSection("Named meter presets");
