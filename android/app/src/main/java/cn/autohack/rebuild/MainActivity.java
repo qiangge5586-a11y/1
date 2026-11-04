@@ -19,6 +19,7 @@ public final class MainActivity extends Activity {
     private TextView sizeLabel;
     private int meterColor = 0xFF263746;
     private int meterTextSize = 32;
+    private int meterTextColor = 0xFFFFFFFF;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -86,12 +87,13 @@ public final class MainActivity extends Activity {
                     getSharedPreferences("meter_editor", MODE_PRIVATE);
             meterColor = prefs.getInt("background", 0xFF263746);
             meterTextSize = prefs.getInt("text_size", preset.primaryView.textSize);
+            meterTextColor = prefs.getInt("text_color", 0xFFFFFFFF);
             int initialSpeed = prefs.getInt("speed", 0);
 
             meterDisplay = new TextView(this);
             meterDisplay.setGravity(Gravity.CENTER);
             meterDisplay.setPadding(dp(14), dp(18), dp(14), dp(18));
-            meterDisplay.setTextColor(0xFFFFFFFF);
+            meterDisplay.setTextColor(meterTextColor);
             meterDisplay.setBackgroundColor(meterColor);
             LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(150));
@@ -126,6 +128,18 @@ public final class MainActivity extends Activity {
             content.addView(theme, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
+            Button textColor = new Button(this);
+            textColor.setText("Change meter text color");
+            textColor.setOnClickListener(v -> {
+                if (meterTextColor == 0xFFFFFFFF) meterTextColor = 0xFFFFD54F;
+                else if (meterTextColor == 0xFFFFD54F) meterTextColor = 0xFF80CBC4;
+                else meterTextColor = 0xFFFFFFFF;
+                meterDisplay.setTextColor(meterTextColor);
+                prefs.edit().putInt("text_color", meterTextColor).apply();
+            });
+            content.addView(textColor, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
             Runnable update = () -> {
                 int value = speed.getProgress();
                 int rpm = 850 + value * 32;
@@ -133,6 +147,7 @@ public final class MainActivity extends Activity {
                         + preset.primaryView.renderMock(value, rpm, 68, 82)
                         + "\nFuel: 68% · Coolant: 82 °C");
                 meterDisplay.setTextSize(meterTextSize);
+                meterDisplay.setTextColor(meterTextColor);
                 speedLabel.setText("Demo speed: " + value + " km/h");
                 sizeLabel.setText("Meter text size: " + meterTextSize + " sp");
             };
