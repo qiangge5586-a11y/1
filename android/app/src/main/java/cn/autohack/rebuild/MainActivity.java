@@ -1840,6 +1840,45 @@ public final class MainActivity extends Activity {
             content.addView(launch, matchWrap());
         }
 
+        addSection("Saved home destination");
+        android.content.SharedPreferences navigationPrefs =
+                getSharedPreferences("navigation_preferences", MODE_PRIVATE);
+        android.widget.EditText homeDestination = new android.widget.EditText(this);
+        homeDestination.setSingleLine(true);
+        homeDestination.setHint("Enter a place name or home address");
+        homeDestination.setText(navigationPrefs.getString("home_destination", ""));
+        content.addView(homeDestination, matchWrap());
+        Button saveHome = new Button(this);
+        saveHome.setText("Save home destination");
+        saveHome.setOnClickListener(v -> {
+            try {
+                String normalized = SavedHomeDestination.normalize(
+                        homeDestination.getText().toString());
+                if (!SavedHomeDestination.isValid(normalized)) {
+                    toast("Enter a destination first");
+                    return;
+                }
+                navigationPrefs.edit().putString("home_destination", normalized).apply();
+                homeDestination.setText(normalized);
+                toast("Home destination saved on this device");
+            } catch (IllegalArgumentException error) {
+                toast(error.getMessage());
+            }
+        });
+        content.addView(saveHome, matchWrap());
+        Button clearHome = new Button(this);
+        clearHome.setText("Clear saved home destination");
+        clearHome.setOnClickListener(v -> {
+            navigationPrefs.edit().remove("home_destination").apply();
+            homeDestination.setText("");
+            toast("Saved home destination cleared");
+        });
+        content.addView(clearHome, matchWrap());
+        TextView homeNote = new TextView(this);
+        homeNote.setText("Stored only in this app's private preferences. Voice command “回家” opens the public map chooser only after confirmation. No GPS or background location is used.");
+        homeNote.setTextSize(12);
+        content.addView(homeNote);
+
         addSection("Navigation state adapter · demo only");
         TextView demoNote = new TextView(this);
         demoNote.setText("This is a local sample route used to verify the navigation display contract. It is not reading Amap, Baidu, GPS, or the vehicle.");
