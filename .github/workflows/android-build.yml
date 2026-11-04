@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'android/**'
+      - 'tools/**'
       - '.github/workflows/android-build.yml'
   pull_request:
     paths:
@@ -23,6 +24,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Validate reverse-engineering helper
+        run: bash -n tools/decompile-original.sh
       - name: Assemble debug APK
         working-directory: android
         run: gradle --no-daemon :app:testDebugUnitTest :app:assembleDebug
