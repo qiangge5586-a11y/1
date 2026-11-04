@@ -26,9 +26,14 @@ public final class CivicCompassOptions {
     }
 
     public static String modeDescription(boolean compassEnabled, boolean trackUp) {
+        return modeDescription(compassEnabled, trackUp, false);
+    }
+
+    public static String modeDescription(boolean compassEnabled, boolean trackUp,
+            boolean gpsCourseAvailable) {
         if (!compassEnabled) return "Compass disabled";
-        return trackUp
-                ? "Track-up demo selected · orientation is simulated"
-                : "North-up demo selected · orientation is simulated";
+        if (trackUp && gpsCourseAvailable) return "Track-up · using GPS direction of travel";
+        if (trackUp) return "Track-up fallback · waiting for a stable GPS course";
+        return "North-up · device compass heading when available";
     }
 }
