@@ -2099,6 +2099,7 @@ public final class MainActivity extends Activity {
 
     private void choosePairedObdAdapter() {
         if (android.os.Build.VERSION.SDK_INT >= 31
+                && getApplicationInfo().targetSdkVersion >= 31
                 && checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{android.Manifest.permission.BLUETOOTH_CONNECT}, 7610);
@@ -2108,6 +2109,7 @@ public final class MainActivity extends Activity {
     }
 
     @android.annotation.TargetApi(18)
+    @android.annotation.SuppressLint("MissingPermission")
     private void showPairedObdAdapters() {
         try {
             android.bluetooth.BluetoothAdapter adapter;
