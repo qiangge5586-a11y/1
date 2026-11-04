@@ -29,7 +29,8 @@ public final class ForegroundGpsController implements LocationListener {
     }
 
     public boolean hasFinePermission() {
-        return context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        return context.checkPermission(Manifest.permission.ACCESS_FINE_LOCATION,
+                android.os.Process.myPid(), android.os.Process.myUid())
                 == PackageManager.PERMISSION_GRANTED;
     }
 
