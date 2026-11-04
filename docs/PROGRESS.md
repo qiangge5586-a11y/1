@@ -1,12 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 22 — Read-only storage diagnostics (CI pending)
+## Phase 22 — Read-only storage diagnostics (CI verified)
 
 - Replaced the placeholder storage card with a live diagnostic report for Android API level, shared-storage state, app-private files/cache capacity, app-specific external storage and emulation state.
 - Added refresh and user-invoked share controls.
 - No broad storage permission, arbitrary file enumeration, SD-card repair, platform.xml modification, partition remount, or deletion is performed.
 - Details: `docs/READ_ONLY_STORAGE_DIAGNOSTICS.md`.
-- Source commit: `26ca5112ba0954602d48caddbf1bce0f4baf2610`; CI validation pending.
+- GitHub Actions run #52 (ID 41762049288) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41762049288
+- Source commit: `26ca5112ba0954602d48caddbf1bce0f4baf2610`; artifact ID: 13291800139; APK size: 40,827 bytes; SHA-256: `77629511b839c838f4c73d3fd67347a8f1106205062c85bf5cf7f2083d4a0b9c`.
 
 ## Phase 21 — User-confirmed local APK installer (CI verified)
 
@@ -139,7 +140,7 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 
 1. Obtain a fresh readable JADX source export and review high-value original classes: MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService. The supplied report is valuable evidence, but its raw source tree is not currently stored in Library or GitHub.
 2. Manually test local APK selection and system installation confirmation on a spare Android device; CI verifies compilation, not an actual package installation.
-3. Manually test phases 19–20 (startup video preview and JSON file import/export) with multiple Android document providers.
+3. Manually test phases 19–22 (startup video preview, JSON file import/export, local APK installation and storage diagnostics) on a spare Android device.
 4. Identify the exact 2019 Civic factory head-unit model, firmware, Android API level and ABI; do not infer compatibility from vendor intent strings.
 5. Implement navigation-state and vehicle-data adapters only after documented interfaces are verified; until then, keep meter/navigation values clearly marked as simulated.
 6. Add remaining safe feature modules (storage diagnostics, display controls, and opt-in voice assistant) with permission explanations and tests.
