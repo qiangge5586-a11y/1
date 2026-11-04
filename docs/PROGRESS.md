@@ -1,12 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 24 — Explicit on-device voice recognition (CI pending)
+## Phase 24 — Explicit on-device voice recognition (CI verified)
 
 - Added a user-started speech-recognition prototype for Android 12+ devices that expose an on-device recognition service.
 - Requests microphone permission only after Start is tapped; provides Stop and destroys the recognizer when the Activity stops.
 - Does not use cloud fallback, wake-word/background listening, network upload, or vehicle command execution.
 - Details: `docs/ON_DEVICE_VOICE_ASSISTANT.md`.
-- Source and manifest commits: `5143804365ea9c4ca18afcb8d59b7b6f2317522b` and `5f89ec0122d7802cee50df22b5a3387af50bd0aa`; CI pending.
+- GitHub Actions run #56 (ID 41762298887) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41762298887
+- Source/manifest commit: `5f89ec0122d7802cee50df22b5a3387af50bd0aa`; artifact ID: 13291341408; APK size: 45,071 bytes; SHA-256: `5a040c0929f306726fa8865c5673f16d3571845276ea79705ad5558b7f260186`.
 
 ## Phase 23 — App-scoped display controls (CI verified)
 
@@ -159,7 +160,7 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 3. Manually test phases 19–22 (startup video preview, JSON file import/export, local APK installation and storage diagnostics) on a spare Android device.
 4. Identify the exact 2019 Civic factory head-unit model, firmware, Android API level and ABI; do not infer compatibility from vendor intent strings.
 5. Implement navigation-state and vehicle-data adapters only after documented interfaces are verified; until then, keep meter/navigation values clearly marked as simulated.
-6. Add remaining safe feature modules (opt-in on-device voice assistant and screenshot/share utilities) with permission explanations and tests.
+6. Add remaining safe feature modules (screenshot/share utilities and deeper display options) with permission explanations and tests.
 
 
 <!-- Previous roadmap retained below for historical context. -->
