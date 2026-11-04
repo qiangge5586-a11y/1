@@ -1,12 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 31 — Local startup audio selection and preview (CI pending)
+## Phase 31 — Local startup audio selection and preview (CI verified)
 
 - Added local audio selection through Android's document picker with persisted read-only URI access.
 - Added explicit Preview/Stop/Clear controls and transient audio focus; releases MediaPlayer and audio focus when the Activity stops.
 - No automatic boot playback, background audio service, network upload, or bundled copyrighted audio.
 - Details: `docs/STARTUP_AUDIO_PREVIEW.md`.
-- Source commit: `dea6984d388b23e92c6734ae0ffe78477138bb5b`; CI pending.
+- GitHub Actions run #77 (ID 41763603871) passed debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41763603871
+- Source commit: `dea6984d388b23e92c6734ae0ffe78477138bb5b`; artifact ID: 13290724947; APK size: 55,671 bytes; SHA-256: `57b2880f22c7f3e49b6d24eb4be4d4e32a6e77d5041655d9e4db809ea680a50a`.
 
 ## Phase 30 — App-private cache maintenance (CI verified)
 
