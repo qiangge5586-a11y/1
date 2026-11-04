@@ -66,12 +66,22 @@ public final class MainActivity extends Activity {
         addStartupVideoSettings();
 
         addSection("Device capability (read-only)");
+        String capabilityReport = buildHeadUnitCompatibilityReport();
         TextView facts = new TextView(this);
-        facts.setText(new CapabilitySnapshot().toDisplayString());
+        facts.setText(capabilityReport);
         facts.setTextSize(14);
         facts.setPadding(dp(14), dp(12), dp(14), dp(12));
         facts.setBackgroundColor(0xFFEFF2F5);
         content.addView(facts);
+        Button shareCapabilities = new Button(this);
+        shareCapabilities.setText("Share head-unit compatibility report");
+        shareCapabilities.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(android.content.Intent.EXTRA_TEXT, capabilityReport);
+            startActivity(android.content.Intent.createChooser(intent, "Share compatibility report"));
+        });
+        content.addView(shareCapabilities, matchWrap());
         addVehicleDataDemo();
 
         addSection("Feature preview");
@@ -993,6 +1003,15 @@ public final class MainActivity extends Activity {
             startActivityForResult(intent, 7604);
         });
         content.addView(choose, matchWrap());
+    }
+
+    private String buildHeadUnitCompatibilityReport() {
+        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        return new CapabilitySnapshot().toDisplayString()
+                + "\\nDisplay: " + metrics.widthPixels + " × " + metrics.heightPixels
+                + "\\nDensity: " + metrics.densityDpi + " dpi"
+                + "\\nScreen density scale: " + metrics.density;
     }
 
     private void addVehicleDataDemo() {
