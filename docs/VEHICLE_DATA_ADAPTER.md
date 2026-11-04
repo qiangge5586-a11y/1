@@ -7,6 +7,10 @@
 - `MockVehicleDataProvider` supplies static offline demo values.
 - The main screen labels the values as demo data and offers a refresh action.
 
+## Original transport finding
+
+Fresh source review found the original meter uses a privileged `/data/local/tmp/shared_files` integer-file bridge populated by Xposed hooks, not a documented public OBD/Honda interface. The directory is made world-writable by the original setup. The rebuild intentionally does not reproduce this transport. Details: `docs/VEHICLE_DATA_TRANSPORT_AUDIT.md`.
+
 ## Not implemented
 
 - No CAN bus, OBD-II, ECU, Bluetooth dongle, OEM AIDL service, GPS, or factory head-unit connection is active.
