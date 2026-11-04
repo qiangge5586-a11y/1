@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 72 — APK manifest verification and build metadata (CI pending)
+## Phase 72 — APK manifest verification and build metadata (CI verified)
 
 - CI now inspects the packaged APK with `aapt dump badging` after assembly.
 - The workflow fails unless the APK application ID is `cn.autohack.rebuild`, minSdk is 17 and targetSdk is 28.
@@ -8,7 +8,9 @@
 - Uploads the APK and build metadata together as `hondahack-rebuild-api17-debug`; the lint report remains a separate artifact.
 - This is a debug APK, not release-signed, and no physical head-unit install is claimed.
 - Details: `docs/APK_BUILD_ARTIFACTS.md`.
-- Workflow commits: `37d295ac40ca54fda9518296219792e69c09ce68`, `7ec4505997d089a37519fdafd0485cfd321f6fe2`; CI pending.
+- Workflow commits: `37d295ac40ca54fda9518296219792e69c09ce68`, `7ec4505997d089a37519fdafd0485cfd321f6fe2`.
+- GitHub Actions run #258 (ID 41782948267) passed unit tests, lint, APK assembly, packaged metadata assertions and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41782948267.
+- Artifact ID: 13300480446. Verified APK: 108,925 bytes; SHA-256 `a97f2e549148c28e26c0fd6cce4cc567704f9c8aaacf556bb2e70220963ac4b3`; package `cn.autohack.rebuild`; minSdk 17; targetSdk 28. Artifact ZIP size: 105,325 bytes. Build is debug-signed, not release-signed.
 
 
 ## Phase 71 — Android API 17 compatibility target (CI verified)
