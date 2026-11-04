@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 58 — Standard OBD-II / ELM327 protocol decoder (CI pending)
+
+- Added a pure ELM327 positive-response parser for compact/spaced responses, optional CAN headers, command echo, SEARCHING text and prompt.
+- Added common Mode 01 PID decoders for speed, RPM, coolant, fuel level, engine load, throttle, MAF, intake/oil temperature, manifold/barometric pressure, timing advance and fuel rate.
+- Unsupported, negative and truncated responses return null; no fabricated values.
+- No Bluetooth/USB/Wi-Fi connection, pairing, vehicle command, Honda enhanced PID or new permission is added. The UI remains demo data until a real adapter is selected and tested.
+- Added unit tests for formulas, framing and malformed/no-data cases.
+- Details: `docs/OBD2_ELM327_DECODER.md`.
+- Source/test commits: `fad073b4d3125212873dd6fdfdecbd04f79244fb`, `5d6e68277898a0b534b5699cfa486c57f0236c26`, `d3c775b7c6bc4b047ec0c1999c98ad381f88fe92`; CI pending.
+
+
 ## Phase 57 — Opt-in foreground GPS course (CI verified)
 
 - Added GPS_PROVIDER-only location updates after the user enables the meter setting; fine+coarse permissions are requested together only on that explicit opt-in, and GPS course requires precise access.
