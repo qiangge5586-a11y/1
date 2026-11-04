@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 50 — Original voice assistant audit (analysis complete)
+
+- Confirmed original speech recognition uploads recorded MP3 audio through an HTTP form request; it is not on-device ASR.
+- Mapped original command families: installed-app launch, Amap navigation/POI broadcasts, QQ Music Car playback and bundled spoken responses.
+- Rebuild keeps the existing Android on-device recognizer, explicit microphone opt-in and foreground-only lifecycle; it currently displays text only.
+- No cloud audio upload, private navigation broadcasts, QQ Music internals, shared-storage recording, wake word or background service is copied.
+- Details: `docs/VOICE_ASSISTANT_ORIGINAL_AUDIT.md`.
+
 ## Phase 49 — Ten-slot foreground steering-key mapping (CI pending)
 
 - Replaced the simulator-only mapping with ten configurable foreground key slots.
