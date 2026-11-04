@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- The APK is privately deployed to legacy head units; targetSdk 28 is deliberate.
+         API 17 compatibility is checked separately and no Google Play release is claimed. -->
+    <issue id="ExpiredTargetSdkVersion" severity="ignore" />
+</lint>
