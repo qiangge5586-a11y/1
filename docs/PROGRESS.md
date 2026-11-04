@@ -1,37 +1,64 @@
-# Progress
+# HondaHack 7.6.0 Rebuild Progress
 
-2026-11-04: Phase 1 complete. Original 7.6.0 APK located and SHA-256 verified.
-2026-11-04: Phase 2 complete as an initial structural inventory. See APK_BASELINE_INVENTORY.md.
-Next: audit the existing source archive and perform full manifest/DEX decompilation.
+Last updated: 2026-11-04  
+Repository: https://github.com/qiangge5586-a11y/1  
+Target: independent Android rebuild based on the user's supplied HondaHack 7.6.0 APK and reverse-analysis notes.
 
-Phase 2 extension: direct DEX table parsing verified 12,302 strings, 2,555 types, 3,490 prototypes, 13,775 fields, 15,752 methods, 1,770 class definitions and 427 `cn.autohack` classes. Inventory updated in the same repository.
+## Current verified status
 
-2026-11-04: Phase 3 archive audit completed structurally. The 29,808-byte ZIP has 47 entries and contains only two Java source files plus basic Gradle/manifest/assets scaffolding. It is not a complete 7.6.0 functional rebuild. Full source-text review of those files is still pending. See SOURCE_ARCHIVE_AUDIT.md.
+- Original APK identity and SHA-256 recorded; see `APK_BASELINE_INVENTORY.md`.
+- Original binary manifest, DEX class/method structures and resource inventory audited; see `MANIFEST_COMPONENT_AUDIT.md`, `DEX_CLASS_METHOD_MAP.md`, `RESOURCE_FEATURE_ASSET_AUDIT.md`.
+- DEX instruction-reference triage completed for meter, navigation, steering-key, startup, audio, voice, GPS and receiver paths; see `DEX_BYTECODE_BEHAVIOR_AUDIT.md`. This is not full Java decompilation or runtime proof.
+- Independent Android app skeleton builds successfully.
+- Offline meter parser, editor canvas, editable speed/text size/position/colors and reset control implemented.
+- Steering-key mapping simulator with four configurable mock keys and persistent action selections implemented.
+- Navigation-app detection and explicit launch buttons implemented for package IDs found in the original APK.
+- Unit tests for meter preset parsing and validation are included in CI.
 
-2026-11-04: Phase 4 planning artifact created. Feature traceability maps the report's steering key, startup media, meter, navigation, audio, APK manager, storage diagnostics, startup manager, maintenance, display, voice, vendor adapters and emergency mode into isolated rebuild modules with safe implementation boundaries. Root/Xposed installation, signature spoofing and remote destructive revocation are excluded from the baseline. See FEATURE_TRACEABILITY.md.
+## Latest build verification
 
-2026-11-04: Phase 5 build validation completed. GitHub Actions run #1 (41751463999) succeeded: `:app:assembleDebug` and artifact upload both completed successfully. Artifact `hondahack-rebuild-debug` (artifact ID 13285548195) was downloaded and inspected. It contains `app-debug.apk` (11,448 bytes); SHA-256 `9b8a8c567c017f02e2468660e9b3b330b49b0a5e29f741cfa1ba5dd982d759bb`. APK signature is Android Debug; DEX contains the expected `cn.autohack.rebuild`, `MainActivity` and `CapabilitySnapshot` symbols. This confirms the starter shell compiles and is packaged, not that original HondaHack features have been recreated. See BUILD_ARTIFACT_VALIDATION.md.
+GitHub Actions run #31:
+- Run ID: `41755385647`
+- Commit: `64ffbe9b039b044051c1059b379e9a7b5333a0ba`
+- Run URL: https://github.com/qiangge5586-a11y/1/actions/runs/41755385647
+- The `Assemble debug APK` step completed successfully. That command runs `:app:testDebugUnitTest` followed by `:app:assembleDebug`.
+- The `Upload debug APK` step completed successfully.
+- Artifact ID: `13287766903`; artifact name: `hondahack-rebuild-debug`.
+- Downloaded APK size: 23,222 bytes (approx. 23 KB).
+- APK SHA-256: `c26c2a8f0c70682459e43807ec868da363e98d3d90f30ef74339d43403196921`.
 
-2026-11-04: Phase 6 manifest audit completed. Parsed the original APK binary XML directly: package/version/SDK, 22 declared permissions, 23 activities, 2 services, 1 receiver, 1 provider, application class and vendor boot intent filters. See MANIFEST_COMPONENT_AUDIT.md. This is a structural manifest decode, not method-level reverse engineering.
+The workflow's post-job cleanup was still running when this status was recorded; the actual test/build and artifact-upload steps had succeeded. This artifact is a debug prototype, not a complete or pixel-identical HondaHack clone.
 
-2026-11-04: Phase 7 DEX class_data mapping completed. Parsed class descriptors, method IDs and encoded class_data: recovered 427 app namespace classes and key application entrypoint method names (Activities, services, receiver, Xposed marker). This is not Java decompilation or control-flow proof. See DEX_CLASS_METHOD_MAP.md.
+## Phase history
 
-2026-11-04: Phase 8 resource audit completed. Inspected meter JSON schemas, speedometer presets, voice/navigation audio inventory, and identified bundled vendor/Xposed/system-modification payload classes by filename. Unsafe system payloads are quarantined as forensic evidence and excluded from rebuild. See RESOURCE_FEATURE_ASSET_AUDIT.md.
+1. Original 7.6.0 APK verified and fingerprinted.
+2. APK ZIP/DEX structural inventory recorded.
+3. Existing source ZIP audited: 47 entries, two Java files and basic Gradle/manifest/assets scaffolding; not a complete clone.
+4. Feature traceability and safe rebuild boundaries documented.
+5. Initial Android project and GitHub Actions debug build established.
+6. Binary AndroidManifest.xml parsed: package/version/SDK, permissions and declared components recorded.
+7. DEX class_data mapped; app entrypoint methods inventoried.
+8. Meter JSON presets, audio resources and privileged payload indicators audited.
+9. Preliminary DEX instruction-reference behavior map completed; JADX readable decompilation remains outstanding.
+10. Offline meter preset parser/repository and validation tests added.
+11. CI updated to run unit tests before assembling the debug APK.
+12. Interactive meter editor added with persistent speed, text size and theme settings.
+13. Normalized-coordinate canvas, horizontal/vertical layout controls and reset function added.
+14. Configurable steering-key simulator added; it does not capture physical inputs or issue vehicle commands.
+15. Safe navigation-app detection and explicit launcher added; it does not force-stop, modify or inject into other apps.
 
-2026-11-04: Phase 9 DEX bytecode behavior triage completed. A preliminary code_item reference scan connected key classes to meter/navigation/key-remap/startup/audio/voice/GPS/receiver behaviors and identified privileged shell-command indicators for exclusion. This is instruction-reference evidence, not full Java decompilation or runtime proof. See DEX_BYTECODE_BEHAVIOR_AUDIT.md. Next: obtain JADX and perform readable method/control-flow review, then implement/test safe standalone modules.
+## Safety and compatibility boundaries
 
-2026-11-04: Phase 10 implementation committed. Added an offline JSON meter-preset model/repository, validated the 0..100 canvas bounds and supported mock telemetry placeholders, and replaced the static meter placeholder with a parsed mock preview in MainActivity. No permissions or vehicle interfaces added. Build is expected to run through the push-triggered Actions workflow but has not yet been independently verified. See METER_PREVIEW_IMPLEMENTATION.md.
+- No root/Xposed installer, signature spoofing, app_process replacement, platform permission modification, silent installation, remote revocation, destructive shell commands or system-partition writes.
+- No force-stop/kill of third-party apps and no undocumented vendor service calls.
+- Meter and vehicle values remain mock data. No CAN/OBD/ECU telemetry integration is implemented.
+- The user's 2019 Civic factory head-unit compatibility is not assumed from package strings or Mitsubishi/Clarion vendor intents. Model, firmware and documented interfaces must be identified before device integration.
+- The debug APK has not yet been tested on the user's vehicle or factory head unit.
 
-2026-11-04: Phase 11 test hardening committed. Added unit tests for valid meter rendering, empty presets, out-of-bounds layouts and unsupported placeholders (including mixed valid/invalid tokens). Updated CI to run `:app:testDebugUnitTest` before `:app:assembleDebug`. The new run result is pending independent verification. See METER_PREVIEW_IMPLEMENTATION.md.
+## Next steps
 
-2026-11-04: Phase 12 interactive meter editor committed. MainActivity now provides a 0–240 km/h mock speed slider, 18–56 sp text-size slider, three background themes, and app-private persistence via SharedPreferences. No vehicle interface or extra permissions were added. CI is configured to run parser tests then assemble the APK, but success for this exact revision is not yet verified. See INTERACTIVE_METER_EDITOR.md.
-
-2026-11-04: Phase 13 steering-key simulator committed. Added four demo actions (volume+, next track, meter visibility, voice assistant), a visible simulation result and app-private persistence of the last selected action. It does not intercept physical keys or send commands to the vehicle. CI verification is pending. See STEERING_KEY_SIMULATOR.md.
-
-2026-11-04: Phase 12 committed. The offline meter editor now uses the parsed preset template, has demo speed and text-size sliders, three background themes, three text colors, and persists these settings in app-private SharedPreferences. Added a steering-key simulator for four sample actions; it does not intercept physical controls or send vehicle commands. Latest Actions result is not yet independently verified. See METER_EDITOR_AND_KEY_SIMULATOR.md.
-
-2026-11-04: Phase 13 committed. Added MeterCanvasView for normalized-coordinate rendering and replaced the meter TextView with a canvas preview. Added horizontal/vertical position sliders, persisted layout/color/size/speed settings and a reset-to-default action. The preview uses the preset width/height and mock telemetry template. Latest Actions result remains unverified. See METER_CANVAS_LAYOUT_CONTROLS.md.
-
-2026-11-04: Phase 14 committed. Replaced the fixed steering-key demo buttons with four configurable simulated key mappings, selectable action lists and per-key persistence. Added per-key simulation buttons and explicit no-interception/no-vehicle-command messaging. Latest Actions result remains unverified. See STEERING_KEY_MAPPING_SIMULATOR.md.
-
-2026-11-04: Phase 15 committed. Added a safe navigation launcher using PackageManager.getLaunchIntentForPackage for Amap Auto, Baidu Map Auto and Baidu Navi Auto package identifiers observed in the original APK. Apps are only opened after an explicit tap; no force-stop, private service calls, private-file access or undocumented broadcasts. Build status for the latest changes is pending. See NAVIGATION_APP_LAUNCHER.md.
+1. Obtain readable JADX output and review high-value original methods, especially `MyService`, `MeterActivity`, `NavigatorActivity`, `RemapKeysActivity`, `StartupActivity` and `VoiceAssistantService`.
+2. Extend the meter editor to multiple widgets, drag positioning, font/alignment/stroke/shadow/background assets and named presets with import/export.
+3. Add safe, explicit audio-focus controls and startup preferences using public Android APIs.
+4. Build a device compatibility matrix for the exact Civic factory head-unit model/firmware.
+5. Test the debug APK on a spare Android device first; do not modify the live vehicle head unit until a documented interface and rollback path are confirmed.
