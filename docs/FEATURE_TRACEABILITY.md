@@ -61,3 +61,8 @@ The intended first test target is a 2019 Honda Civic factory head unit. The reve
 - Original meter/navigation data hooks are coupled to Xposed hooks into Amap/Waze internals and Mitsubishi/Clarion binder services. The rebuild's navigation/vehicle provider interfaces remain mock/demo until a documented read-only integration is verified.
 - The supplied modified APK's `C0270ub` license stubs and `C0234na.c` privileged bootstrap are not reproduced.
 - See `docs/ORIGINAL_APK_METHOD_AUDIT_2026-11-04.md` for method-level evidence and remaining DEX checks.
+
+
+## Civic meter resource-derived fields
+
+The fresh resource audit identified a 584×215 px Civic layout and the original six vehicle-information keys. The rebuild now has a text-only, offline Civic layout template and mock token values for those fields, plus navigation/compass/speed-limit indicators. This is a preview of the resource field set, not a claim of pixel-perfect recreation or 2019 Civic head-unit compatibility. See `docs/CIVIC_METER_LAYOUT_AUDIT.md`.
