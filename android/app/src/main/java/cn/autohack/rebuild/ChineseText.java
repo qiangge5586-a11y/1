@@ -4,6 +4,12 @@ package cn.autohack.rebuild;
 public final class ChineseText {
     private ChineseText() {}
 
+    public static String[] translateArray(String[] values) {
+        String[] translated = new String[values.length];
+        for (int i = 0; i < values.length; i++) translated[i] = translate(values[i]);
+        return translated;
+    }
+
     public static String translate(CharSequence input) {
         if (input == null) return "";
         String s = input.toString();
@@ -270,7 +276,61 @@ public final class ChineseText {
             {"North","北"},
             {"East","东"},
             {"South","南"},
-            {"West","西"}
+            {"West","西"},
+            {"Audio focus: ","音频焦点："},
+            {"GPS course: ","GPS 航向："},
+            {"GPS: ","GPS："},
+            {"Loaded ","已加载 "},
+            {"Preset: ","预设："},
+            {"No saved presets","没有已保存的预设"},
+            {"Load","加载"},
+            {"Rename","重命名"},
+            {"Duplicate","复制"},
+            {"Share JSON","分享 JSON"},
+            {"Save JSON file","保存 JSON 文件"},
+            {"Delete","删除"},
+            {"New name","新名称"},
+            {"Copy name","副本名称"},
+            {"Renamed","已重命名"},
+            {"Duplicated","已复制"},
+            {"Deleted","已删除"},
+            {"Operation failed: ","操作失败："},
+            {"OK","确定"},
+            {"Read codes","读取故障码"},
+            {"Read ","读取"},
+            {" trouble codes?","故障码？"},
+            {"Stored","已存储"},
+            {"Pending","待定"},
+            {"Permanent","永久"},
+            {" trouble codes:","故障码："},
+            {"none returned (or the ECU response contained no valid codes).","无返回结果（或 ECU 响应中没有有效故障码）。"},
+            {"OBD-II live read-only snapshot","OBD-II 实时只读快照"},
+            {"Speed: ","车速："},
+            {"Engine RPM: ","发动机转速："},
+            {"Coolant: ","冷却液温度："},
+            {"Fuel level: ","燃油液位："},
+            {"Four live meter fields are overlaid; unsupported route, distance and economy tokens show --.","四项实时仪表数据已叠加；不支持的路线、距离和油耗字段显示为 --。"},
+            {"ECU-supported dashboard PIDs:","ECU 支持的仪表 PID："},
+            {"Check-engine status: ","发动机故障灯状态："},
+            {"Check-engine status: no valid ECU response.","发动机故障灯状态：未收到有效 ECU 响应。"},
+            {"Check-engine light (MIL): ","发动机故障灯（MIL）："},
+            {"ON","亮"},
+            {"OFF","灭"},
+            {"Stored DTC count (PID 01): ","已存储故障码数量（PID 01）："},
+            {"Read only · no codes were cleared.","只读操作 · 未清除任何故障码。"},
+            {"System default","系统默认"},
+            {"Brightness: ","屏幕亮度："},
+            {"No speech recognized.","未识别到语音。"},
+            {"Voice assistant: ","语音助手："},
+            {"Audio preview stopped.","音频预览已停止。"},
+            {"No launchable apps","没有可启动的应用"},
+            {" · device sensor available"," · 设备传感器可用"},
+            {" · device compass sensor unavailable; sample heading fallback"," · 设备指南针传感器不可用，使用示例航向"},
+            {" · GPS is foreground-only and opt-in"," · GPS 仅在前台且经授权后使用"},
+            {"No ","没有"},
+            {" seconds"," 秒"},
+            {" km/h"," 公里/小时"},
+            {" rpm"," 转/分钟"}
         };
         for (String[] pair : phrases) s = s.replace(pair[0], pair[1]);
         return s;
