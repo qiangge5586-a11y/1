@@ -718,7 +718,7 @@ public final class MainActivity extends Activity {
             int value = brightness.getProgress();
             applyWindowBrightness(value, system);
             brightnessLabel.setText(system ? "Brightness: system default"
-                    : "App window brightness: " + value + "%");
+                    : "App window brightness: " + Math.max(1, value) + "%");
             prefs.edit().putBoolean("use_system_brightness", system)
                     .putInt("app_brightness", value).apply();
         };
