@@ -15,13 +15,13 @@ public final class SavedHomeDestinationTest {
     }
 
     @Test public void rejectsEmbeddedNullAndOtherControlCharacters() {
-        assertFalse(SavedHomeDestination.isValid("Home\\u0000Address"));
-        assertFalse(SavedHomeDestination.isValid("Home\\u0007Address"));
+        assertFalse(SavedHomeDestination.isValid("Home" + ((char) 0) + "Address"));
+        assertFalse(SavedHomeDestination.isValid("Home" + ((char) 7) + "Address"));
     }
 
     @Test public void allowsAndNormalizesOrdinaryWhitespace() {
         assertEquals("Home Address",
-                SavedHomeDestination.normalize("Home\\n  Address"));
+                SavedHomeDestination.normalize("Home\n  Address"));
     }
 
     @Test public void acceptsMaximumLengthDestination() {
