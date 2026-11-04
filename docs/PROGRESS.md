@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 67 — Pending and permanent DTC reads (CI pending)
+
+- Extended the decoder to parse Mode 07 positive responses (`47`) and Mode 0A positive responses (`4A`) in addition to stored Mode 03 (`43`).
+- Added exact command allowlisting for `03`, `07` and `0A`; Mode 04 clear-DTC and all other write/control commands remain blocked.
+- The Bluetooth worker accepts one explicitly requested diagnostic read at a time and serializes it with live PID polling; no DTC mode is queried automatically on connection.
+- Added separate confirmed UI actions for stored, pending and permanent codes. Results are decoded and displayed with the existing cautious generic descriptions.
+- Tests cover positive markers, cross-mode rejection and exact diagnostic command allowlisting.
+- Details: `docs/OBD2_DTC_READ.md`.
+- Source/test commits: `6d1ccb79c1ea8583be86a3efca4acb4c0003a1ab`, `4f45a208b9349859d3760e028fc751fb68c2ffb1`, `a15bc400e5006aaff382d033bd35c13a4a83fd6b`, `0cc3bfe903948c88a7542954660154315b9ebc6f`, `0fe2957e16d7e8c632a9a307caf03b34238373f3`, `6d56747311376bd9714955576878c37ec1a7f887`; CI pending.
+
+
 ## Phase 66 — Offline generic DTC descriptions (CI verified)
 
 - Added a small offline dictionary for common generic powertrain codes: P0101, P0113, P0128, P0133, P0171, P0300, P0420, P0442, P0455, P0500 and P0700.
