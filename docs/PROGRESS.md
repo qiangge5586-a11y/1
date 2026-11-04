@@ -2,14 +2,14 @@
 
 ## Phase 63 — Live OBD values in the meter preview (CI verified)
 
-- Connected OBD sessions now overlay live speed, RPM, coolant and fuel level into the meter tokens.
-- Converts OBD speed to mph and coolant to °F for US/Imperial display modes; RPM and fuel percent remain direct.
-- Unsupported/missing PIDs display `--` during a live session rather than silently falling back to sample values.
-- On disconnect or Activity pause, live values are cleared and the meter returns to demo values. Road, turn, ETA, trip/fuel economy and gear fields remain demo because the current standard PID set does not provide them.
-- Added unit tests for disconnected demo preservation, live overlay, unit conversions and missing-PID placeholders.
+- Connected live OBD speed, RPM, coolant and fuel values to the Civic meter token map.
+- Converts OBD speed to mph and coolant to °F for US/Imperial display modes; RPM and fuel percent remain direct. The speed slider is disabled and relabelled while live data is active.
+- Missing/invalid OBD fields display `--` rather than demo values. Route names, speed limits, distance-to-empty, trip distance and fuel-economy tokens also display `--` because the current generic OBD session does not supply them.
+- Compass and unit labels retain their own sources. Disconnecting or leaving the Activity clears the in-memory live overlay and restores the demo preview; live values are not persisted.
+- Tests cover disconnected demo restoration, live overlay, metric/US conversions, missing PID placeholders and suppression of unsupported demo tokens.
 - Details: `docs/OBD_LIVE_METER_OVERLAY.md`.
-- GitHub Actions run #199 (ID 41779229675) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41779229675
-- Final source/test commit: `6e88b97f1d51083bfb83e8e74eb899703124a13d`; artifact ID: 13298646367; APK size: 100,546 bytes; SHA-256: `126f911d256e3b21020ea9ee891b647bda0f79c8a6d8a6fcb15eef226b88e20a`.
+- GitHub Actions run #204 (ID 41779323368) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41779323368. Artifact ID: 13298123936; APK artifact ZIP size: 96,813 bytes.
+- Source/test commits: `af97513ef320c98d348958d14604b565c7a60c5f`, `2f37d6ecf445e6ccdeaaa4bfdabc814b856cd938`, `c6d0d17c200f06fc37c85bc2018c9736f27cbd3b`; duplicate mapper cleanup: `7b7824c91e80f81e20719a4b478341ffa94df7e6`, `f52efba09959fa418c97dcad6db84be442f84f0d`.
 
 ## Phase 62 — ECU-supported PID polling (CI verified)
 
