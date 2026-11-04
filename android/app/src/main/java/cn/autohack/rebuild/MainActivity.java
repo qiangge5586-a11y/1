@@ -53,6 +53,17 @@ public final class MainActivity extends Activity {
     private int[] foregroundKeyBindings = new int[ForegroundKeyMapping.SLOT_COUNT];
     private TextView[] foregroundKeyCodeLabels;
     private android.content.SharedPreferences keyMappingPreferences;
+    private ForegroundGpsController foregroundGpsController;
+    private boolean gpsCourseOptInEnabled;
+    private boolean gpsCourseAvailable;
+    private boolean gpsHasSpeed;
+    private float gpsSpeedKmh = -1f;
+    private boolean gpsHasBearing;
+    private float gpsBearingDegrees = -1f;
+    private boolean gpsHasAccuracy;
+    private float gpsAccuracyMeters = -1f;
+    private TextView gpsCourseStatus;
+    private android.widget.CheckBox gpsCourseOptInCheckbox;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -753,6 +764,19 @@ public final class MainActivity extends Activity {
                 voiceAssistantStatus.setText("Microphone permission denied; voice recognition did not start.");
             }
         }
+        if (requestCode == 7608) {
+            if (grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                startForegroundGpsCourse();
+            } else {
+                gpsCourseOptInEnabled = false;
+                getSharedPreferences("navigation_preferences", MODE_PRIVATE)
+                        .edit().putBoolean("gps_course_enabled", false).apply();
+                if (gpsCourseOptInCheckbox != null) gpsCourseOptInCheckbox.setChecked(false);
+                if (gpsCourseStatus != null)
+                    gpsCourseStatus.setText("Precise location permission denied; GPS course is off.");
+            }
+        }
     }
 
     @Override protected void onResume() {
@@ -762,11 +786,18 @@ public final class MainActivity extends Activity {
             if (!compassSensorAvailable) currentCompassHeading = "NE";
             if (compassPreviewRefresh != null) compassPreviewRefresh.run();
         }
+        if (gpsCourseOptInEnabled && foregroundGpsController != null) {
+            if (foregroundGpsController.hasFinePermission()) startForegroundGpsCourse();
+            else if (gpsCourseStatus != null)
+                gpsCourseStatus.setText("Precise location permission is no longer available.");
+        }
     }
 
     @Override protected void onPause() {
         if (deviceCompassController != null) deviceCompassController.stop();
+        if (foregroundGpsController != null) foregroundGpsController.stop();
         compassSensorAvailable = false;
+        gpsCourseAvailable = false;
         super.onPause();
     }
 
@@ -903,6 +934,60 @@ public final class MainActivity extends Activity {
             TextView compassModeStatus = new TextView(this);
             content.addView(compassModeStatus);
 
+            addSection("GPS course · explicit foreground opt-in");
+            TextView gpsNote = new TextView(this);
+            gpsNote.setText("Uses only Android GPS_PROVIDER while this Activity is visible. Precise location permission is requested only after you enable this option. No coordinates are displayed, stored, uploaded or read from the network.");
+            gpsNote.setTextSize(12);
+            content.addView(gpsNote);
+            gpsCourseStatus = new TextView(this);
+            gpsCourseStatus.setText("GPS course: off");
+            content.addView(gpsCourseStatus);
+            gpsCourseOptInCheckbox = new android.widget.CheckBox(this);
+            gpsCourseOptInCheckbox.setText("Use GPS speed/course for track-up while this app is visible");
+            android.content.SharedPreferences navigationPrefs =
+                    getSharedPreferences("navigation_preferences", MODE_PRIVATE);
+            gpsCourseOptInEnabled = navigationPrefs.getBoolean("gps_course_enabled", false);
+            gpsCourseOptInCheckbox.setChecked(gpsCourseOptInEnabled);
+            foregroundGpsController = new ForegroundGpsController(this,
+                    new ForegroundGpsController.Listener() {
+                @Override public void onGpsUpdate(boolean hasSpeed, float speedKmh,
+                        boolean hasBearing, float bearingDegrees,
+                        boolean hasAccuracy, float accuracyMeters) {
+                    gpsHasSpeed = hasSpeed;
+                    gpsSpeedKmh = speedKmh;
+                    gpsHasBearing = hasBearing;
+                    gpsBearingDegrees = bearingDegrees;
+                    gpsHasAccuracy = hasAccuracy;
+                    gpsAccuracyMeters = accuracyMeters;
+                    gpsCourseAvailable = GpsCourseFormatter.shouldUseCourse(
+                            hasBearing, hasSpeed, speedKmh);
+                    updateGpsCourseStatus();
+                    if (compassPreviewRefresh != null) compassPreviewRefresh.run();
+                }
+                @Override public void onGpsUnavailable(String reason) {
+                    gpsCourseAvailable = false;
+                    if (gpsCourseStatus != null) gpsCourseStatus.setText("GPS course: " + reason);
+                    if (compassPreviewRefresh != null) compassPreviewRefresh.run();
+                }
+            });
+            gpsCourseOptInCheckbox.setOnCheckedChangeListener((button, checked) -> {
+                gpsCourseOptInEnabled = checked;
+                navigationPrefs.edit().putBoolean("gps_course_enabled", checked).apply();
+                if (!checked) {
+                    if (foregroundGpsController != null) foregroundGpsController.stop();
+                    gpsCourseAvailable = false;
+                    gpsCourseStatus.setText("GPS course: off");
+                    if (compassPreviewRefresh != null) compassPreviewRefresh.run();
+                } else if (foregroundGpsController != null
+                        && foregroundGpsController.hasFinePermission()) {
+                    startForegroundGpsCourse();
+                } else {
+                    requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                            7608);
+                }
+            });
+            content.addView(gpsCourseOptInCheckbox);
+
             addSection("Road information (original preference options)");
             android.widget.CheckBox roadInfoEnabled = new android.widget.CheckBox(this);
             roadInfoEnabled.setText("Enable road information");
@@ -978,7 +1063,10 @@ public final class MainActivity extends Activity {
                 MeterUnitSystem unitSystem = MeterUnitSystem.fromIndex(unitSelector.getSelectedItemPosition());
                 java.util.Map<String, String> demoValues = new java.util.HashMap<>(
                         CivicMeterDemoData.forSpeed(value, unitSystem).asTokenMap());
-                demoValues.put("compass", CivicCompassOptions.compassLabel(currentCompassHeading, trackUp.isChecked()));
+                String compassHeading = trackUp.isChecked() && gpsCourseAvailable
+                        ? CompassHeading.fromAzimuth(gpsBearingDegrees) : currentCompassHeading;
+                demoValues.put("compass", CivicCompassOptions.compassLabel(
+                        compassHeading, trackUp.isChecked()));
                 java.util.List<MeterPreset.ViewSpec> visibleSpecs =
                         CivicVehicleInfoLayout.apply(specs, vehicleInfoSelection);
                 visibleSpecs = CivicCompassOptions.apply(visibleSpecs, compassEnabled.isChecked());
@@ -989,7 +1077,10 @@ public final class MainActivity extends Activity {
                         compassEnabled.isChecked(), trackUp.isChecked())
                         + (compassSensorAvailable ? " · device sensor heading"
                         : " · device compass sensor unavailable; showing demo heading")
-                        + " · track-up remains simulated without a navigation course");
+                        + (trackUp.isChecked()
+                        ? (gpsCourseAvailable ? " · GPS course active" : " · GPS course unavailable; fallback heading")
+                        : " · north-up mode")
+                        + " · GPS is foreground-only and opt-in");
                 display.setWidgets(widgets, meterColor);
                 status.setText("Preset: " + activePresetName[0] + " · "
                         + visibleSpecs.size() + " visible widgets");
@@ -1762,6 +1853,30 @@ public final class MainActivity extends Activity {
                 snapshot.fingerprint, snapshot.release, snapshot.sdk, snapshot.abis,
                 metrics.widthPixels, metrics.heightPixels, metrics.densityDpi,
                 metrics.density, includeDetailedIdentifiers);
+    }
+
+    private void startForegroundGpsCourse() {
+        if (foregroundGpsController == null) return;
+        if (!foregroundGpsController.hasFinePermission()) {
+            if (gpsCourseStatus != null)
+                gpsCourseStatus.setText("Precise location permission is required for GPS course.");
+            return;
+        }
+        if (!foregroundGpsController.start() && gpsCourseStatus != null) {
+            gpsCourseStatus.setText("GPS course is unavailable on this device.");
+        }
+    }
+
+    private void updateGpsCourseStatus() {
+        if (gpsCourseStatus == null) return;
+        String speed = GpsCourseFormatter.formatSpeed(gpsHasSpeed, gpsSpeedKmh);
+        String course = gpsHasBearing
+                ? CompassHeading.fromAzimuth(gpsBearingDegrees) : "--";
+        String accuracy = gpsHasAccuracy
+                ? " · accuracy " + Math.round(gpsAccuracyMeters) + " m" : "";
+        gpsCourseStatus.setText("GPS: " + speed + " · course " + course
+                + (gpsCourseAvailable ? " · valid for track-up" : " · waiting for stable movement")
+                + accuracy);
     }
 
     private void addVehicleDataDemo() {
