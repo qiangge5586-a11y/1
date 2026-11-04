@@ -44,6 +44,19 @@ public final class MainActivity extends Activity {
         subtitle.setPadding(0, dp(6), 0, dp(18));
         content.addView(subtitle);
 
+        android.content.SharedPreferences startupPrefs =
+                getSharedPreferences("startup_preferences", MODE_PRIVATE);
+        android.widget.CheckBox openMeterOnLaunch = new android.widget.CheckBox(this);
+        openMeterOnLaunch.setText("Open meter editor automatically on launch");
+        openMeterOnLaunch.setChecked(startupPrefs.getBoolean("open_meter_on_launch", false));
+        openMeterOnLaunch.setOnCheckedChangeListener((button, checked) ->
+                startupPrefs.edit().putBoolean("open_meter_on_launch", checked).apply());
+        content.addView(openMeterOnLaunch);
+        TextView startupNote = new TextView(this);
+        startupNote.setText("Optional local startup preference. It only scrolls to the offline meter editor; it does not start the app at device boot.");
+        startupNote.setTextSize(12);
+        content.addView(startupNote);
+
         addSection("Device capability (read-only)");
         TextView facts = new TextView(this);
         facts.setText(new CapabilitySnapshot().toDisplayString());
@@ -53,6 +66,7 @@ public final class MainActivity extends Activity {
         content.addView(facts);
 
         addSection("Feature preview");
+        int meterSectionIndex = content.getChildCount();
         addMeterPreview();
         addPresetManagement();
         addKeyMappingDemo();
@@ -70,6 +84,13 @@ public final class MainActivity extends Activity {
         safety.setTextSize(12);
         safety.setPadding(0, dp(18), 0, 0);
         content.addView(safety);
+
+        scroll.post(() -> {
+            if (startupPrefs.getBoolean("open_meter_on_launch", false)
+                    && meterSectionIndex < content.getChildCount()) {
+                scroll.smoothScrollTo(0, content.getChildAt(meterSectionIndex).getTop());
+            }
+        });
     }
 
     @Override protected void onStop() {
