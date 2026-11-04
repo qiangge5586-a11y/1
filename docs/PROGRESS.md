@@ -1,5 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 57 — Opt-in foreground GPS course (CI pending)
+
+- Added GPS_PROVIDER-only location updates after the user enables the meter setting; precise location permission is requested only on that explicit opt-in.
+- Updates run only while the Activity is foregrounded and stop in `onPause`. No network provider, coordinates display/storage/upload, contacts, background location or map-app internals.
+- GPS course drives track-up only when bearing and speed are valid and speed is at least 5 km/h; otherwise the UI falls back to device compass/sample heading.
+- GPS speed is labelled separately and is not treated as ECU/CAN/OBD vehicle speed.
+- Added tests for course threshold, missing data, invalid speeds and compass-mode descriptions.
+- Details: `docs/FOREGROUND_GPS_COURSE.md`.
+- Source/test/manifest commits: `61f23288f69cffb46fdddf5f42d411c1264f36e1`, `9dd38038a4308dd801740d66c2bf193a7d7c625f`, `3fc917a62553c09505158c4ebc99cdbfad1b49a6`, `a8fd9c3ef0a0c54e7647c7057ca248ca45e4a7bf`, `797fdfc2d777e1a5e3468455d955554457dfc757`, `cec76c845d91f0c92b1fa0f1d269e63c98e0db9d`, `79aa0c0b6d0b4eaf2aa0affac2ac40578da9472e`, `0db093ed2a39510db0e48b9afc61af7061a023fc`, `585a778571d80cb10cac5cf766a723a286f79da3`; CI pending.
+
 ## Phase 56 — Explicit return-home phrase guard (CI verified)
 
 - Replaced substring matching for `回家` with an explicit allowlist of home-navigation phrases.
