@@ -21,6 +21,11 @@ public final class ObdReadOnlyCommandsTest {
         assertFalse(ObdReadOnlyCommands.isAllowed("04"));
         assertFalse(ObdReadOnlyCommands.isAllowed("ATZ"));
         assertFalse(ObdReadOnlyCommands.isAllowed(null));
+        assertTrue(ObdReadOnlyCommands.isDiagnosticReadCommand("03"));
+        assertTrue(ObdReadOnlyCommands.isDiagnosticReadCommand(" 03 "));
+        assertFalse(ObdReadOnlyCommands.isDiagnosticReadCommand("04"));
+        assertFalse(ObdReadOnlyCommands.isDiagnosticReadCommand("010D"));
+        assertFalse(ObdReadOnlyCommands.isDiagnosticReadCommand("ATZ"));
     }
 
     @Test public void adapterSetupCommandsAreAlsoExplicitlyAllowlisted() {
