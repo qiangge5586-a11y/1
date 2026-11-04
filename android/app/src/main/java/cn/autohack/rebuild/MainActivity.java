@@ -1552,28 +1552,14 @@ public final class MainActivity extends Activity {
             case OPEN_APP:
                 java.util.List<StartupAppLauncher.Entry> apps =
                         StartupAppLauncher.listUserLaunchableApps(this);
-                String target = pendingVoiceCommand.target.toLowerCase(java.util.Locale.ROOT);
-                StartupAppLauncher.Entry match = null;
-                int matches = 0;
-                for (StartupAppLauncher.Entry app : apps) {
-                    String label = app.label.toLowerCase(java.util.Locale.ROOT);
-                    String packageName = app.packageName.toLowerCase(java.util.Locale.ROOT);
-                    if (label.equals(target) || packageName.equals(target)) {
-                        match = app;
-                        matches = 1;
-                        break;
-                    }
-                    if (label.contains(target) || packageName.contains(target)) {
-                        match = app;
-                        matches++;
-                    }
-                }
-                if (matches == 1 && match != null) {
-                    pendingVoiceAppPackage = match.packageName;
+                VoiceAppMatcher.Result match =
+                        VoiceAppMatcher.resolve(apps, pendingVoiceCommand.target);
+                if (match.status == VoiceAppMatcher.Status.UNIQUE && match.entry != null) {
+                    pendingVoiceAppPackage = match.entry.packageName;
                     voiceAssistantStatus.setText("Recognized: " + recognizedText
-                            + "\\nSuggested app: " + match.label + ". Tap Confirm to launch.");
+                            + "\\nSuggested app: " + match.entry.label + ". Tap Confirm to launch.");
                     voiceAssistantConfirm.setEnabled(true);
-                } else if (matches > 1) {
+                } else if (match.status == VoiceAppMatcher.Status.AMBIGUOUS) {
                     voiceAssistantStatus.setText("Recognized: " + recognizedText
                             + "\\nMore than one app matches. Use the startup app picker instead.");
                 } else {
