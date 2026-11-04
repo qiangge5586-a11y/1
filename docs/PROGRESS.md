@@ -1,11 +1,12 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 23 — App-scoped display controls (CI pending)
+## Phase 23 — App-scoped display controls (CI verified)
 
 - Added an opt-in keep-screen-awake switch, active only while the app screen is visible.
 - Added per-window brightness override with a system-default reset; does not alter global brightness settings.
 - Details: `docs/APP_SCOPED_DISPLAY_CONTROLS.md`.
-- Source commits: `2246f64cbfe5bf8da78956fc5871260d84f29d09` and `9b43671e9a57a1a6a25cd82779fe63b3c0490807`; CI validation pending.
+- GitHub Actions run #54 (ID 41762171192) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41762171192
+- Final source commit: `9b43671e9a57a1a6a25cd82779fe63b3c0490807`; artifact ID: 13290488008; APK size: 42,675 bytes; SHA-256: `548f22269a0b54abe559841b714ff451577e027644ccf0816a239e7ed9aaffce`.
 
 ## Phase 22 — Read-only storage diagnostics (CI verified)
 
@@ -150,7 +151,7 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 3. Manually test phases 19–22 (startup video preview, JSON file import/export, local APK installation and storage diagnostics) on a spare Android device.
 4. Identify the exact 2019 Civic factory head-unit model, firmware, Android API level and ABI; do not infer compatibility from vendor intent strings.
 5. Implement navigation-state and vehicle-data adapters only after documented interfaces are verified; until then, keep meter/navigation values clearly marked as simulated.
-6. Add remaining safe feature modules (storage diagnostics, display controls, and opt-in voice assistant) with permission explanations and tests.
+6. Add remaining safe feature modules (opt-in on-device voice assistant and screenshot/share utilities) with permission explanations and tests.
 
 
 <!-- Previous roadmap retained below for historical context. -->
