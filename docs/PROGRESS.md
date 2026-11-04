@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 64 — Standard OBD-II stored trouble-code decoder (CI pending)
+
+- Added a parser for positive Mode 03 `43` responses and standard P/C/B/U trouble-code categories.
+- Accepts compact/spaced ELM output, optional CAN header, echoed `03` and prompt suffix; preserves order, removes duplicates and skips zero padding.
+- Negative, no-data, malformed, truncated and oversized responses return no codes.
+- Parser-only: no Mode 03 request is sent, no DTC is cleared, and no ECU reset/write action is introduced. The Bluetooth allowlist remains unchanged.
+- Added unit tests for all four code categories, ordering/deduplication, padding, no-data and malformed input.
+- Details: `docs/OBD2_DTC_READ.md`.
+- Source/test commits: `32709529699f32818b30c85d572448e0f11db49e`, `971fd28b3d2c3b8edd1ec7bf7c3ed9fa990154d0`, `81349d1171a9e4064a55fb1a786181a3413ba9fe`; CI pending.
+
+
 ## Phase 63 — Live OBD values in the meter preview (CI verified)
 
 - Connected live OBD speed, RPM, coolant and fuel values to the Civic meter token map.
