@@ -84,7 +84,18 @@ public final class MainActivity extends Activity {
             MeterPreset preset = MeterPresetRepository.loadDemo(this);
             android.content.SharedPreferences prefs = getSharedPreferences("meter_editor", MODE_PRIVATE);
             meterColor = prefs.getInt("background", 0xFF263746);
-            java.util.List<MeterPreset.ViewSpec> specs = new java.util.ArrayList<>(preset.views);
+            int savedCount = Math.max(1, Math.min(32, prefs.getInt("widget_count", preset.views.size())));
+            java.util.List<MeterPreset.ViewSpec> specs = new java.util.ArrayList<>();
+            for (int i = 0; i < savedCount; i++) {
+                MeterPreset.ViewSpec base = i < preset.views.size() ? preset.views.get(i)
+                        : new MeterPreset.ViewSpec(10,10,35,20,"{rpm} rpm","center",20,"#ffffd54f");
+                specs.add(new MeterPreset.ViewSpec(prefs.getInt("left_" + i, base.left),
+                        prefs.getInt("top_" + i, base.top), prefs.getInt("width_" + i, base.width),
+                        prefs.getInt("height_" + i, base.height), prefs.getString("template_" + i, base.template),
+                        prefs.getString("align_" + i, base.alignment),
+                        prefs.getInt("size_" + i, base.textSize),
+                        prefs.getString("color_" + i, base.textColor)));
+            }
             int[] speedValue = {prefs.getInt("speed", 0)};
             MeterCanvasView display = new MeterCanvasView(this);
             LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
@@ -216,11 +227,13 @@ public final class MainActivity extends Activity {
             save.setText("Save widget layout");
             save.setOnClickListener(v -> {
                 android.content.SharedPreferences.Editor edit = prefs.edit();
+                edit.putInt("widget_count", specs.size());
                 for (int i=0;i<specs.size();i++) {
                     MeterPreset.ViewSpec s=specs.get(i);
                     edit.putInt("left_"+i,s.left).putInt("top_"+i,s.top)
                             .putInt("width_"+i,s.width).putInt("height_"+i,s.height)
-                            .putInt("size_"+i,s.textSize).putString("color_"+i,s.textColor);
+                            .putInt("size_"+i,s.textSize).putString("color_"+i,s.textColor)
+                            .putString("template_"+i,s.template).putString("align_"+i,s.alignment);
                 }
                 edit.apply(); status.setText("Saved "+specs.size()+" widgets on this device");
             });
