@@ -40,15 +40,14 @@ Rebuild a functionally equivalent, maintainable Android application based on ind
 - No remote kill switch, remote deletion of `su`, hidden signature spoofing, credential bypass, or silent system-partition modification.
 - Use documented interfaces and user-authorized integration. Do not assume that the 2019 Civic factory head unit exposes every feature found in the report.
 
-## Build and validation stages
-
-- [ ] Acquire and verify the exact original 7.6.0 APK; record SHA-256 and signer.
-- [ ] Inspect the existing `HondaHackRebuild_source.zip` archive and reconcile its files with the report.
-- [ ] Produce a reproducible APK inventory: manifest, resources, DEX classes, native libraries, permissions, components, assets.
-- [ ] Map each feature to UI, service, broadcast, preference keys, and vehicle-side dependencies.
-- [ ] Implement the safe baseline app shell and feature modules.
-- [ ] Implement read-only vehicle capability detection and mock/demo mode.
-- [ ] Implement compatible features incrementally with unit/instrumentation tests.
+- [x] Acquire and verify the exact original 7.6.0 APK; record SHA-256 and signer.
+- [x] Inspect the existing `HondaHackRebuild_source.zip` archive structure and reconcile its files with the report.
+- [x] Produce the structural APK inventory: manifest, resources, DEX classes, native libraries, permissions, components, assets.
+- [x] Map major feature families to observed components/actions and a safe rebuild traceability matrix.
+- [x] Implement the safe baseline app shell and multiple independent feature previews.
+- [x] Implement read-only capability detection and mock/demo mode.
+- [ ] Freshly review the high-value original classes using a locally available JADX source export; raw decompilation output is not currently in Library/repo.
+- [ ] Implement remaining compatible features incrementally with unit/instrumentation tests.
 - [ ] Validate on emulator, then bench hardware, then vehicle while parked.
 - [ ] Produce signed debug/release APKs and installation/rollback documentation.
 
