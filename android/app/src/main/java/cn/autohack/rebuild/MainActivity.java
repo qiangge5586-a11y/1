@@ -30,6 +30,9 @@ public final class MainActivity extends Activity {
     private android.net.Uri pendingApkUri;
     private android.speech.SpeechRecognizer speechRecognizer;
     private TextView voiceAssistantStatus;
+    private Button voiceAssistantConfirm;
+    private VoiceCommandParser.Command pendingVoiceCommand;
+    private String pendingVoiceAppPackage;
     private TextView vehicleSnapshotStatus;
     private boolean foregroundKeyMonitorEnabled;
     private android.speech.tts.TextToSpeech roadInfoTts;
@@ -1351,6 +1354,11 @@ public final class MainActivity extends Activity {
         voiceAssistantStatus = new TextView(this);
         voiceAssistantStatus.setText("Voice assistant: stopped");
         content.addView(voiceAssistantStatus);
+        voiceAssistantConfirm = new Button(this);
+        voiceAssistantConfirm.setText("Confirm suggested action");
+        voiceAssistantConfirm.setEnabled(false);
+        voiceAssistantConfirm.setOnClickListener(v -> executePendingVoiceCommand());
+        content.addView(voiceAssistantConfirm, matchWrap());
         Button start = new Button(this);
         start.setText("Start on-device voice recognition");
         start.setOnClickListener(v -> requestOnDeviceVoiceRecognition());
@@ -1408,8 +1416,12 @@ public final class MainActivity extends Activity {
                 @Override public void onResults(android.os.Bundle results) {
                     java.util.ArrayList<String> matches = results.getStringArrayList(
                             android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
-                    voiceAssistantStatus.setText(matches == null || matches.isEmpty()
-                            ? "No speech recognized." : "Recognized: " + matches.get(0));
+                    if (matches == null || matches.isEmpty()) {
+                        voiceAssistantStatus.setText("No speech recognized.");
+                        clearPendingVoiceCommand();
+                    } else {
+                        prepareVoiceCommand(matches.get(0));
+                    }
                 }
                 @Override public void onPartialResults(android.os.Bundle partialResults) {
                     java.util.ArrayList<String> matches = partialResults.getStringArrayList(
@@ -1431,6 +1443,92 @@ public final class MainActivity extends Activity {
             releaseVoiceRecognizer();
             voiceAssistantStatus.setText("Unable to start on-device recognition: " + e.getMessage());
         }
+    }
+
+    private void prepareVoiceCommand(String recognizedText) {
+        pendingVoiceCommand = VoiceCommandParser.parse(recognizedText);
+        pendingVoiceAppPackage = null;
+        voiceAssistantConfirm.setEnabled(false);
+        switch (pendingVoiceCommand.type) {
+            case SHOW_METER:
+                voiceAssistantStatus.setText("Recognized: " + recognizedText
+                        + "\\nSuggested action: show the meter editor. Tap Confirm to continue.");
+                voiceAssistantConfirm.setEnabled(true);
+                break;
+            case OPEN_APP:
+                java.util.List<StartupAppLauncher.Entry> apps =
+                        StartupAppLauncher.listUserLaunchableApps(this);
+                String target = pendingVoiceCommand.target.toLowerCase(java.util.Locale.ROOT);
+                StartupAppLauncher.Entry match = null;
+                int matches = 0;
+                for (StartupAppLauncher.Entry app : apps) {
+                    String label = app.label.toLowerCase(java.util.Locale.ROOT);
+                    String packageName = app.packageName.toLowerCase(java.util.Locale.ROOT);
+                    if (label.equals(target) || packageName.equals(target)) {
+                        match = app;
+                        matches = 1;
+                        break;
+                    }
+                    if (label.contains(target) || packageName.contains(target)) {
+                        match = app;
+                        matches++;
+                    }
+                }
+                if (matches == 1 && match != null) {
+                    pendingVoiceAppPackage = match.packageName;
+                    voiceAssistantStatus.setText("Recognized: " + recognizedText
+                            + "\\nSuggested app: " + match.label + ". Tap Confirm to launch.");
+                    voiceAssistantConfirm.setEnabled(true);
+                } else if (matches > 1) {
+                    voiceAssistantStatus.setText("Recognized: " + recognizedText
+                            + "\\nMore than one app matches. Use the startup app picker instead.");
+                } else {
+                    voiceAssistantStatus.setText("Recognized: " + recognizedText
+                            + "\\nNo matching user-installed app was found.");
+                }
+                break;
+            case NAVIGATION_UNAVAILABLE:
+                voiceAssistantStatus.setText("Recognized: " + recognizedText
+                        + "\\nNavigation voice commands are not connected to a live navigation provider.");
+                break;
+            case MUSIC_UNAVAILABLE:
+                voiceAssistantStatus.setText("Recognized: " + recognizedText
+                        + "\\nMusic voice commands are not connected to a media app.");
+                break;
+            default:
+                voiceAssistantStatus.setText("Recognized: " + recognizedText
+                        + "\\nNo supported local action was identified.");
+                break;
+        }
+    }
+
+    private void executePendingVoiceCommand() {
+        if (pendingVoiceCommand == null) return;
+        if (pendingVoiceCommand.type == VoiceCommandParser.Type.SHOW_METER) {
+            if (mainScroll != null && meterEditorAnchor != null) {
+                mainScroll.smoothScrollTo(0, meterEditorAnchor.getTop());
+                voiceAssistantStatus.setText("Opened the meter editor section.");
+            } else {
+                voiceAssistantStatus.setText("Meter editor is not available.");
+            }
+        } else if (pendingVoiceCommand.type == VoiceCommandParser.Type.OPEN_APP
+                && pendingVoiceAppPackage != null) {
+            try {
+                boolean launched = StartupAppLauncher.launch(this, pendingVoiceAppPackage);
+                voiceAssistantStatus.setText(launched
+                        ? "Launch request sent to the selected app."
+                        : "The selected app no longer has a launch activity.");
+            } catch (RuntimeException error) {
+                voiceAssistantStatus.setText("Unable to launch app: " + error.getMessage());
+            }
+        }
+        clearPendingVoiceCommand();
+    }
+
+    private void clearPendingVoiceCommand() {
+        pendingVoiceCommand = null;
+        pendingVoiceAppPackage = null;
+        if (voiceAssistantConfirm != null) voiceAssistantConfirm.setEnabled(false);
     }
 
     private void releaseVoiceRecognizer() {
