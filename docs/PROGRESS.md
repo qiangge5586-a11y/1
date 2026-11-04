@@ -11,7 +11,7 @@
 - GitHub Actions run #121 (ID 41775390619) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41775390619
 - Final source/test commit: `196e94df486f15de090f895ca0d7cd2d62191843`; artifact ID: 13296662705; APK size: 67,445 bytes; SHA-256: `b39d8511252ecb132b4dbd0473bacf80b488dd123f1290a8300aac55798e6318`.
 
-## Phase 42 — Source-derived Civic telemetry decoder (CI verified)
+## Phase 44 — Source-derived Civic telemetry decoder (CI verified)
 
 - Added a pure decoder for the original Civic meter's integer fields: speed, distance-to-empty, Trip A distance, average fuel efficiency, unit codes and coolant temperature.
 - Reproduces verified original scaling: trip/fuel tenths, large Trip A distance formatting, distance/fuel unit codes, coolant offset (-40) and Celsius/Fahrenheit conversion.
