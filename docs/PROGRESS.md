@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 52 — Confirmed public navigation handoff (CI pending)
+## Phase 52 — Confirmed public navigation handoff (CI verified)
 
 - Extended the on-device voice parser to extract a destination from navigation phrases.
 - After a separate confirmation tap, opens a public Android geo URI through the system map-app chooser.
@@ -8,7 +8,9 @@
 - “回家” remains unavailable until a home destination is explicitly configured.
 - Added parser tests and documentation.
 - Details: `docs/VOICE_NAVIGATION_HANDOFF.md`.
-- Source/test commits: `b456f1b9a1f41c0cf2bb073b17cb6d56da2db103`, `cacddead9d37004511fd4bb034f07f3a24dcefdd`, `aa67d7347bebd2a4625a776c668dd5c75d97ac6f`; CI pending.
+- The first parser update run #144 failed because the previous test still expected the old unsupported-navigation classification; the test was updated to assert destination extraction.
+- GitHub Actions run #146 (ID 41776843071) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776843071
+- Final source/test commit: `aa67d7347bebd2a4625a776c668dd5c75d97ac6f`; artifact ID: 13296863136; APK size: 82,661 bytes; SHA-256: `791a93ee6d76db180172c8679f6c6c88ce2ad6a17d4923ebcbc207b6597b2671`.
 
 ## Phase 51 — Confirmed local voice commands (CI verified)
 
