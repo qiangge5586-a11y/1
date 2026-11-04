@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 51 — Confirmed local voice commands (CI pending)
+## Phase 51 — Confirmed local voice commands (CI verified)
 
 - Added a conservative parser for local meter-editor and user-app launch phrases.
 - Recognized navigation/music phrases are explicitly marked unavailable; unknown speech creates no action.
@@ -8,7 +8,9 @@
 - Added parser unit tests and documentation.
 - No vehicle command, private Amap/QQ Music integration, media-key injection, wake word or background listening.
 - Details: `docs/VOICE_COMMAND_CONFIRMATION.md`.
-- Source/test commits: `1288e3c89aef95d395b83190387eaf1876ae72a0`, `f61e5e3dfd6ff8dc87cbc18205da8fee44c7e044`, `8108502f3a02819b26868cc6ec8148935a73602a`; CI pending.
+- The first parser-only build failed because the MainActivity section-anchor code lacked the `android.view.View` import; this was corrected before the final build.
+- GitHub Actions run #143 (ID 41776668344) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776668344
+- Final source/test commit: `8108502f3a02819b26868cc6ec8148935a73602a`; artifact ID: 13297650304; APK size: 82,118 bytes; SHA-256: `f46521bd727f0b744b119feaaf224108c86dcc4d5be5815758ddfe5df58713bf`.
 
 ## Phase 50 — Original voice assistant audit (analysis complete)
 
