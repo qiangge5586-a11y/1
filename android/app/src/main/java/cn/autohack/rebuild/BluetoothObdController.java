@@ -24,6 +24,7 @@ public final class BluetoothObdController {
         void onTelemetry(Integer speedKph, Integer engineRpm,
                 Integer coolantTempC, Integer fuelPercent);
         void onDiagnosticCodes(String command, List<String> codes);
+        void onSupportedPids(List<String> commands);
     }
 
     private static final UUID SPP_UUID =
@@ -123,6 +124,12 @@ public final class BluetoothObdController {
             java.util.List<String> supportedCommands =
                     ObdPidQueryPlan.supportedReadCommands(bitmap00, bitmap20, bitmap40);
             if (!isActive(session)) return;
+            List<String> dashboardSupported = new ArrayList<>();
+            for (int index = 0; index < ObdReadOnlyCommands.POLL_COUNT; index++) {
+                String command = ObdReadOnlyCommands.commandAt(index);
+                if (supportedCommands.contains(command)) dashboardSupported.add(command);
+            }
+            postSupportedPids(dashboardSupported, session);
             readyForCommands = true;
             postState("Connected. ELM protocol: " + protocolInfo
                     + ". Polling only ECU-advertised read-only PIDs.", session);
@@ -223,6 +230,17 @@ public final class BluetoothObdController {
             if (session == generation)
                 listener.onTelemetry(speed, rpm, coolant, fuel);
         });
+    }
+
+    private void postSupportedPids(List<String> commands, long session) {
+        if (listener != null) {
+            List<String> safeCommands = commands == null
+                    ? Collections.<String>emptyList()
+                    : Collections.unmodifiableList(new ArrayList<>(commands));
+            mainHandler.post(() -> {
+                if (session == generation) listener.onSupportedPids(safeCommands);
+            });
+        }
     }
 
     private void postDiagnosticCodes(String command, List<String> codes, long session) {
