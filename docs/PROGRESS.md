@@ -1,13 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 41 — Selectable Civic meter demo unit systems (CI pending)
+## Phase 41 — Selectable Civic meter demo unit systems (CI verified)
 
 - Added metric, km/L, US customary and imperial display-only unit modes.
 - Demo values convert speed, distance, fuel efficiency and coolant temperature; speed and field labels update from the selected mode.
 - Unit choice is saved locally in the meter editor. It never reads or changes the vehicle's own unit settings.
 - Added tests for US/imperial conversions and unit labels.
 - Details: `docs/CIVIC_METER_LAYOUT_AUDIT.md`.
-- Source/test commits: `5afd46518fd3b6e9c4cd8d574a026583812f19ad`, `7f1d8405b430cb46786ce96fc4a1a24340b00dc8`, `71a40c298f99c417854dcd290357b5d7385bdb25`, `48098bca863cd7271f527bf25da05cadba0de061`, `0b304f3d06438337f28197179d6bfd381259ac18`, `70f08615503e909281669c22bc341ec37c139e34`, `2912738168e2823c65354dab14aaf946583237cc`, `96cffa517d39a07f4aa7f5e90beed13a411632b6`; CI pending.
+- Source/test commits: `5afd46518fd3b6e9c4cd8d574a026583812f19ad`, `7f1d8405b430cb46786ce96fc4a1a24340b00dc8`, `71a40c298f99c417854dcd290357b5d7385bdb25`, `48098bca863cd7271f527bf25da05cadba0de061`, `0b304f3d06438337f28197179d6bfd381259ac18`, `70f08615503e909281669c22bc341ec37c139e34`, `2912738168e2823c65354dab14aaf946583237cc`, `96cffa517d39a07f4aa7f5e90beed13a411632b6`, `92248a0e14b025290427f0f1c6a60390ba0468c2`, `215b3a9e0705a39eab6900436899ea25667bb7b3`.
+- GitHub Actions run #109 (ID 41773638600) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41773638600
+- Final source/test commit: `215b3a9e0705a39eab6900436899ea25667bb7b3`; artifact ID: 13296365787; APK size: 63,549 bytes; SHA-256: `b6f3a19ffcb29d19179755c6ada33b6fa390e798f45b31d3f80dc3c5b49ec938`.
 
 ## Phase 40 — Explicit Civic demo units (CI verified)
 
