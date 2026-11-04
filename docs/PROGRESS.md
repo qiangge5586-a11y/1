@@ -1,11 +1,19 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 19 — Startup preferences (CI pending)
+
+- Added a disabled-by-default checkbox to open the offline meter editor when the app launches.
+- Persists the choice locally and scrolls to the editor after layout; no boot receiver, boot permission, background startup, or third-party launch.
+- Details: `docs/STARTUP_PREFERENCES.md`.
+- GitHub Actions run #44 (ID 41760539194) is queued for this commit; build verification is pending.
+
 ## Phase 18 — Explicit audio-focus management
 
 - Added a public-API audio focus controller with Android 8+ AudioFocusRequest and legacy fallback.
 - Added explicit opt-in and tap-to-request UI; displays focus grant/denial and focus-change events.
 - Manual release and Activity-stop release are implemented. No sound playback or system volume change.
-- CI validation pending; details: `docs/AUDIO_FOCUS_MANAGEMENT.md`.
+- Audio focus controller commit passed CI run #41 (ID 41760212335). The first UI commit failed because escaped newline characters were inserted into the Java source; the source was corrected in commit `0c895efb846830691a744b6c72a7b2b769beb3de`. CI run #43 (ID 41760480324) validates that correction; final UI build status pending.
+- Details: `docs/AUDIO_FOCUS_MANAGEMENT.md`.
 
 
 Last updated: 2026-11-04
