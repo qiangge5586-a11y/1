@@ -2112,7 +2112,8 @@ public final class MainActivity extends Activity {
                     return;
                 }
                 StringBuilder result = new StringBuilder("Stored trouble codes:");
-                for (String code : codes) result.append("\\n").append(code);
+                for (String code : codes) result.append("\\n").append(code)
+                        .append(" · ").append(ObdDtcDescriptions.describe(code));
                 result.append("\\nRead only · no codes were cleared.");
                 obdDtcStatus.setText(result.toString());
             }
