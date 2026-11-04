@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 28 — Foreground hardware key event monitor (CI pending)
+
+- Added an opt-in, foreground-only Android key event monitor in the steering-key simulator section.
+- Displays key name/code and passes the event through unchanged; it does not execute mapped vehicle actions.
+- Disabled by default and not persisted across launches. No accessibility service, global interception, root or Xposed hooks.
+- Steering keys are observable only if the head unit routes them to this Activity.
+- Details: `docs/FOREGROUND_KEY_EVENT_MONITOR.md`.
+- Source commit: `8910155cc952919f82ab5df619df0b7fa67711f7`; CI pending.
+
 ## Phase 27 — Vehicle telemetry adapter contract and demo (CI verified)
 
 - Added immutable, range-validated `VehicleSnapshot` for speed, RPM, fuel, coolant temperature and gear.
