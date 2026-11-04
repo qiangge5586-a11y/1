@@ -27,6 +27,24 @@ public final class VehicleSnapshot {
         this.connected = connected;
     }
 
+    public static VehicleSnapshot fromJson(String json) throws org.json.JSONException {
+        if (json == null || json.length() > 65536)
+            throw new org.json.JSONException("Vehicle snapshot JSON is empty or exceeds 64 KiB");
+        org.json.JSONObject object = new org.json.JSONObject(json);
+        String[] required = {"speedKph", "engineRpm", "fuelPercent", "coolantTempC", "gear"};
+        for (String key : required) {
+            if (!object.has(key) || object.isNull(key))
+                throw new org.json.JSONException("Missing required field: " + key);
+        }
+        return new VehicleSnapshot("Imported JSON snapshot",
+                object.getInt("speedKph"),
+                object.getInt("engineRpm"),
+                object.getInt("fuelPercent"),
+                object.getInt("coolantTempC"),
+                object.getString("gear"),
+                object.optBoolean("connected", true));
+    }
+
     public String toDisplayString() {
         if (!connected) return "Vehicle data: disconnected\nSource: " + source;
         return "Vehicle data: demo snapshot"
