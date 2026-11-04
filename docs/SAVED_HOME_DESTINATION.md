@@ -13,3 +13,10 @@
 - The app does not infer the home address.
 - The destination remains local to this app and is not automatically shared.
 - Without a saved destination, “回家” creates no action.
+
+## Phase 54 — Destination input hardening
+
+- Rejects embedded non-whitespace ISO control characters before a saved destination is stored.
+- Continues to normalize ordinary whitespace and enforce the 160-character limit.
+- Added tests for embedded NUL/control characters and newline/space normalization.
+- Saved destinations remain app-private and are used only after the explicit voice-action confirmation flow.
