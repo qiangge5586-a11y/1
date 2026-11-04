@@ -40,7 +40,9 @@ jobs:
           TARGET_SDK="$(printf '%s\n' "$BADGING" | sed -n "s/.*targetSdkVersion:'\\([^']*\\)'.*/\\1/p" | head -n 1)"
           APK_SHA256="$(sha256sum "$APK" | cut -d ' ' -f 1)"
           APK_SIZE="$(stat -c '%s' "$APK")"
+          test "$PACKAGE" = "cn.autohack.rebuild"
           test "$MIN_SDK" = "17"
+          test "$TARGET_SDK" = "28"
           {
             echo "Package: $PACKAGE"
             echo "Min SDK: $MIN_SDK"
