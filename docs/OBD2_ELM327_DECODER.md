@@ -36,6 +36,10 @@ The companion `ObdPidQueryPlan` starts with `0100`, follows only advertised `012
 - No gear position is decoded because it is not a universally supported standard Mode 01 PID.
 - Phase 58 itself adds no hardware connection. Phase 59 adds an optional paired Bluetooth SPP controller with an explicit confirmation and a fixed read-only command allowlist; see `docs/BLUETOOTH_OBD_ADAPTER.md`. The offline demo snapshot remains separate from live OBD values.
 
+## Optional Bluetooth adapter
+
+The UI can list already-paired Bluetooth devices after explicit user action and a runtime permission check. A second confirmation is required before connecting. The controller runs only while the Activity is foregrounded, disconnects on pause, and uses a fixed allowlist of ELM setup commands plus four standard read-only Mode 01 requests. It does not scan, pair, reconnect in the background or send ECU write/control commands.
+
 ## Validation
 
-Unit tests cover common PID formulas, CAN headers, ELM echo/prompt, no-data responses, truncated frames and unsupported PIDs.
+Unit tests cover common PID formulas, CAN headers, ELM echo/prompt, no-data responses, truncated frames, unsupported PIDs, query bitmap planning and strict command allowlists. Hardware validation with a real ELM327 adapter remains outstanding.
