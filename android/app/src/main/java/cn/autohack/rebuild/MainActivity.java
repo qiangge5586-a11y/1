@@ -207,7 +207,13 @@ public final class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 7605) {
             android.net.Uri uri = pendingApkUri;
+            if (uri == null) {
+                String saved = getSharedPreferences("apk_installer", MODE_PRIVATE)
+                        .getString("pending_uri", null);
+                if (saved != null) uri = android.net.Uri.parse(saved);
+            }
             pendingApkUri = null;
+            getSharedPreferences("apk_installer", MODE_PRIVATE).edit().remove("pending_uri").apply();
             if (uri != null && android.os.Build.VERSION.SDK_INT >= 26
                     && getPackageManager().canRequestPackageInstalls()) {
                 launchApkInstaller(uri);
@@ -264,6 +270,14 @@ public final class MainActivity extends Activity {
                 toast("JSON export failed: " + e.getMessage());
             }
         } else if (requestCode == 7604) {
+            int readGrant = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+            if (readGrant != 0) {
+                try {
+                    getContentResolver().takePersistableUriPermission(uri, readGrant);
+                } catch (SecurityException ignored) {}
+            }
+            getSharedPreferences("apk_installer", MODE_PRIVATE).edit()
+                    .putString("pending_uri", uri.toString()).apply();
             launchApkInstaller(uri);
         }
     }
@@ -283,6 +297,7 @@ public final class MainActivity extends Activity {
             }
             return;
         }
+        getSharedPreferences("apk_installer", MODE_PRIVATE).edit().remove("pending_uri").apply();
         android.content.Intent install = new android.content.Intent(android.content.Intent.ACTION_VIEW);
         install.setDataAndType(uri, "application/vnd.android.package-archive");
         install.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
