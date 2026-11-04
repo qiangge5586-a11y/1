@@ -122,9 +122,9 @@ public final class MainActivity extends Activity {
             Runnable update = () -> {
                 int value = speed.getProgress();
                 int rpm = 850 + value * 32;
-                String previewText = preset.name + "\\n"
+                String previewText = preset.name + "\n"
                         + spec.renderMock(value, rpm, 68, 82)
-                        + "\\nFuel: 68% · Coolant: 82 °C";
+                        + "\nFuel: 68% · Coolant: 82 °C";
                 meterDisplay.setPreview(previewText, meterTextSize, meterTextColor,
                         meterColor, left.getProgress(), top.getProgress(),
                         spec.width, spec.height);
@@ -220,7 +220,7 @@ public final class MainActivity extends Activity {
             button.setText(labels[i]);
             button.setOnClickListener(v -> {
                 status.setText("Simulated mapping action: " + action
-                        + "\\nThis does not send commands to the car.");
+                        + "\nThis does not send commands to the car.");
                 getSharedPreferences("key_mapping_demo", MODE_PRIVATE)
                         .edit().putString("last_action", action).apply();
             });
@@ -230,7 +230,7 @@ public final class MainActivity extends Activity {
 
     private void addFeature(String name, String detail) {
         TextView row = new TextView(this);
-        row.setText(name + "\\n" + detail);
+        row.setText(name + "\n" + detail);
         row.setTextSize(14);
         row.setPadding(dp(14), dp(12), dp(14), dp(12));
         row.setBackgroundColor(0xFFF5F6F7);
