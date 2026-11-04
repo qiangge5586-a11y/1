@@ -50,18 +50,18 @@ Last updated: 2026-11-04
 - Added local named preset library with save, load, rename, duplicate and delete operations.
 - Added JSON import via paste dialog and JSON export through Android share sheet.
 - Added validation and unit tests for preset library operations and invalid imports.
-- Implementation committed; CI build and unit tests must pass before marking this phase build-verified.
+- GitHub Actions run #40 (ID 41759036834) passed with unit tests and debug APK assembly.
 - Details: `docs/NAMED_METER_PRESET_LIBRARY.md`.
 
 
-## Phase 16 — Multi-widget meter editor
+## Phase 16 — Multi-widget meter editor (CI verified)
 
 - Parser now validates every views[] entry (up to 32 widgets), not just the first.
 - Preview canvas draws all widgets and supports per-widget alignment, size and color.
 - Editor supports selecting, adding and removing widgets, plus editing x/y position and width/height using normalized coordinates.
 - Save widget layout stores widget count and widget settings locally; reset restores the bundled preset.
-- Unit tests now cover multiple widgets, rendering, alignment and invalid layouts.
-- This phase is implemented in source; the new CI run is pending and must pass before the updated APK is marked build-verified.
+- Unit tests cover multiple widgets, rendering, alignment and invalid layouts.
+- GitHub Actions run #36 (ID 41757049880) passed with the multi-widget editor and tests included.
 
 Details: MULTI_WIDGET_METER_EDITOR.md (phase notes are also recorded in this progress entry).  
 Repository: https://github.com/qiangge5586-a11y/1  
@@ -127,12 +127,13 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 
 ## Next steps
 
-1. Obtain readable JADX output and review high-value original methods (MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService).
-2. Obtain readable JADX output and review high-value original methods (MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService).
-2. Add named preset save/rename/duplicate/import/export.
-3. Add safe, explicit audio-focus controls and startup preferences using public Android APIs.
-4. Build a compatibility matrix for the exact Civic factory head-unit model/firmware.
-5. Test the debug APK on a spare Android device first; do not modify the live vehicle head unit until a documented interface and rollback path are confirmed.
+1. Obtain a fresh readable JADX source export and review high-value original classes: MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService. The supplied report is valuable evidence, but its raw source tree is not currently stored in Library or GitHub.
+2. Complete CI verification of phase 21 (local APK installer), then test document-provider selection and system confirmation on a spare Android device.
+3. Manually test phases 19–20 (startup video preview and JSON file import/export) with multiple Android document providers.
+4. Identify the exact 2019 Civic factory head-unit model, firmware, Android API level and ABI; do not infer compatibility from vendor intent strings.
+5. Implement navigation-state and vehicle-data adapters only after documented interfaces are verified; until then, keep meter/navigation values clearly marked as simulated.
+6. Add remaining safe feature modules (storage diagnostics, display controls, and opt-in voice assistant) with permission explanations and tests.
+
 
 <!-- Previous roadmap retained below for historical context. -->
 
