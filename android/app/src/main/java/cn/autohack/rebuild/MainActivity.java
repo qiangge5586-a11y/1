@@ -2004,6 +2004,15 @@ public final class MainActivity extends Activity {
         readPermanent.setOnClickListener(v ->
                 confirmDiagnosticRead(ObdReadOnlyCommands.PERMANENT_DTC, "permanent"));
         content.addView(readPermanent, matchWrap());
+
+        Button copyReport = new Button(this);
+        copyReport.setText("Copy OBD-II diagnostic report");
+        copyReport.setOnClickListener(v -> copyObdDiagnosticReport());
+        content.addView(copyReport, matchWrap());
+        TextView reportPrivacy = new TextView(this);
+        reportPrivacy.setText("The report is copied locally only. It excludes VIN, adapter MAC address and location; review it before sharing.");
+        reportPrivacy.setTextSize(12);
+        content.addView(reportPrivacy);
     }
 
     private void confirmDiagnosticRead(String command, String category) {
@@ -2020,6 +2029,26 @@ public final class MainActivity extends Activity {
                     }
                 })
                 .show();
+    }
+
+    private void copyObdDiagnosticReport() {
+        String generatedAt = new java.text.SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss", java.util.Locale.ROOT)
+                .format(new java.util.Date());
+        String report = ObdDiagnosticReport.build(generatedAt,
+                obdStatus == null ? null : obdStatus.getText().toString(),
+                obdPidStatus == null ? null : obdPidStatus.getText().toString(),
+                obdDtcStatus == null ? null : obdDtcStatus.getText().toString());
+        android.content.ClipboardManager clipboard =
+                (android.content.ClipboardManager) getSystemService(
+                        android.content.Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) {
+            toast("Clipboard is unavailable on this device.");
+            return;
+        }
+        clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                "OBD-II diagnostic report", report));
+        toast("Diagnostic report copied. Review it before sharing.");
     }
 
     private void choosePairedObdAdapter() {
