@@ -10,6 +10,8 @@ public final class ObdReadOnlyCommands {
     public static final String BITMAP_20 = "0120";
     public static final String BITMAP_40 = "0140";
     public static final String STORED_DTC = "03";
+    public static final String PENDING_DTC = "07";
+    public static final String PERMANENT_DTC = "0A";
     public static final int POLL_COUNT = 4;
 
     private ObdReadOnlyCommands() {}
@@ -36,8 +38,10 @@ public final class ObdReadOnlyCommands {
 
     /** Explicitly requested standard Mode 03 read of stored diagnostic codes. */
     public static boolean isDiagnosticReadCommand(String command) {
-        return command != null && STORED_DTC.equals(
-                command.trim().toUpperCase(java.util.Locale.ROOT));
+        if (command == null) return false;
+        String normalized = command.trim().toUpperCase(java.util.Locale.ROOT);
+        return STORED_DTC.equals(normalized) || PENDING_DTC.equals(normalized)
+                || PERMANENT_DTC.equals(normalized);
     }
 
     public static boolean isAdapterSetupCommand(String command) {
