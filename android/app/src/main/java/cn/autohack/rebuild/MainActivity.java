@@ -1487,9 +1487,15 @@ public final class MainActivity extends Activity {
                             + "\\nNo matching user-installed app was found.");
                 }
                 break;
+            case NAVIGATE_TO:
+                voiceAssistantStatus.setText("Recognized: " + recognizedText
+                        + "\\nSuggested destination: " + pendingVoiceCommand.target
+                        + ". Tap Confirm to open a public map-app chooser.");
+                voiceAssistantConfirm.setEnabled(true);
+                break;
             case NAVIGATION_UNAVAILABLE:
                 voiceAssistantStatus.setText("Recognized: " + recognizedText
-                        + "\\nNavigation voice commands are not connected to a live navigation provider.");
+                        + "\\nThis navigation shortcut needs a saved destination or a live navigation provider.");
                 break;
             case MUSIC_UNAVAILABLE:
                 voiceAssistantStatus.setText("Recognized: " + recognizedText
@@ -1520,6 +1526,18 @@ public final class MainActivity extends Activity {
                         : "The selected app no longer has a launch activity.");
             } catch (RuntimeException error) {
                 voiceAssistantStatus.setText("Unable to launch app: " + error.getMessage());
+            }
+        } else if (pendingVoiceCommand.type == VoiceCommandParser.Type.NAVIGATE_TO) {
+            android.content.Intent mapIntent = new android.content.Intent(
+                    android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("geo:0,0?q="
+                            + android.net.Uri.encode(pendingVoiceCommand.target)));
+            if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                startActivity(android.content.Intent.createChooser(mapIntent,
+                        "Choose navigation app"));
+                voiceAssistantStatus.setText("Opened the public map-app chooser.");
+            } else {
+                voiceAssistantStatus.setText("No installed app can handle a map destination.");
             }
         }
         clearPendingVoiceCommand();
