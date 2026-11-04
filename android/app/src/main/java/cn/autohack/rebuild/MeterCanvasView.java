@@ -44,12 +44,12 @@ public final class MeterCanvasView extends View {
         float scaleY = getHeight() / 100f;
         RectF bounds = new RectF(left * scaleX, top * scaleY,
                 (left + width) * scaleX, (top + height) * scaleY);
-        panelPaint.setColor(0x332FFFFFF);
+        panelPaint.setColor(0x332A2A2A);
         canvas.drawRoundRect(bounds, 12f, 12f, panelPaint);
 
         textPaint.setColor(textColor);
         textPaint.setTextSize(textSizeSp * getResources().getDisplayMetrics().scaledDensity);
-        String[] lines = text.split("\\n");
+        String[] lines = text.split("\n");
         Paint.FontMetrics metrics = textPaint.getFontMetrics();
         float lineHeight = metrics.descent - metrics.ascent;
         float firstBaseline = bounds.centerY()
