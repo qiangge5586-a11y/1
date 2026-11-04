@@ -78,6 +78,7 @@ public final class MainActivity extends Activity {
         addLocalApkInstaller();
         addAudioFocusDemo();
         addStorageDiagnostics();
+        addDisplayControls();
 
         Button refresh = new Button(this);
         refresh.setText("Refresh device information");
@@ -324,8 +325,17 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @Override protected void onStart() {
+        super.onStart();
+        if (getSharedPreferences("display_preferences", MODE_PRIVATE)
+                .getBoolean("keep_screen_awake", false)) {
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+    }
+
     @Override protected void onStop() {
         if (audioFocusController != null) audioFocusController.release();
+        getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onStop();
     }
 
@@ -673,6 +683,71 @@ public final class MainActivity extends Activity {
         label.setTextSize(14);
         content.addView(label);
         content.addView(control, matchWrap());
+    }
+
+    private void addDisplayControls() {
+        addSection("Display controls · app window only");
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("display_preferences", MODE_PRIVATE);
+
+        android.widget.CheckBox keepAwake = new android.widget.CheckBox(this);
+        keepAwake.setText("Keep screen awake while this app is visible");
+        keepAwake.setChecked(prefs.getBoolean("keep_screen_awake", false));
+        keepAwake.setOnCheckedChangeListener((button, checked) -> {
+            prefs.edit().putBoolean("keep_screen_awake", checked).apply();
+            if (checked) getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            else getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        });
+        content.addView(keepAwake);
+
+        android.widget.CheckBox useSystem = new android.widget.CheckBox(this);
+        useSystem.setText("Use system screen brightness");
+        useSystem.setChecked(prefs.getBoolean("use_system_brightness", true));
+        content.addView(useSystem);
+
+        TextView brightnessLabel = new TextView(this);
+        SeekBar brightness = new SeekBar(this);
+        brightness.setMax(100);
+        brightness.setProgress(Math.max(1, Math.min(100, prefs.getInt("app_brightness", 70))));
+        content.addView(brightnessLabel);
+        content.addView(brightness, matchWrap());
+        brightness.setEnabled(!useSystem.isChecked());
+        Runnable apply = () -> {
+            boolean system = useSystem.isChecked();
+            brightness.setEnabled(!system);
+            int value = brightness.getProgress();
+            applyWindowBrightness(value, system);
+            brightnessLabel.setText(system ? "Brightness: system default"
+                    : "App window brightness: " + value + "%");
+            prefs.edit().putBoolean("use_system_brightness", system)
+                    .putInt("app_brightness", value).apply();
+        };
+        useSystem.setOnCheckedChangeListener((button, checked) -> apply.run());
+        brightness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int value, boolean fromUser) {
+                if (fromUser && !useSystem.isChecked()) apply.run();
+            }
+            @Override public void onStartTrackingTouch(SeekBar bar) {}
+            @Override public void onStopTrackingTouch(SeekBar bar) {}
+        });
+        Button reset = new Button(this);
+        reset.setText("Restore system brightness");
+        reset.setOnClickListener(v -> useSystem.setChecked(true));
+        content.addView(reset, matchWrap());
+        apply.run();
+
+        TextView note = new TextView(this);
+        note.setText("Brightness affects only this app's window. Keep-awake is active only while this screen is visible and is cleared when the app screen stops. No global display setting is changed.");
+        note.setTextSize(12);
+        content.addView(note);
+    }
+
+    private void applyWindowBrightness(int value, boolean useSystem) {
+        android.view.WindowManager.LayoutParams attributes = getWindow().getAttributes();
+        attributes.screenBrightness = useSystem
+                ? android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                : Math.max(1, Math.min(100, value)) / 100.0f;
+        getWindow().setAttributes(attributes);
     }
 
     private void addStorageDiagnostics() {
