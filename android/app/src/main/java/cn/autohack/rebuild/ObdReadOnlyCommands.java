@@ -44,6 +44,14 @@ public final class ObdReadOnlyCommands {
                 || PERMANENT_DTC.equals(normalized);
     }
 
+
+    /** Read-only ELM adapter identification commands; they do not alter protocol settings. */
+    public static boolean isAdapterInfoCommand(String command) {
+        if (command == null) return false;
+        String normalized = command.trim().toUpperCase(java.util.Locale.ROOT);
+        return "ATDP".equals(normalized) || "ATDPN".equals(normalized);
+    }
+
     public static boolean isAdapterSetupCommand(String command) {
         if (command == null) return false;
         String normalized = command.trim().toUpperCase(java.util.Locale.ROOT);
