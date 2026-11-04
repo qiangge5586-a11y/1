@@ -103,7 +103,11 @@ public final class BluetoothObdController {
             sendCommand(input, output, "ATH0", 1500, session);
             sendCommand(input, output, "ATSP0", 1500, session);
             if (!isActive(session)) return;
-            postState("Connected. Discovering ECU-supported standard PIDs…", session);
+            String protocolDescription = sendCommand(input, output, "ATDP", 1200, session);
+            String protocolNumber = sendCommand(input, output, "ATDPN", 1200, session);
+            String protocolInfo = ElmProtocolInfo.describe(protocolDescription, protocolNumber);
+            postState("Connected. Detected ELM protocol: " + protocolInfo
+                    + ". Discovering ECU-supported standard PIDs…", session);
             String bitmap00 = sendCommand(input, output,
                     ObdReadOnlyCommands.BITMAP_00, 1800, session);
             String bitmap20 = null;
@@ -120,7 +124,8 @@ public final class BluetoothObdController {
                     ObdPidQueryPlan.supportedReadCommands(bitmap00, bitmap20, bitmap40);
             if (!isActive(session)) return;
             readyForCommands = true;
-            postState("Connected. Polling only ECU-advertised read-only PIDs.", session);
+            postState("Connected. ELM protocol: " + protocolInfo
+                    + ". Polling only ECU-advertised read-only PIDs.", session);
 
             while (isActive(session) && activeSocket.isConnected()) {
                 Integer speed = supportedCommands.contains(ObdReadOnlyCommands.SPEED)
@@ -184,6 +189,7 @@ public final class BluetoothObdController {
             throws IOException, InterruptedException {
         if (!ObdReadOnlyCommands.isAllowed(command)
                 && !ObdReadOnlyCommands.isAdapterSetupCommand(command)
+                && !ObdReadOnlyCommands.isAdapterInfoCommand(command)
                 && !ObdReadOnlyCommands.isDiagnosticReadCommand(command)) {
             throw new SecurityException("Only allowlisted adapter setup and read-only PIDs are permitted");
         }
