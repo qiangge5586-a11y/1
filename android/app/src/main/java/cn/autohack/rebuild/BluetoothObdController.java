@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,6 +23,7 @@ public final class BluetoothObdController {
         void onState(String state);
         void onTelemetry(Integer speedKph, Integer engineRpm,
                 Integer coolantTempC, Integer fuelPercent);
+        void onStoredCodes(List<String> codes);
     }
 
     private static final UUID SPP_UUID =
@@ -29,6 +33,8 @@ public final class BluetoothObdController {
     private volatile boolean stopped = true;
     private volatile long generation;
     private volatile BluetoothSocket socket;
+    private volatile boolean readyForCommands;
+    private volatile boolean dtcReadRequested;
     private ExecutorService worker;
 
     public BluetoothObdController(Listener listener) {
@@ -43,6 +49,8 @@ public final class BluetoothObdController {
         }
         final long session = generation;
         stopped = false;
+        readyForCommands = false;
+        dtcReadRequested = false;
         worker = Executors.newSingleThreadExecutor();
         worker.execute(() -> runSession(device, session));
     }
@@ -50,6 +58,8 @@ public final class BluetoothObdController {
     public synchronized void disconnect() {
         generation++;
         stopped = true;
+        readyForCommands = false;
+        dtcReadRequested = false;
         BluetoothSocket active = socket;
         socket = null;
         closeSocket(active);
@@ -57,6 +67,13 @@ public final class BluetoothObdController {
             worker.shutdownNow();
             worker = null;
         }
+    }
+
+    /** Queues one Mode 03 read on the session worker; never performs socket I/O on the UI thread. */
+    public synchronized boolean requestStoredCodes() {
+        if (stopped || !readyForCommands || dtcReadRequested) return false;
+        dtcReadRequested = true;
+        return true;
     }
 
     private boolean isActive(long session) {
@@ -99,6 +116,7 @@ public final class BluetoothObdController {
             java.util.List<String> supportedCommands =
                     ObdPidQueryPlan.supportedReadCommands(bitmap00, bitmap20, bitmap40);
             if (!isActive(session)) return;
+            readyForCommands = true;
             postState("Connected. Polling only ECU-advertised read-only PIDs.", session);
 
             while (isActive(session) && activeSocket.isConnected()) {
@@ -112,6 +130,12 @@ public final class BluetoothObdController {
                         ? decode(ObdReadOnlyCommands.FUEL_LEVEL, input, output, session, 3) : null;
                 if (!isActive(session)) break;
                 postTelemetry(speed, rpm, coolant, fuel, session);
+                if (dtcReadRequested && isActive(session)) {
+                    dtcReadRequested = false;
+                    String dtcResponse = sendCommand(input, output,
+                            ObdReadOnlyCommands.STORED_DTC, 2500, session);
+                    postStoredCodes(ObdDtcDecoder.decodeStoredCodes(dtcResponse), session);
+                }
                 Thread.sleep(1000L);
             }
         } catch (InterruptedException ignored) {
@@ -122,6 +146,8 @@ public final class BluetoothObdController {
         } finally {
             if (session == generation) {
                 stopped = true;
+                readyForCommands = false;
+                dtcReadRequested = false;
                 if (socket == activeSocket) socket = null;
                 postState(terminalState, session);
             }
@@ -146,7 +172,8 @@ public final class BluetoothObdController {
             String command, int timeoutMs, long session)
             throws IOException, InterruptedException {
         if (!ObdReadOnlyCommands.isAllowed(command)
-                && !ObdReadOnlyCommands.isAdapterSetupCommand(command)) {
+                && !ObdReadOnlyCommands.isAdapterSetupCommand(command)
+                && !ObdReadOnlyCommands.isDiagnosticReadCommand(command)) {
             throw new SecurityException("Only allowlisted adapter setup and read-only PIDs are permitted");
         }
         if (!isActive(session)) return "";
@@ -179,6 +206,17 @@ public final class BluetoothObdController {
             if (session == generation)
                 listener.onTelemetry(speed, rpm, coolant, fuel);
         });
+    }
+
+    private void postStoredCodes(List<String> codes, long session) {
+        if (listener != null) {
+            List<String> safeCodes = codes == null
+                    ? Collections.<String>emptyList()
+                    : Collections.unmodifiableList(new ArrayList<>(codes));
+            mainHandler.post(() -> {
+                if (session == generation) listener.onStoredCodes(safeCodes);
+            });
+        }
     }
 
     private static String safeMessage(Exception error) {
