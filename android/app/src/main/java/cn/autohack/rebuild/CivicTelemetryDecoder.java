@@ -27,19 +27,19 @@ public final class CivicTelemetryDecoder {
             int coolantRaw,
             int coolantUnit) {
         Map<String, String> result = new LinkedHashMap<>();
-        String distanceUnit = distanceUnit(tripDistanceUnit);
+        String distanceUnit = tripDistanceUnit < 0 ? "unknown" : distanceUnit(tripDistanceUnit);
         result.put("speed", speed < 0 ? "--" : Integer.toString(speed));
         result.put("distance_to_empty", distanceToEmpty < 0
                 ? "---" : distanceToEmpty + " " + distanceUnit);
-        result.put("trip_a_distance", scaledTenth(tripDistanceRaw, distanceUnit, true));
-        result.put("avg_fuel_eff", scaledTenth(averageFuelRaw, fuelUnit(averageFuelUnit), false));
+        result.put("trip_a_distance", tripDistanceUnit < 0 ? "--.-"\n                : scaledTenth(tripDistanceRaw, distanceUnit, true));
+        result.put("avg_fuel_eff", averageFuelUnit < 0 ? "--.-"\n                : scaledTenth(averageFuelRaw, fuelUnit(averageFuelUnit), false));
         result.put("avg_fuel_eff_a", scaledTenth(tripAAverageFuelRaw,
                 fuelUnit(tripAAverageFuelUnit)));
         result.put("coolant", coolant(coolantRaw, coolantUnit));
         result.put("distance_unit", distanceUnit);
-        result.put("avg_fuel_eff_unit", fuelUnit(averageFuelUnit));
-        result.put("avg_fuel_eff_a_unit", fuelUnit(tripAAverageFuelUnit));
-        result.put("coolant_unit", coolantUnit == 0 ? "°C" : "°F");
+        result.put("avg_fuel_eff_unit", averageFuelUnit < 0 ? "unknown" : fuelUnit(averageFuelUnit));
+        result.put("avg_fuel_eff_a_unit", tripAAverageFuelUnit < 0 ? "unknown" : fuelUnit(tripAAverageFuelUnit));
+        result.put("coolant_unit", coolantUnit < 0 ? "unknown" : coolantUnit == 0 ? "°C" : "°F");
         return Collections.unmodifiableMap(result);
     }
 
@@ -66,7 +66,7 @@ public final class CivicTelemetryDecoder {
     }
 
     private static String coolant(int raw, int unit) {
-        if (raw == MISSING) return "---";
+        if (raw == MISSING || unit < 0) return "---";
         int celsius = raw - 40;
         if (unit == 0) return celsius + " °C";
         int fahrenheit = Math.round((celsius * 9.0f / 5.0f) + 32.0f);
