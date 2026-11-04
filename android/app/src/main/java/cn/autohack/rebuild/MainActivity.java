@@ -1027,6 +1027,33 @@ public final class MainActivity extends Activity {
             });
             content.addView(launch, matchWrap());
         }
+
+        addSection("Navigation state adapter · demo only");
+        TextView demoNote = new TextView(this);
+        demoNote.setText("This is a local sample route used to verify the navigation display contract. It is not reading Amap, Baidu, GPS, or the vehicle.");
+        demoNote.setTextSize(12);
+        content.addView(demoNote);
+        MockNavigationStateProvider demoProvider = new MockNavigationStateProvider();
+        TextView navigationState = new TextView(this);
+        navigationState.setText(demoProvider.getCurrentState().toDisplayString());
+        navigationState.setTextSize(14);
+        navigationState.setPadding(dp(12), dp(12), dp(12), dp(12));
+        navigationState.setBackgroundColor(0xFFF5F6F7);
+        content.addView(navigationState, matchWrap());
+
+        Button nextState = new Button(this);
+        nextState.setText("Advance demo navigation state");
+        nextState.setOnClickListener(v ->
+                navigationState.setText(demoProvider.advance().toDisplayString()));
+        content.addView(nextState, matchWrap());
+
+        Button resetState = new Button(this);
+        resetState.setText("Reset demo route");
+        resetState.setOnClickListener(v -> {
+            demoProvider.reset();
+            navigationState.setText(demoProvider.getCurrentState().toDisplayString());
+        });
+        content.addView(resetState, matchWrap());
     }
 
     private void addKeyMappingDemo() {
