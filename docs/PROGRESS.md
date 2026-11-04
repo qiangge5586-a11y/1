@@ -1,10 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 75 — Chinese wording coverage expansion (CI pending)
+## Phase 75 — Chinese wording coverage expansion (CI verified)
 
 - Expanded the central translation dictionary to cover import/export errors, APK installer guidance, speech engine states, audio-focus states, preset management, preview failures, Bluetooth and GPS permission states, and storage diagnostics.
 - Technical protocol identifiers and user-entered names remain unchanged.
-- Source commit: `ee1c8af6c34d8048d7acfba74cd8390db440bc4c`; CI pending.
+- Source commit: `ee1c8af6c34d8048d7acfba74cd8390db440bc4c`.
+- GitHub Actions run #277 (ID 41791308087) passed `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, APK metadata checks and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41791308087.
+- Artifact ID 13303084009; APK 122,674 bytes; SHA-256 `42a48847f5ef4a613e0ad1df54202c5ac94e83233d7dee1a6c5749ca18a52432`; package `cn.autohack.rebuild`; minSdk 17; targetSdk 28; debug-signed.
+- The current APK is saved in the active build workspace as `/mnt/data/本田黑科技_简体中文版_API17_debug.apk`.
 - This is a wording-coverage follow-up to Phase 74; physical device visual QA remains outstanding.
 
 
