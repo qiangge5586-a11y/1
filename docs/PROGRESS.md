@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 71 — Android API 17 compatibility target (CI pending)
+
+- Original APK manifest in the Library reverse-engineering report specifies `minSdk=17`; rebuild previously used `minSdk=23`, excluding Android 4.2.2 / API 17.
+- Lowered rebuild `minSdk` to 17 while retaining compileSdk 35 and targetSdk 28.
+- Added `lintDebug` to CI alongside unit tests and debug APK assembly to surface unguarded newer Android API calls.
+- Related 10th-gen Civic research reports Android 4.2.2 for most 2016–2021 head units but warns that some lower trims differ; 2019 China-market 劲动 trim sources confirm CarPlay/basic display context but do not confirm its exact OS or APK sideload capability.
+- This is an API compatibility target, not a claim that the user's exact factory screen accepts APK installation. Physical API 17/19 head-unit testing remains outstanding.
+- Details: `docs/ANDROID_API17_COMPATIBILITY.md`.
+- Source/workflow commits: `33f8f20a1e986fd1ffd20a34c8932f4b0e99ec04`, `297689c0647f3d23067e2446c2cae50250354620`; CI pending.
+
+
 ## Phase 70 — Local OBD diagnostic report copy (CI verified)
 
 - Added a user-initiated clipboard report containing current connection/protocol status, ECU-supported dashboard PIDs and the latest DTC result.
