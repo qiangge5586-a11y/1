@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 62 — ECU-supported PID polling (CI pending)
+
+- Integrated `ObdPidQueryPlan` into the paired Bluetooth ELM327 session.
+- On connection, the client queries `0100`, and requests `0120` / `0140` only when the previous bitmap advertises that extension.
+- The live polling loop now intersects ECU-advertised PIDs with the strict allowlist for speed, RPM, coolant and fuel level. Unsupported or missing bitmap entries are not polled and display as unavailable.
+- Added only the three explicit read-only bitmap commands to the command allowlist; no other Mode 01 PID, DTC clearing, actuator control, coding, reset or ECU write command is enabled.
+- Added allowlist tests for the bitmap discovery commands and explicit rejection of other PIDs.
+- Details: `docs/OBD2_READ_ONLY_QUERY_PLAN.md`.
+- Source/test commits: `ba985889100cacc10c0d01e21db28727b7c27260`, `d56e4a5f3cb9b0c874680a60309d67d4cf16dc6c`, `6dfa46d181f3907158eb271955b15ec725666c0e`; CI pending.
+
+
 ## Phase 61 — Paired Bluetooth ELM327 read-only session (CI verified)
 
 - Added a manual picker for already-paired Bluetooth devices; no discovery scan or automatic pairing is performed.
@@ -21,17 +32,6 @@
 - GitHub Actions run #187 (ID 41778681165) passed the combined unit-test suite, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41778681165
 - Source/test commits: `16df646bf778bfcb172e90c019fcd64453c47cad`, `01b8f839046646e755db9795acf88dc999d58377`; final verification includes allowlist hardening commits `31f5998d8898501dd8dfc909da69c1b096f1ca34`, `6f1720a83a56cc21136dbdffd853a8cba263691c`.
 
-
-## Phase 59 — Paired Bluetooth ELM327 read-only adapter (CI pending)
-
-- Added manual selection from already paired Bluetooth Classic devices; no scanning or in-app pairing.
-- Android 12+ connect permission is requested only after the user opens the paired-device picker.
-- Connect requires a second confirmation. The controller uses a secure SPP socket and a worker thread, then disconnects in `onPause`; no background reconnect.
-- Adapter setup commands are allowlisted (`ATZ`, `ATE0`, `ATL0`, `ATS0`, `ATH0`, `ATSP0`). The only ECU requests are four fixed Mode 01 read PIDs: `010D`, `010C`, `0105`, `012F`.
-- No clear-DTC, control, coding, actuator, write or enhanced Honda PID commands. Live values stay in memory and remain separate from the demo snapshot.
-- Added strict command allowlist tests. Physical adapter/vehicle validation remains pending.
-- Details: `docs/BLUETOOTH_OBD_ADAPTER.md` and `docs/OBD2_ELM327_DECODER.md`.
-- Source/test/manifest commits: `bb62179baf7af7ba5960d6b3c08bb68801ca481a`, `35de13ec1dfb95016b103cd458da18173f3669e0`, `e3b89d782b6b769684f3822483ac25ebebfb50f4`, `31f5998d8898501dd8dfc909da69c1b096f1ca34`, `6f1720a83a56cc21136dbdffd853a8cba263691c`, `bf93b0515bdd82a82c3ae3868293472ae079c9d9`, `1c5810e039543ccef97d4f48ecc4165fa0224900`; CI pending.
 
 ## Phase 59 — Deterministic spoken app matching (CI verified)
 
