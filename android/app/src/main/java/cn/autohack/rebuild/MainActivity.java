@@ -70,19 +70,31 @@ public final class MainActivity extends Activity {
         addStartupAudioSettings();
 
         addSection("Device capability (read-only)");
-        String capabilityReport = buildHeadUnitCompatibilityReport();
         TextView facts = new TextView(this);
-        facts.setText(capabilityReport);
         facts.setTextSize(14);
         facts.setPadding(dp(14), dp(12), dp(14), dp(12));
         facts.setBackgroundColor(0xFFEFF2F5);
+        android.widget.CheckBox includeIdentifiers = new android.widget.CheckBox(this);
+        includeIdentifiers.setText("Include detailed firmware identifiers in report");
+        includeIdentifiers.setChecked(false);
+        Runnable refreshCompatibilityReport = () ->
+                facts.setText(buildHeadUnitCompatibilityReport(includeIdentifiers.isChecked()));
+        refreshCompatibilityReport.run();
         content.addView(facts);
+        content.addView(includeIdentifiers);
+        includeIdentifiers.setOnCheckedChangeListener((button, checked) ->
+                refreshCompatibilityReport.run());
+        TextView privacyNote = new TextView(this);
+        privacyNote.setText("Detailed identifiers such as board, hardware and build fingerprint are excluded by default. Review the report before sharing it.");
+        privacyNote.setTextSize(12);
+        content.addView(privacyNote);
         Button shareCapabilities = new Button(this);
         shareCapabilities.setText("Share head-unit compatibility report");
         shareCapabilities.setOnClickListener(v -> {
             android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SEND);
             intent.setType("text/plain");
-            intent.putExtra(android.content.Intent.EXTRA_TEXT, capabilityReport);
+            intent.putExtra(android.content.Intent.EXTRA_TEXT,
+                    buildHeadUnitCompatibilityReport(includeIdentifiers.isChecked()));
             startActivity(android.content.Intent.createChooser(intent, "Share compatibility report"));
         });
         content.addView(shareCapabilities, matchWrap());
@@ -1234,13 +1246,15 @@ public final class MainActivity extends Activity {
         content.addView(choose, matchWrap());
     }
 
-    private String buildHeadUnitCompatibilityReport() {
+    private String buildHeadUnitCompatibilityReport(boolean includeDetailedIdentifiers) {
         android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
         getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
-        return new CapabilitySnapshot().toDisplayString()
-                + "\\nDisplay: " + metrics.widthPixels + " × " + metrics.heightPixels
-                + "\\nDensity: " + metrics.densityDpi + " dpi"
-                + "\\nScreen density scale: " + metrics.density;
+        CapabilitySnapshot snapshot = new CapabilitySnapshot();
+        return CompatibilityReportFormatter.format(snapshot.manufacturer, snapshot.model,
+                snapshot.device, snapshot.product, snapshot.board, snapshot.hardware,
+                snapshot.fingerprint, snapshot.release, snapshot.sdk, snapshot.abis,
+                metrics.widthPixels, metrics.heightPixels, metrics.densityDpi,
+                metrics.density, includeDetailedIdentifiers);
     }
 
     private void addVehicleDataDemo() {
