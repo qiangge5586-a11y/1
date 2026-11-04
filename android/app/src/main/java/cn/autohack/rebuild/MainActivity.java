@@ -636,6 +636,7 @@ public final class MainActivity extends Activity {
                         prefs.getString("color_" + i, base.textColor)));
             }
             int[] speedValue = {prefs.getInt("speed", 0)};
+            String[] activePresetName = {preset.name};
             MeterCanvasView display = new MeterCanvasView(this);
             meterDisplay = display;
             LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
@@ -678,7 +679,7 @@ public final class MainActivity extends Activity {
                     widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(demoValues)));
                 }
                 display.setWidgets(widgets, meterColor);
-                status.setText("Preset: " + preset.name + " · " + specs.size() + " widgets");
+                status.setText("Preset: " + activePresetName[0] + " · " + specs.size() + " widgets");
                 speedLabel.setText("Demo speed: " + value + " km/h");
                 MeterPreset.ViewSpec s = specs.get(selected[0]);
                 sizeLabel.setText("Text size: " + s.textSize + " sp");
@@ -737,6 +738,7 @@ public final class MainActivity extends Activity {
                     MeterPreset civic = MeterPresetRepository.loadCivicDemo(this);
                     specs.clear();
                     specs.addAll(civic.views);
+                    activePresetName[0] = civic.name;
                     String[] updated = new String[specs.size()];
                     for (int i = 0; i < updated.length; i++) updated[i] = "Widget " + (i + 1);
                     selector.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, updated));
