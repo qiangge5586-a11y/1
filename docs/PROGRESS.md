@@ -1,8 +1,18 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 18 — Explicit audio-focus management
+
+- Added a public-API audio focus controller with Android 8+ AudioFocusRequest and legacy fallback.
+- Added explicit opt-in and tap-to-request UI; displays focus grant/denial and focus-change events.
+- Manual release and Activity-stop release are implemented. No sound playback or system volume change.
+- CI validation pending; details: `docs/AUDIO_FOCUS_MANAGEMENT.md`.
+
+
 Last updated: 2026-11-04
 
 ## Phase 17 — Named meter preset management
+
+- GitHub Actions run #40 (ID 41759036834) completed successfully, including unit tests and debug APK assembly: https://github.com/qiangge5586-a11y/1/actions/runs/41759036834
 
 - Added local named preset library with save, load, rename, duplicate and delete operations.
 - Added JSON import via paste dialog and JSON export through Android share sheet.
