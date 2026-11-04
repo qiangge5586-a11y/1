@@ -38,6 +38,21 @@ public final class VoiceCommandParserTest {
         assertEquals("火车站", VoiceCommandParser.parse("前往火车站！").target);
     }
 
+    @Test public void requiresAnExplicitReturnHomePhrase() {
+        assertEquals(VoiceCommandParser.Type.NAVIGATE_HOME,
+                VoiceCommandParser.parse("我想回家").type);
+        assertEquals(VoiceCommandParser.Type.NAVIGATE_HOME,
+                VoiceCommandParser.parse("请带我回家。").type);
+        assertEquals(VoiceCommandParser.Type.NAVIGATE_HOME,
+                VoiceCommandParser.parse("导航回家").type);
+        assertEquals(VoiceCommandParser.Type.UNKNOWN,
+                VoiceCommandParser.parse("我不回家").type);
+        assertEquals(VoiceCommandParser.Type.UNKNOWN,
+                VoiceCommandParser.parse("不要回家").type);
+        assertEquals(VoiceCommandParser.Type.UNKNOWN,
+                VoiceCommandParser.parse("回家吗").type);
+    }
+
     @Test public void rejectsEmptyGenericAndOverlongNavigationTargets() {
         assertEquals(VoiceCommandParser.Type.UNKNOWN,
                 VoiceCommandParser.parse("导航到").type);
