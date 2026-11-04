@@ -85,14 +85,10 @@ public final class BluetoothObdController {
             postState("Connected. Reading standard OBD-II PIDs only.", session);
 
             while (isActive(session) && activeSocket.isConnected()) {
-                Integer speed = decode(ObdReadOnlyCommands.POLL_COMMANDS[0],
-                        input, output, 0x0D, 1, session, 0);
-                Integer rpm = decode(ObdReadOnlyCommands.POLL_COMMANDS[1],
-                        input, output, 0x0C, 2, session, 1);
-                Integer coolant = decode(ObdReadOnlyCommands.POLL_COMMANDS[2],
-                        input, output, 0x05, 1, session, 2);
-                Integer fuel = decode(ObdReadOnlyCommands.POLL_COMMANDS[3],
-                        input, output, 0x2F, 1, session, 3);
+                Integer speed = decode(ObdReadOnlyCommands.commandAt(0), input, output, session, 0);
+                Integer rpm = decode(ObdReadOnlyCommands.commandAt(1), input, output, session, 1);
+                Integer coolant = decode(ObdReadOnlyCommands.commandAt(2), input, output, session, 2);
+                Integer fuel = decode(ObdReadOnlyCommands.commandAt(3), input, output, session, 3);
                 if (!isActive(session)) break;
                 postTelemetry(speed, rpm, coolant, fuel, session);
                 Thread.sleep(1000L);
@@ -113,8 +109,7 @@ public final class BluetoothObdController {
     }
 
     private Integer decode(String command, InputStream input, OutputStream output,
-            int pid, int byteCount, long session, int field)
-            throws IOException, InterruptedException {
+            long session, int field) throws IOException, InterruptedException {
         if (!ObdReadOnlyCommands.isAllowed(command)) return null;
         String response = sendCommand(input, output, command, 1800, session);
         switch (field) {
