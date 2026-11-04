@@ -1,12 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 21 — User-confirmed local APK installer (CI pending)
+## Phase 21 — User-confirmed local APK installer (CI verified)
 
 - Added document-picker selection for a local APK and handoff to Android's package installer.
 - Android 8+ unknown-source authorization is handled through the system app-specific setting; installation itself remains a system-confirmed user action.
 - No silent install, root, background install, or APK download is implemented.
 - Details: `docs/LOCAL_APK_INSTALLER.md`.
-- Source and manifest commits are in `f5e31c2236ebe23c2d74b2604f8607d5bada7a29` and `c610b515a787b6833ff57d8f0659109f07c08d1d`; CI validation pending.
+- The selected document URI is persisted across the system settings handoff when the provider supports persistable grants.
+- GitHub Actions run #51 (ID 41761942861) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41761942861
+- Commit: `f5f42fde32f929ac527563033af101bacc441564`; artifact ID: 13291475493; APK size: 39,348 bytes; SHA-256: `6ca723b650f900f3530dbeb7cb886926faa3c1ab1bf1aa0a0573a89a6e3ec7b0`.
 
 ## Phase 20 — Direct JSON preset file import and export (CI verified)
 
@@ -128,7 +130,7 @@ The workflow completed with conclusion `success`; test/build and artifact-upload
 ## Next steps
 
 1. Obtain a fresh readable JADX source export and review high-value original classes: MyService, MeterActivity, NavigatorActivity, RemapKeysActivity, StartupActivity and VoiceAssistantService. The supplied report is valuable evidence, but its raw source tree is not currently stored in Library or GitHub.
-2. Complete CI verification of phase 21 (local APK installer), then test document-provider selection and system confirmation on a spare Android device.
+2. Manually test local APK selection and system installation confirmation on a spare Android device; CI verifies compilation, not an actual package installation.
 3. Manually test phases 19–20 (startup video preview and JSON file import/export) with multiple Android document providers.
 4. Identify the exact 2019 Civic factory head-unit model, firmware, Android API level and ABI; do not infer compatibility from vendor intent strings.
 5. Implement navigation-state and vehicle-data adapters only after documented interfaces are verified; until then, keep meter/navigation values clearly marked as simulated.
