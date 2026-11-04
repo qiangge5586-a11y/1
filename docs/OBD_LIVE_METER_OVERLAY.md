@@ -11,11 +11,11 @@ When a user connects a paired ELM327 adapter and the controller reports a live s
 
 Speed is converted from km/h to mph for US/Imperial display modes. Coolant is converted from °C to °F in those modes. RPM and fuel percent are shown directly.
 
-If an advertised PID is unsupported or its response is missing, that field displays `--`; the demo value is not substituted while the live OBD session is active. On disconnect or when the Activity pauses, the overlay is cleared and the preview returns to clearly labelled demo values.
+If an advertised PID is unsupported or its response is missing, that field displays `--`; the demo value is not substituted while the live OBD session is active. Non-OBD route/distance/economy tokens are also replaced with `--` so sample values are not mistaken for live data. On disconnect or when the Activity pauses, the overlay is cleared and the preview returns to clearly labelled demo values.
 
-## Fields that remain demo
+## Fields unavailable in live mode
 
-Road names, turn instructions, route distance, ETA, compass unless a separate sensor/GPS source is active, trip/fuel-economy values and gear remain demo/sample fields. Standard OBD PIDs do not provide a universally available gear position or navigation route.
+Road names, turn instructions, route distance, ETA, distance-to-empty, trip distance, fuel economy, speed limits, camera distance and gear display `--` while the live OBD overlay is active. Standard generic OBD PIDs in this session do not provide those values. Compass remains sourced from the device sensor/GPS course when separately enabled.
 
 ## Validation
 
