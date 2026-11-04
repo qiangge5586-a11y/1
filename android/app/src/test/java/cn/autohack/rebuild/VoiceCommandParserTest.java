@@ -17,9 +17,12 @@ public final class VoiceCommandParserTest {
         assertEquals("高德地图", command.target);
     }
 
-    @Test public void marksNavigationAndMusicAsUnavailable() {
-        assertEquals(VoiceCommandParser.Type.NAVIGATION_UNAVAILABLE,
-                VoiceCommandParser.parse("导航到公司").type);
+    @Test public void parsesDestinationHandoffAndMarksUnsupportedShortcuts() {
+        VoiceCommandParser.Command destination = VoiceCommandParser.parse("导航到公司");
+        assertEquals(VoiceCommandParser.Type.NAVIGATE_TO, destination.type);
+        assertEquals("公司", destination.target);
+        assertEquals(VoiceCommandParser.Type.NAVIGATE_TO,
+                VoiceCommandParser.parse("带我去机场").type);
         assertEquals(VoiceCommandParser.Type.NAVIGATION_UNAVAILABLE,
                 VoiceCommandParser.parse("回家").type);
         assertEquals(VoiceCommandParser.Type.MUSIC_UNAVAILABLE,
