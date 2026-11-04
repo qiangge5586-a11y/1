@@ -9,7 +9,7 @@ This matrix separates behavior observed in the 7.6.0 reverse-engineering report 
 | Instrument cluster / meters | MeterActivity; SHOW_METER/UPDATE_METER; meter JSON; nine shared vehicle data files | `feature-meter` + `vehicle-adapter` | Demo data provider and read-only adapter interface; no guessed CAN/AIDL protocol | Partial — multi-widget mock-data editor and named JSON presets; no vehicle telemetry |
 | Navigation presentation | START_NAVI/STOP_NAVI/UPDATE_NAVI broadcasts; AMap/Waze hooks | `feature-navigation` | Receive documented app intents only; show simulated navigation state if no supported interface | Partial — detects/launches supported installed navigation apps; no nav-state bridge |
 | Navigation audio ducking | REQUEST_AUDIO_FOCUS/ABANDON_AUDIO_FOCUS; music_volume_decrease | `feature-audio` | Android AudioFocus API with bounded, reversible volume behavior | Partial — explicit transient audio focus; no volume manipulation |
-| Local APK install | AppsInstallLocalActivity | `feature-app-manager` | Use Android package installer user confirmation; no silent installs | Planned |
+| Local APK install | AppsInstallLocalActivity | `feature-app-manager` | Use Android package installer user confirmation; no silent installs | Partial — local document picker and system-confirmed install handoff; device validation pending |
 | Online app catalog | AppsInstallOnlineActivity; appstore endpoint | `feature-app-catalog` | Omit until endpoint authenticity and privacy are established; use user-provided APKs first | Deferred |
 | SD-card write repair | SdcardActivity; platform.xml overwrite | `feature-storage-diagnostics` | Diagnose scoped-storage/permission state and explain supported settings; never overwrite platform.xml | Planned |
 | Startup / autorun manager | StartupActivity; AutorunManagerActivity; boot receiver | `feature-startup-manager` | List this app's own startup behavior and supported app settings only; no force-stop/disable of system apps | Planned |
@@ -24,7 +24,7 @@ This matrix separates behavior observed in the 7.6.0 reverse-engineering report 
 
 ## Current implementation status
 
-The safe baseline now includes the app shell, read-only capability snapshot, multi-widget offline meter editor, four-key mapping simulator, navigation-app launcher, named preset management with JSON paste/share and direct document import/export, explicit audio-focus controls, startup editor preference, and local video selection/preview. These are independent safe implementations, not proof of full feature parity. GitHub Actions runs #47 and #48 verify the startup-video and direct JSON file workflows respectively. The vehicle adapter, physical steering-key capture, navigation-state bridge, voice assistant, app manager, and vehicle telemetry remain unimplemented or deferred.
+The safe baseline now includes the app shell, read-only capability snapshot, multi-widget offline meter editor, four-key mapping simulator, navigation-app launcher, user-confirmed local APK installer, named preset management with JSON paste/share and direct document import/export, explicit audio-focus controls, startup editor preference, and local video selection/preview. These are independent safe implementations, not proof of full feature parity. GitHub Actions runs #47 and #48 verify the startup-video and direct JSON file workflows respectively. The vehicle adapter, physical steering-key capture, navigation-state bridge, voice assistant, app manager, and vehicle telemetry remain unimplemented or deferred.
 
 ## Common architecture
 
