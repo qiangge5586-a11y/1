@@ -23,6 +23,8 @@ public final class MainActivity extends Activity {
     private AudioFocusController audioFocusController;
     private TextView audioFocusStatus;
     private TextView startupVideoStatus;
+    private TextView startupAudioStatus;
+    private android.media.MediaPlayer startupAudioPlayer;
     private String pendingPresetExportName;
     private android.net.Uri pendingApkUri;
     private android.speech.SpeechRecognizer speechRecognizer;
@@ -64,6 +66,7 @@ public final class MainActivity extends Activity {
         startupNote.setTextSize(12);
         content.addView(startupNote);
         addStartupVideoSettings();
+        addStartupAudioSettings();
 
         addSection("Device capability (read-only)");
         String capabilityReport = buildHeadUnitCompatibilityReport();
@@ -182,6 +185,157 @@ public final class MainActivity extends Activity {
         content.addView(explanation);
     }
 
+    private void addStartupAudioSettings() {
+        addSection("Startup audio · local preview");
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("startup_preferences", MODE_PRIVATE);
+        android.widget.CheckBox enabled = new android.widget.CheckBox(this);
+        enabled.setText("Enable local startup-audio preview controls");
+        enabled.setChecked(prefs.getBoolean("startup_audio_enabled", false));
+        enabled.setOnCheckedChangeListener((button, checked) ->
+                prefs.edit().putBoolean("startup_audio_enabled", checked).apply());
+        content.addView(enabled);
+
+        startupAudioStatus = new TextView(this);
+        updateStartupAudioStatus(prefs.getString("startup_audio_uri", null));
+        content.addView(startupAudioStatus);
+
+        Button choose = new Button(this);
+        choose.setText("Choose local audio");
+        choose.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(
+                    android.content.Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+            intent.setType("audio/*");
+            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    | android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            startActivityForResult(intent, 7607);
+        });
+        content.addView(choose, matchWrap());
+
+        Button preview = new Button(this);
+        preview.setText("Preview selected audio");
+        preview.setOnClickListener(v -> {
+            if (!enabled.isChecked()) {
+                toast("Enable local audio preview first");
+                return;
+            }
+            String value = prefs.getString("startup_audio_uri", null);
+            if (value == null || value.isEmpty()) {
+                toast("Choose an audio file first");
+                return;
+            }
+            startStartupAudioPreview(android.net.Uri.parse(value));
+        });
+        content.addView(preview, matchWrap());
+
+        Button stop = new Button(this);
+        stop.setText("Stop audio preview");
+        stop.setOnClickListener(v -> {
+            releaseStartupAudioPlayer();
+            startupAudioStatus.setText("Audio preview stopped.");
+        });
+        content.addView(stop, matchWrap());
+
+        Button clear = new Button(this);
+        clear.setText("Clear selected audio");
+        clear.setOnClickListener(v -> {
+            releaseStartupAudioPlayer();
+            String value = prefs.getString("startup_audio_uri", null);
+            if (value != null) {
+                try {
+                    getContentResolver().releasePersistableUriPermission(
+                            android.net.Uri.parse(value),
+                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (SecurityException ignored) {}
+            }
+            prefs.edit().remove("startup_audio_uri").apply();
+            updateStartupAudioStatus(null);
+        });
+        content.addView(clear, matchWrap());
+
+        TextView explanation = new TextView(this);
+        explanation.setText("Audio is played only after you tap Preview and is stopped when the app screen stops. No boot playback, automatic playback, network upload, or background service is used.");
+        explanation.setTextSize(12);
+        content.addView(explanation);
+    }
+
+    private void updateStartupAudioStatus(String value) {
+        if (startupAudioStatus == null) return;
+        if (value == null || value.isEmpty()) {
+            startupAudioStatus.setText("Selected audio: none");
+            return;
+        }
+        String displayName = value;
+        try (android.database.Cursor cursor = getContentResolver().query(
+                android.net.Uri.parse(value),
+                new String[]{android.provider.OpenableColumns.DISPLAY_NAME},
+                null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int column = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                if (column >= 0) displayName = cursor.getString(column);
+            }
+        } catch (RuntimeException ignored) {}
+        startupAudioStatus.setText("Selected audio: " + displayName);
+    }
+
+    private void startStartupAudioPreview(android.net.Uri uri) {
+        releaseStartupAudioPlayer();
+        if (audioFocusController == null || !audioFocusController.requestTransientFocus(change ->
+                runOnUiThread(() -> {
+                    if (change == android.media.AudioManager.AUDIOFOCUS_LOSS
+                            || change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                        releaseStartupAudioPlayer();
+                        if (startupAudioStatus != null)
+                            startupAudioStatus.setText("Audio preview stopped because audio focus was lost.");
+                    }
+                }))) {
+            startupAudioStatus.setText("Audio focus was not granted; playback did not start.");
+            return;
+        }
+        try {
+            android.media.MediaPlayer player = new android.media.MediaPlayer();
+            startupAudioPlayer = player;
+            player.setAudioAttributes(new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build());
+            player.setDataSource(this, uri);
+            player.setOnPreparedListener(prepared -> {
+                if (startupAudioPlayer == prepared) {
+                    prepared.start();
+                    startupAudioStatus.setText("Playing local audio preview…");
+                }
+            });
+            player.setOnCompletionListener(completed -> {
+                if (startupAudioPlayer == completed) {
+                    releaseStartupAudioPlayer();
+                    startupAudioStatus.setText("Audio preview completed.");
+                }
+            });
+            player.setOnErrorListener((failed, what, extra) -> {
+                releaseStartupAudioPlayer();
+                startupAudioStatus.setText("Unable to play this audio file ("
+                        + what + "/" + extra + ").");
+                return true;
+            });
+            player.prepareAsync();
+            startupAudioStatus.setText("Preparing local audio preview…");
+        } catch (java.io.IOException | RuntimeException error) {
+            releaseStartupAudioPlayer();
+            startupAudioStatus.setText("Unable to open audio: " + error.getMessage());
+        }
+    }
+
+    private void releaseStartupAudioPlayer() {
+        if (startupAudioPlayer != null) {
+            try { startupAudioPlayer.stop(); } catch (RuntimeException ignored) {}
+            try { startupAudioPlayer.release(); } catch (RuntimeException ignored) {}
+            startupAudioPlayer = null;
+        }
+        if (audioFocusController != null) audioFocusController.release();
+    }
+
     private void updateStartupVideoStatus(String value) {
         if (startupVideoStatus == null) return;
         if (value == null || value.isEmpty()) {
@@ -246,7 +400,19 @@ public final class MainActivity extends Activity {
             return;
         }
         android.net.Uri uri = data.getData();
-        if (requestCode == 7601) {
+        if (requestCode == 7607) {
+            try {
+                int granted = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+                if (granted == 0) throw new SecurityException("Read permission was not granted");
+                getContentResolver().takePersistableUriPermission(uri, granted);
+            } catch (SecurityException ignored) {
+                toast("The document provider did not grant persistent access. Choose a file from a supported provider.");
+                return;
+            }
+            getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
+                    .putString("startup_audio_uri", uri.toString()).apply();
+            updateStartupAudioStatus(uri.toString());
+        } else if (requestCode == 7601) {
             try {
                 int granted = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
                 if (granted == 0) throw new SecurityException("Read permission was not granted");
@@ -364,6 +530,7 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onStop() {
+        releaseStartupAudioPlayer();
         releaseVoiceRecognizer();
         if (audioFocusController != null) audioFocusController.release();
         getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
