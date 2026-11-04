@@ -158,6 +158,32 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void addKeyMappingDemo() {
+        addSection("Steering key mapping · simulator");
+        TextView status = new TextView(this);
+        status.setText("No physical buttons are intercepted. Tap a sample action below.");
+        status.setTextSize(14);
+        status.setPadding(dp(12), dp(12), dp(12), dp(12));
+        status.setBackgroundColor(0xFFF5F6F7);
+        content.addView(status);
+        String[] labels = {"Volume +", "Next track", "Show meter", "Voice assistant"};
+        String[] actions = {"Increase demo volume", "Skip to next demo track",
+                "Toggle demo meter visibility", "Open voice assistant demo"};
+        for (int i = 0; i < labels.length; i++) {
+            final String action = actions[i];
+            Button button = new Button(this);
+            button.setText(labels[i]);
+            button.setOnClickListener(v -> {
+                status.setText("Simulated mapping action: " + action
+                        + "\nThis does not send commands to the car.");
+                getSharedPreferences("key_mapping_demo", MODE_PRIVATE)
+                        .edit().putString("last_action", action).apply();
+            });
+            content.addView(button, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
+    }
+
     private void addFeature(String name, String detail) {
         TextView row = new TextView(this);
         row.setText(name + "\n" + detail);
