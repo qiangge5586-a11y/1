@@ -13,6 +13,16 @@ import java.nio.charset.StandardCharsets;
 public final class MeterPresetRepository {
     private MeterPresetRepository() {}
 
+    public static MeterPreset loadCivicDemo(Context context) throws IOException, JSONException {
+        try (InputStream input = context.getAssets().open("civic_meter_demo.json");
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int count;
+            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            return MeterPreset.fromJson(new String(output.toByteArray(), StandardCharsets.UTF_8));
+        }
+    }
+
     public static MeterPreset loadDemo(Context context) throws IOException, JSONException {
         try (InputStream input = context.getAssets().open("meter_presets.json");
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
