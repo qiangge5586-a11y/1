@@ -1,13 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 43 — Civic compass and track-up options (CI pending)
+## Phase 43 — Civic compass and track-up options (CI verified)
 
 - Added the original compass enable (default on) and dependent track-up (default off) controls.
 - Disabling compass hides the compass widget, disables track-up and resets it off.
 - Track-up changes only the static sample compass label; UI explicitly states orientation is simulated and no compass sensor/GPS/live map is connected.
 - Added tests for visibility, label behavior and demo-only status.
 - Details: `docs/CIVIC_COMPASS_OPTIONS.md`.
-- Source/test commits: `472ec6aa4504210a2b90ab6a937019a1c4145fa2`, `59fdd6dd0967cfea49bc2d1b1faddbe8bebdc20e`, `7de1068d4f4b1bf60936c468473350ef59bbfadd`; CI pending.
+- Corrected an earlier Civic telemetry decoder line-break/formatting issue in commit `196e94df486f15de090f895ca0d7cd2d62191843`; the final build includes the fix.
+- GitHub Actions run #121 (ID 41775390619) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41775390619
+- Final source/test commit: `196e94df486f15de090f895ca0d7cd2d62191843`; artifact ID: 13296662705; APK size: 67,445 bytes; SHA-256: `b39d8511252ecb132b4dbd0473bacf80b488dd123f1290a8300aac55798e6318`.
 
 ## Phase 42 — Source-derived Civic telemetry decoder (CI verified)
 
