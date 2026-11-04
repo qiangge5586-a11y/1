@@ -5,6 +5,11 @@
         android:allowBackup="true"
         android:label="HondaHack Rebuild"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <provider
+            android:name=".MeterPreviewFileProvider"
+            android:authorities="cn.autohack.rebuild.meterpreview"
+            android:exported="false"
+            android:grantUriPermissions="true" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
