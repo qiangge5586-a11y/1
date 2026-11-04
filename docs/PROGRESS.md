@@ -8,7 +8,8 @@
 - TTS is stopped and released with the Activity. No background announcement service or copyrighted bundled voice assets are used.
 - Added tests for road display and spoken sample strings.
 - Details: `docs/ROAD_INFORMATION_OFFLINE_VOICE_DEMO.md`.
-- Source/test commits: `5d75a64b5a2185f256af2e603de67666e724cf23`, `4a34e43b37400aa63ff9abc3644072958f239a34`, `767f5d7370a1e8e6a6d8f4030b072c1ac42ecf06`; CI pending.
+- GitHub Actions run #124 (ID 41775670071) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41775670071
+- Final source/test commit: `767f5d7370a1e8e6a6d8f4030b072c1ac42ecf06`; artifact ID: 13296029067; APK size: 69,984 bytes; SHA-256: `235df14287b6d4fd22ba9ecf44ae8e318e3245267588f17aed70c2b7a6a69b43`.
 
 ## Phase 43 — Civic compass and track-up options (CI verified)
 
