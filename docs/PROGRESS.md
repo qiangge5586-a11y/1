@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 35 — Reproducible original APK decompilation setup (CI pending)
+
+- Added a pinned JADX 1.5.3 CLI script with SHA-256 checks for both the original APK and official decompiler release archive.
+- Requires WSL2 ext4 output because the APK contains case-colliding class names such as `d.java` and `D.java`; warns/refuses a case-insensitive workspace by default.
+- Keeps the original APK unchanged, avoids overwriting existing decompilation output, and records analysis metadata.
+- Added a CI shell-syntax validation step. Actual full decompilation remains pending local WSL2 execution; no claim of fresh method-level review yet.
+- Details: `docs/JADX_REPRODUCIBLE_DECOMPILATION.md`.
+- Script/workflow commits: `a9e83a1fa31c3163e6e4b722e74672ccb8488d4f`, `b183b2bdf5c0bf64fbff823f185ac912c47ac420`; CI pending.
+
 ## Phase 34 — Privacy-aware compatibility report (CI verified)
 
 - Fixed the compatibility report so the default includes manufacturer/model, Android/API, ABIs and display metrics.
