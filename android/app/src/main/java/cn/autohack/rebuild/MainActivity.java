@@ -22,6 +22,7 @@ public final class MainActivity extends Activity {
     private int meterTextColor = 0xFFFFFFFF;
     private AudioFocusController audioFocusController;
     private TextView audioFocusStatus;
+    private TextView startupVideoStatus;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -56,6 +57,7 @@ public final class MainActivity extends Activity {
         startupNote.setText("Optional local startup preference. It only scrolls to the offline meter editor; it does not start the app at device boot.");
         startupNote.setTextSize(12);
         content.addView(startupNote);
+        addStartupVideoSettings();
 
         addSection("Device capability (read-only)");
         TextView facts = new TextView(this);
@@ -91,6 +93,128 @@ public final class MainActivity extends Activity {
                 scroll.smoothScrollTo(0, content.getChildAt(meterSectionIndex).getTop());
             }
         });
+    }
+
+    private void addStartupVideoSettings() {
+        addSection("Startup video · local preview");
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("startup_preferences", MODE_PRIVATE);
+        android.widget.CheckBox enabled = new android.widget.CheckBox(this);
+        enabled.setText("Enable local startup-video preview controls");
+        enabled.setChecked(prefs.getBoolean("startup_video_enabled", false));
+        enabled.setOnCheckedChangeListener((button, checked) ->
+                prefs.edit().putBoolean("startup_video_enabled", checked).apply());
+        content.addView(enabled);
+
+        startupVideoStatus = new TextView(this);
+        updateStartupVideoStatus(prefs.getString("startup_video_uri", null));
+        content.addView(startupVideoStatus);
+
+        Button choose = new Button(this);
+        choose.setText("Choose local video");
+        choose.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(
+                    android.content.Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+            intent.setType("video/*");
+            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    | android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            startActivityForResult(intent, 7601);
+        });
+        content.addView(choose, matchWrap());
+
+        Button preview = new Button(this);
+        preview.setText("Preview selected video");
+        preview.setOnClickListener(v -> {
+            if (!enabled.isChecked()) {
+                toast("Enable local video preview first");
+                return;
+            }
+            String value = prefs.getString("startup_video_uri", null);
+            if (value == null || value.isEmpty()) {
+                toast("Choose a video first");
+                return;
+            }
+            showStartupVideoPreview(android.net.Uri.parse(value));
+        });
+        content.addView(preview, matchWrap());
+
+        Button clear = new Button(this);
+        clear.setText("Clear selected video");
+        clear.setOnClickListener(v -> {
+            String value = prefs.getString("startup_video_uri", null);
+            if (value != null) {
+                try {
+                    getContentResolver().releasePersistableUriPermission(
+                            android.net.Uri.parse(value),
+                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (SecurityException ignored) {}
+            }
+            prefs.edit().remove("startup_video_uri").apply();
+            updateStartupVideoStatus(null);
+        });
+        content.addView(clear, matchWrap());
+
+        TextView explanation = new TextView(this);
+        explanation.setText("The selected video is stored as a local document reference. Playback starts only after you tap Preview. No boot receiver, automatic playback, network access, or background service is used.");
+        explanation.setTextSize(12);
+        content.addView(explanation);
+    }
+
+    private void updateStartupVideoStatus(String value) {
+        if (startupVideoStatus == null) return;
+        if (value == null || value.isEmpty()) {
+            startupVideoStatus.setText("Selected video: none");
+            return;
+        }
+        android.net.Uri uri = android.net.Uri.parse(value);
+        String displayName = value;
+        try (android.database.Cursor cursor = getContentResolver().query(
+                uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME},
+                null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int column = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                if (column >= 0) displayName = cursor.getString(column);
+            }
+        } catch (RuntimeException ignored) {}
+        startupVideoStatus.setText("Selected video: " + displayName);
+    }
+
+    private void showStartupVideoPreview(android.net.Uri uri) {
+        android.widget.VideoView video = new android.widget.VideoView(this);
+        android.widget.MediaController controls = new android.widget.MediaController(this);
+        controls.setAnchorView(video);
+        video.setMediaController(controls);
+        video.setVideoURI(uri);
+        LinearLayout frame = new LinearLayout(this);
+        frame.setOrientation(LinearLayout.VERTICAL);
+        frame.addView(video, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(220)));
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setTitle("Local video preview")
+                .setView(frame)
+                .setPositiveButton("Close", null)
+                .create();
+        dialog.setOnDismissListener(ignored -> video.stopPlayback());
+        dialog.show();
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode,
+            android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != 7601 || resultCode != RESULT_OK || data == null
+                || data.getData() == null) return;
+        android.net.Uri uri = data.getData();
+        try {
+            getContentResolver().takePersistableUriPermission(uri,
+                    data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (SecurityException ignored) {
+            toast("The document provider did not grant persistent access. Choose a file from a supported provider.");
+            return;
+        }
+        getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
+                .putString("startup_video_uri", uri.toString()).apply();
+        updateStartupVideoStatus(uri.toString());
     }
 
     @Override protected void onStop() {
