@@ -1,6 +1,11 @@
 package cn.autohack.rebuild;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,7 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +34,7 @@ public final class BluetoothObdController {
 
     private static final UUID SPP_UUID =
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private final Context appContext;
     private final Listener listener;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private volatile boolean stopped = true;
@@ -38,7 +44,8 @@ public final class BluetoothObdController {
     private volatile String pendingDiagnosticCommand;
     private ExecutorService worker;
 
-    public BluetoothObdController(Listener listener) {
+    public BluetoothObdController(Context context, Listener listener) {
+        this.appContext = context.getApplicationContext();
         this.listener = listener;
     }
 
@@ -46,6 +53,12 @@ public final class BluetoothObdController {
         disconnect();
         if (device == null) {
             postState("No Bluetooth adapter selected.", generation);
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && appContext.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                        != PackageManager.PERMISSION_GRANTED) {
+            postState("OBD-II Bluetooth connect permission is missing.", generation);
             return;
         }
         final long session = generation;
@@ -84,6 +97,7 @@ public final class BluetoothObdController {
         return !stopped && session == generation;
     }
 
+    @SuppressLint("MissingPermission")
     private void runSession(BluetoothDevice device, long session) {
         BluetoothSocket activeSocket = null;
         String terminalState = "OBD-II adapter disconnected.";
