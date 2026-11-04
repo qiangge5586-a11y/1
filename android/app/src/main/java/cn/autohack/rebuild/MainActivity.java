@@ -52,6 +52,7 @@ public final class MainActivity extends Activity {
 
         addSection("Feature preview");
         addMeterPreview();
+        addPresetManagement();
         addKeyMappingDemo();
         addNavigationDemo();
         addFeature("Audio focus", "No audio changes until explicitly enabled");
@@ -249,6 +250,114 @@ public final class MainActivity extends Activity {
             addFeature("Instrument meter", "Demo preset unavailable: " + error.getMessage());
         }
     }
+
+
+    private void addPresetManagement() {
+        addSection("Named meter presets");
+        Button save = new Button(this);
+        save.setText("Save current layout as named preset");
+        save.setOnClickListener(v -> askPresetName("Preset name", name -> {
+            try {
+                String json = currentPresetJson(name);
+                android.content.SharedPreferences p = getSharedPreferences("named_meter_presets", MODE_PRIVATE);
+                p.edit().putString("library", PresetLibrary.put(p.getString("library", ""), name, json)).apply();
+                toast("Saved: " + name);
+            } catch (Exception e) { toast("Save failed: " + e.getMessage()); }
+        }));
+        content.addView(save, matchWrap());
+        Button manage = new Button(this);
+        manage.setText("Manage / export saved presets");
+        manage.setOnClickListener(v -> managePresets());
+        content.addView(manage, matchWrap());
+        Button importButton = new Button(this);
+        importButton.setText("Import preset JSON (paste)");
+        importButton.setOnClickListener(v -> {
+            android.widget.EditText field = new android.widget.EditText(this);
+            field.setHint("Paste a JSON preset");
+            field.setMinLines(4);
+            new android.app.AlertDialog.Builder(this).setTitle("Import preset")
+                .setView(field).setNegativeButton("Cancel", null)
+                .setPositiveButton("Import", (d,w) -> {
+                    try {
+                        String json = PresetLibrary.importPreset(field.getText().toString());
+                        org.json.JSONObject item = new org.json.JSONObject(json);
+                        String name = item.optString("name", "Imported");
+                        android.content.SharedPreferences p = getSharedPreferences("named_meter_presets", MODE_PRIVATE);
+                        p.edit().putString("library", PresetLibrary.put(p.getString("library", ""), name, json)).apply();
+                        toast("Imported: " + name);
+                    } catch (Exception e) { toast("Import failed: " + e.getMessage()); }
+                }).show();
+        });
+        content.addView(importButton, matchWrap());
+    }
+
+    private String currentPresetJson(String name) throws Exception {
+        MeterPreset base = MeterPresetRepository.loadDemo(this);
+        android.content.SharedPreferences p = getSharedPreferences("meter_editor", MODE_PRIVATE);
+        int count = Math.max(1, Math.min(32, p.getInt("widget_count", base.views.size())));
+        org.json.JSONObject root = new org.json.JSONObject(); root.put("name", name);
+        org.json.JSONArray views = new org.json.JSONArray();
+        for (int i=0;i<count;i++) {
+            MeterPreset.ViewSpec s = i < base.views.size() ? base.views.get(i)
+                : new MeterPreset.ViewSpec(10,10,35,20,"{rpm} rpm","center",20,"#ffffd54f");
+            org.json.JSONObject item = new org.json.JSONObject();
+            item.put("left",p.getInt("left_"+i,s.left)); item.put("top",p.getInt("top_"+i,s.top));
+            item.put("width",p.getInt("width_"+i,s.width)); item.put("height",p.getInt("height_"+i,s.height));
+            item.put("text",p.getString("template_"+i,s.template)); item.put("alignment",p.getString("align_"+i,s.alignment));
+            item.put("textSize",p.getInt("size_"+i,s.textSize)); item.put("textColor",p.getString("color_"+i,s.textColor));
+            views.put(item);
+        }
+        root.put("views",views); return root.toString();
+    }
+
+    private void managePresets() {
+        android.content.SharedPreferences p = getSharedPreferences("named_meter_presets", MODE_PRIVATE);
+        try {
+            org.json.JSONArray names = new org.json.JSONArray(PresetLibrary.names(p.getString("library","")));
+            String[] labels = new String[names.length()];
+            for(int i=0;i<names.length();i++) labels[i]=names.getString(i);
+            if(labels.length==0){toast("No saved presets");return;}
+            new android.app.AlertDialog.Builder(this).setTitle("Select preset")
+                .setItems(labels,(d,index)->presetActions(labels[index])).show();
+        } catch(Exception e){toast(e.getMessage());}
+    }
+
+    private void presetActions(String name) {
+        String[] actions={"Load","Rename","Duplicate","Export JSON","Delete"};
+        new android.app.AlertDialog.Builder(this).setTitle(name).setItems(actions,(d,which)->{
+            android.content.SharedPreferences p=getSharedPreferences("named_meter_presets",MODE_PRIVATE);
+            String library=p.getString("library","");
+            try {
+                if(which==0){
+                    org.json.JSONObject root=new org.json.JSONObject(PresetLibrary.exportPreset(library,name));
+                    org.json.JSONArray views=root.getJSONArray("views");
+                    android.content.SharedPreferences.Editor edit=getSharedPreferences("meter_editor",MODE_PRIVATE).edit();
+                    edit.putInt("widget_count",views.length());
+                    for(int i=0;i<views.length();i++){
+                        org.json.JSONObject item=views.getJSONObject(i);
+                        edit.putInt("left_"+i,item.getInt("left")).putInt("top_"+i,item.getInt("top"))
+                            .putInt("width_"+i,item.getInt("width")).putInt("height_"+i,item.getInt("height"))
+                            .putInt("size_"+i,item.optInt("textSize",32)).putString("template_"+i,item.optString("text","{speed}"))
+                            .putString("align_"+i,item.optString("alignment","center")).putString("color_"+i,item.optString("textColor","#ffffffff"));
+                    }
+                    edit.apply(); recreate();
+                } else if(which==1) askPresetName("New name",next->{try{p.edit().putString("library",PresetLibrary.rename(library,name,next)).apply();toast("Renamed");}catch(Exception e){toast(e.getMessage());}});
+                else if(which==2) askPresetName("Copy name",next->{try{p.edit().putString("library",PresetLibrary.duplicate(library,name,next)).apply();toast("Duplicated");}catch(Exception e){toast(e.getMessage());}});
+                else if(which==3){
+                    android.content.Intent share=new android.content.Intent(android.content.Intent.ACTION_SEND);
+                    share.setType("application/json");share.putExtra(android.content.Intent.EXTRA_TEXT,PresetLibrary.exportPreset(library,name));
+                    startActivity(android.content.Intent.createChooser(share,"Export preset JSON"));
+                } else {p.edit().putString("library",PresetLibrary.delete(library,name)).apply();toast("Deleted");}
+            }catch(Exception e){toast("Operation failed: "+e.getMessage());}
+        }).show();
+    }
+    private interface NameResult { void accept(String name); }
+    private void askPresetName(String title,NameResult callback){
+        android.widget.EditText field=new android.widget.EditText(this);field.setSingleLine(true);
+        new android.app.AlertDialog.Builder(this).setTitle(title).setView(field)
+            .setNegativeButton("Cancel",null).setPositiveButton("OK",(d,w)->callback.accept(field.getText().toString())).show();
+    }
+    private void toast(String value){android.widget.Toast.makeText(this,value,android.widget.Toast.LENGTH_LONG).show();}
 
     private void addLabeledControl(String title, TextView label, SeekBar control) {
         label.setText(title);
