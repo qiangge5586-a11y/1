@@ -72,7 +72,42 @@ public final class MainActivity extends Activity {
         content.addView(safety);
     }
 
-    @Override protected void onStop() {\n        if (audioFocusController != null) audioFocusController.release();\n        super.onStop();\n    }\n\n    private void addAudioFocusDemo() {\n        addSection("Audio focus · explicit demo");\n        audioFocusController = new AudioFocusController(this);\n        TextView note = new TextView(this);\n        note.setText("Audio focus is requested only after you enable this option and tap Request. No sound is played and system volume is not changed. Focus is released when this screen stops.");\n        note.setTextSize(13); content.addView(note);\n        android.widget.CheckBox optIn = new android.widget.CheckBox(this);\n        optIn.setText("I allow this app to request temporary navigation audio focus");\n        content.addView(optIn);\n        audioFocusStatus = new TextView(this);\n        audioFocusStatus.setText("Audio focus: not requested");\n        content.addView(audioFocusStatus);\n        Button request = new Button(this); request.setText("Request temporary audio focus");\n        request.setOnClickListener(v -> {\n            if (!optIn.isChecked()) { audioFocusStatus.setText("Enable the opt-in checkbox first."); return; }\n            boolean granted = audioFocusController.requestTransientFocus(change -> runOnUiThread(() -> {\n                String state = change == android.media.AudioManager.AUDIOFOCUS_GAIN ? "gained"\n                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS ? "lost"\n                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ? "temporarily lost"\n                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ? "may duck" : "changed";\n                audioFocusStatus.setText("Audio focus: " + state);\n            }));\n            audioFocusStatus.setText(granted ? "Audio focus: granted (temporary)" : "Audio focus: not granted");\n        });\n        content.addView(request, matchWrap());\n        Button release = new Button(this); release.setText("Release audio focus");\n        release.setOnClickListener(v -> { audioFocusController.release(); audioFocusStatus.setText("Audio focus: released"); });\n        content.addView(release, matchWrap());\n    }\n\n    private void addSection(String text) {
+    @Override protected void onStop() {
+        if (audioFocusController != null) audioFocusController.release();
+        super.onStop();
+    }
+
+    private void addAudioFocusDemo() {
+        addSection("Audio focus · explicit demo");
+        audioFocusController = new AudioFocusController(this);
+        TextView note = new TextView(this);
+        note.setText("Audio focus is requested only after you enable this option and tap Request. No sound is played and system volume is not changed. Focus is released when this screen stops.");
+        note.setTextSize(13); content.addView(note);
+        android.widget.CheckBox optIn = new android.widget.CheckBox(this);
+        optIn.setText("I allow this app to request temporary navigation audio focus");
+        content.addView(optIn);
+        audioFocusStatus = new TextView(this);
+        audioFocusStatus.setText("Audio focus: not requested");
+        content.addView(audioFocusStatus);
+        Button request = new Button(this); request.setText("Request temporary audio focus");
+        request.setOnClickListener(v -> {
+            if (!optIn.isChecked()) { audioFocusStatus.setText("Enable the opt-in checkbox first."); return; }
+            boolean granted = audioFocusController.requestTransientFocus(change -> runOnUiThread(() -> {
+                String state = change == android.media.AudioManager.AUDIOFOCUS_GAIN ? "gained"
+                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS ? "lost"
+                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ? "temporarily lost"
+                        : change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ? "may duck" : "changed";
+                audioFocusStatus.setText("Audio focus: " + state);
+            }));
+            audioFocusStatus.setText(granted ? "Audio focus: granted (temporary)" : "Audio focus: not granted");
+        });
+        content.addView(request, matchWrap());
+        Button release = new Button(this); release.setText("Release audio focus");
+        release.setOnClickListener(v -> { audioFocusController.release(); audioFocusStatus.setText("Audio focus: released"); });
+        content.addView(release, matchWrap());
+    }
+
+    private void addSection(String text) {
         TextView label = new TextView(this);
         label.setText(text);
         label.setTextSize(18);
@@ -386,7 +421,8 @@ public final class MainActivity extends Activity {
             boolean installed = NavigationAppHelper.isLaunchable(this, packageName);
             TextView state = new TextView(this);
             state.setText(label + " · " + (installed ? "Launchable" : "Not installed / no launcher")
-                    + "\n" + packageName);
+                    + "
+" + packageName);
             state.setTextSize(14);
             state.setPadding(dp(10), dp(8), dp(10), dp(4));
             content.addView(state);
@@ -446,7 +482,8 @@ public final class MainActivity extends Activity {
                         android.view.View view, int position, long id) {
                     prefs.edit().putString(preferenceKey, actions[position]).apply();
                     status.setText(keyName + " is assigned to: " + actions[position]
-                            + "\nSimulation only — no command is sent to the car.");
+                            + "
+Simulation only — no command is sent to the car.");
                 }
                 @Override public void onNothingSelected(AdapterView<?> parent) {}
             });
@@ -456,14 +493,16 @@ public final class MainActivity extends Activity {
             simulate.setText("Simulate " + keyName);
             simulate.setOnClickListener(v -> status.setText("Simulated " + keyName
                     + " → " + selector.getSelectedItem()
-                    + "\nNo physical steering-wheel input was intercepted."));
+                    + "
+No physical steering-wheel input was intercepted."));
             content.addView(simulate, matchWrap());
         }
     }
 
     private void addFeature(String name, String detail) {
         TextView row = new TextView(this);
-        row.setText(name + "\n" + detail);
+        row.setText(name + "
+" + detail);
         row.setTextSize(14);
         row.setPadding(dp(14), dp(12), dp(14), dp(12));
         row.setBackgroundColor(0xFFF5F6F7);
