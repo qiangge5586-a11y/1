@@ -14,7 +14,11 @@ public final class ObdReadOnlyCommandsTest {
         assertTrue(ObdReadOnlyCommands.isAllowed("010D"));
         assertTrue(ObdReadOnlyCommands.isAllowed(" 010C "));
         assertFalse(ObdReadOnlyCommands.isAllowed("04"));
-        assertFalse(ObdReadOnlyCommands.isAllowed("0100"));
+        assertTrue(ObdReadOnlyCommands.isAllowed("0100"));
+        assertTrue(ObdReadOnlyCommands.isAllowed("0120"));
+        assertTrue(ObdReadOnlyCommands.isAllowed("0140"));
+        assertFalse(ObdReadOnlyCommands.isAllowed("0104"));
+        assertFalse(ObdReadOnlyCommands.isAllowed("04"));
         assertFalse(ObdReadOnlyCommands.isAllowed("ATZ"));
         assertFalse(ObdReadOnlyCommands.isAllowed(null));
     }
