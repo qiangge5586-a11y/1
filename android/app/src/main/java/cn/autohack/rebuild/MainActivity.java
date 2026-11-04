@@ -639,7 +639,7 @@ public final class MainActivity extends Activity {
             MeterCanvasView display = new MeterCanvasView(this);
             meterDisplay = display;
             LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(190));
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             displayParams.bottomMargin = dp(12);
             content.addView(display, displayParams);
 
@@ -672,9 +672,10 @@ public final class MainActivity extends Activity {
 
             Runnable render = () -> {
                 java.util.List<MeterCanvasView.Widget> widgets = new java.util.ArrayList<>();
-                int value = speed.getProgress(), rpm = 850 + value * 32;
+                int value = speed.getProgress();
+                java.util.Map<String, String> demoValues = CivicMeterDemoData.forSpeed(value).asTokenMap();
                 for (MeterPreset.ViewSpec spec : specs) {
-                    widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(value, rpm, 68, 82)));
+                    widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(demoValues)));
                 }
                 display.setWidgets(widgets, meterColor);
                 status.setText("Preset: " + preset.name + " · " + specs.size() + " widgets");
@@ -728,6 +729,26 @@ public final class MainActivity extends Activity {
             size.setOnSeekBarChangeListener(editor); left.setOnSeekBarChangeListener(editor);
             top.setOnSeekBarChangeListener(editor); width.setOnSeekBarChangeListener(editor);
             height.setOnSeekBarChangeListener(editor);
+
+            Button civicTemplate = new Button(this);
+            civicTemplate.setText("Load Civic 584×215 meter layout demo");
+            civicTemplate.setOnClickListener(v -> {
+                try {
+                    MeterPreset civic = MeterPresetRepository.loadCivicDemo(this);
+                    specs.clear();
+                    specs.addAll(civic.views);
+                    String[] updated = new String[specs.size()];
+                    for (int i = 0; i < updated.length; i++) updated[i] = "Widget " + (i + 1);
+                    selector.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, updated));
+                    selected[0] = 0;
+                    selector.setSelection(0);
+                    loadSelected.run();
+                    status.setText("Loaded " + civic.name + " · sample values only, no vehicle connection");
+                } catch (Exception error) {
+                    status.setText("Unable to load Civic layout: " + error.getMessage());
+                }
+            });
+            content.addView(civicTemplate, matchWrap());
 
             Button add = new Button(this);
             add.setText("Add widget");
