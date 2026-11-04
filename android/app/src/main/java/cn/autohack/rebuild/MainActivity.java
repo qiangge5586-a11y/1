@@ -812,7 +812,11 @@ public final class MainActivity extends Activity {
     @Override protected void onPause() {
         if (deviceCompassController != null) deviceCompassController.stop();
         if (foregroundGpsController != null) foregroundGpsController.stop();
-        if (obdController != null) obdController.disconnect();
+        if (obdController != null) {
+            obdController.disconnect();
+            if (obdStatus != null)
+                obdStatus.setText("OBD-II disconnected while app left the foreground; reconnect manually.");
+        }
         compassSensorAvailable = false;
         gpsCourseAvailable = false;
         super.onPause();
