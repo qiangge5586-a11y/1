@@ -31,7 +31,6 @@ public final class MeterPresetTest {
 
     @Test(expected = JSONException.class)
     public void rejectsMixedSupportedAndUnsupportedTelemetry() throws Exception {
-        MeterPreset.fromJson("{\\\"views\\\":[{\\\"left\\\":0,\\\"top\\\":0,\\\"width\\\":100,\\\"height\\\":100,\\\"text\\\":\\\"{speed} {gear}\\\"}]}");
+        MeterPreset.fromJson("{\"views\":[{\"left\":0,\"top\":0,\"width\":100,\"height\":100,\"text\":\"{speed} {gear}\"}]}");
     }
-
 }
