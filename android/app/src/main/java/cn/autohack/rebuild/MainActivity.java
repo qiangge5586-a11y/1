@@ -666,6 +666,21 @@ public final class MainActivity extends Activity {
             unitSelector.setSelection(Math.max(0, Math.min(3, prefs.getInt("unit_system", 0))));
             content.addView(unitSelector, matchWrap());
 
+            addSection("Civic vehicle information fields (original options)");
+            boolean[] vehicleInfoSelection = new boolean[CivicVehicleInfoLayout.FIELD_COUNT];
+            android.widget.CheckBox[] vehicleInfoChecks =
+                    new android.widget.CheckBox[CivicVehicleInfoLayout.FIELD_COUNT];
+            boolean[] defaultVehicleInfo = CivicVehicleInfoLayout.defaultSelection();
+            for (int i = 0; i < CivicVehicleInfoLayout.FIELD_COUNT; i++) {
+                String key = "vehicle_info_" + CivicVehicleInfoLayout.KEYS[i];
+                vehicleInfoSelection[i] = prefs.getBoolean(key, defaultVehicleInfo[i]);
+                android.widget.CheckBox fieldCheck = new android.widget.CheckBox(this);
+                fieldCheck.setText(CivicVehicleInfoLayout.LABELS[i]);
+                fieldCheck.setChecked(vehicleInfoSelection[i]);
+                vehicleInfoChecks[i] = fieldCheck;
+                content.addView(fieldCheck);
+            }
+
             String[] labels = new String[specs.size()];
             for (int i = 0; i < labels.length; i++) labels[i] = "Widget " + (i + 1);
             Spinner selector = new Spinner(this);
@@ -690,11 +705,14 @@ public final class MainActivity extends Activity {
                 int value = speed.getProgress();
                 MeterUnitSystem unitSystem = MeterUnitSystem.fromIndex(unitSelector.getSelectedItemPosition());
                 java.util.Map<String, String> demoValues = CivicMeterDemoData.forSpeed(value, unitSystem).asTokenMap();
-                for (MeterPreset.ViewSpec spec : specs) {
+                java.util.List<MeterPreset.ViewSpec> visibleSpecs =
+                        CivicVehicleInfoLayout.apply(specs, vehicleInfoSelection);
+                for (MeterPreset.ViewSpec spec : visibleSpecs) {
                     widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(demoValues)));
                 }
                 display.setWidgets(widgets, meterColor);
-                status.setText("Preset: " + activePresetName[0] + " · " + specs.size() + " widgets");
+                status.setText("Preset: " + activePresetName[0] + " · "
+                        + visibleSpecs.size() + " visible widgets");
                 speedLabel.setText("Demo speed: " + value + " " + unitSystem.speedUnit());
                 MeterPreset.ViewSpec s = specs.get(selected[0]);
                 sizeLabel.setText("Text size: " + s.textSize + " sp");
@@ -715,6 +733,15 @@ public final class MainActivity extends Activity {
                         int position, long id) { selected[0] = position; loadSelected.run(); }
                 @Override public void onNothingSelected(AdapterView<?> parent) {}
             });
+            for (int i = 0; i < vehicleInfoChecks.length; i++) {
+                final int fieldIndex = i;
+                vehicleInfoChecks[i].setOnCheckedChangeListener((button, checked) -> {
+                    vehicleInfoSelection[fieldIndex] = checked;
+                    prefs.edit().putBoolean("vehicle_info_"
+                            + CivicVehicleInfoLayout.KEYS[fieldIndex], checked).apply();
+                    render.run();
+                });
+            }
             unitSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override public void onItemSelected(AdapterView<?> parent, android.view.View view,
                         int position, long id) {
