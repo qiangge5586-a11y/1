@@ -23,6 +23,7 @@ public final class MainActivity extends Activity {
     private AudioFocusController audioFocusController;
     private TextView audioFocusStatus;
     private TextView startupVideoStatus;
+    private String pendingPresetExportName;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -202,19 +203,69 @@ public final class MainActivity extends Activity {
     @Override protected void onActivityResult(int requestCode, int resultCode,
             android.content.Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != 7601 || resultCode != RESULT_OK || data == null
-                || data.getData() == null) return;
-        android.net.Uri uri = data.getData();
-        try {
-            getContentResolver().takePersistableUriPermission(uri,
-                    data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        } catch (SecurityException ignored) {
-            toast("The document provider did not grant persistent access. Choose a file from a supported provider.");
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) {
+            if (requestCode == 7603) pendingPresetExportName = null;
             return;
         }
-        getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
-                .putString("startup_video_uri", uri.toString()).apply();
-        updateStartupVideoStatus(uri.toString());
+        android.net.Uri uri = data.getData();
+        if (requestCode == 7601) {
+            try {
+                int granted = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+                if (granted == 0) throw new SecurityException("Read permission was not granted");
+                getContentResolver().takePersistableUriPermission(uri, granted);
+            } catch (SecurityException ignored) {
+                toast("The document provider did not grant persistent access. Choose a file from a supported provider.");
+                return;
+            }
+            getSharedPreferences("startup_preferences", MODE_PRIVATE).edit()
+                    .putString("startup_video_uri", uri.toString()).apply();
+            updateStartupVideoStatus(uri.toString());
+        } else if (requestCode == 7602) {
+            try {
+                String source = readJsonDocument(uri);
+                String normalized = PresetLibrary.importPreset(source);
+                org.json.JSONObject item = new org.json.JSONObject(normalized);
+                String name = item.optString("name", "Imported");
+                android.content.SharedPreferences p = getSharedPreferences("named_meter_presets", MODE_PRIVATE);
+                p.edit().putString("library",
+                        PresetLibrary.put(p.getString("library", ""), name, normalized)).apply();
+                toast("Imported preset: " + name);
+            } catch (Exception e) {
+                toast("JSON import failed: " + e.getMessage());
+            }
+        } else if (requestCode == 7603) {
+            String name = pendingPresetExportName;
+            pendingPresetExportName = null;
+            if (name == null) return;
+            try {
+                android.content.SharedPreferences p = getSharedPreferences("named_meter_presets", MODE_PRIVATE);
+                String json = PresetLibrary.exportPreset(p.getString("library", ""), name);
+                try (java.io.OutputStream output = getContentResolver().openOutputStream(uri, "w")) {
+                    if (output == null) throw new java.io.IOException("Unable to open destination");
+                    output.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    output.flush();
+                }
+                toast("Saved JSON file: " + name);
+            } catch (Exception e) {
+                toast("JSON export failed: " + e.getMessage());
+            }
+        }
+    }
+
+    private String readJsonDocument(android.net.Uri uri) throws java.io.IOException {
+        try (java.io.InputStream input = getContentResolver().openInputStream(uri);
+             java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream()) {
+            if (input == null) throw new java.io.IOException("Unable to open selected file");
+            byte[] buffer = new byte[8192];
+            int total = 0;
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                total += count;
+                if (total > 1024 * 1024) throw new java.io.IOException("JSON file exceeds 1 MB");
+                output.write(buffer, 0, count);
+            }
+            return new String(output.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+        }
     }
 
     @Override protected void onStop() {
@@ -471,6 +522,18 @@ public final class MainActivity extends Activity {
                 }).show();
         });
         content.addView(importButton, matchWrap());
+        Button importFile = new Button(this);
+        importFile.setText("Import preset JSON file");
+        importFile.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
+                    new String[]{"application/json", "text/json", "text/plain"});
+            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(intent, 7602);
+        });
+        content.addView(importFile, matchWrap());
     }
 
     private String currentPresetJson(String name) throws Exception {
@@ -505,7 +568,7 @@ public final class MainActivity extends Activity {
     }
 
     private void presetActions(String name) {
-        String[] actions={"Load","Rename","Duplicate","Export JSON","Delete"};
+        String[] actions={"Load","Rename","Duplicate","Share JSON","Save JSON file","Delete"};
         new android.app.AlertDialog.Builder(this).setTitle(name).setItems(actions,(d,which)->{
             android.content.SharedPreferences p=getSharedPreferences("named_meter_presets",MODE_PRIVATE);
             String library=p.getString("library","");
@@ -528,7 +591,15 @@ public final class MainActivity extends Activity {
                 else if(which==3){
                     android.content.Intent share=new android.content.Intent(android.content.Intent.ACTION_SEND);
                     share.setType("application/json");share.putExtra(android.content.Intent.EXTRA_TEXT,PresetLibrary.exportPreset(library,name));
-                    startActivity(android.content.Intent.createChooser(share,"Export preset JSON"));
+                    startActivity(android.content.Intent.createChooser(share,"Share preset JSON"));
+                } else if(which==4) {
+                    pendingPresetExportName = name;
+                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_CREATE_DOCUMENT);
+                    intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+                    intent.setType("application/json");
+                    intent.putExtra(android.content.Intent.EXTRA_TITLE, name.replaceAll("[^A-Za-z0-9._-]", "_") + ".json");
+                    intent.addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    startActivityForResult(intent, 7603);
                 } else {p.edit().putString("library",PresetLibrary.delete(library,name)).apply();toast("Deleted");}
             }catch(Exception e){toast("Operation failed: "+e.getMessage());}
         }).show();
