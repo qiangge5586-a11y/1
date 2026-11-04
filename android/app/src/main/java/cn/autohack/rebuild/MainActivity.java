@@ -35,6 +35,11 @@ public final class MainActivity extends Activity {
     private boolean roadInfoTtsInitializing;
     private TextView roadInfoStatus;
     private TextView foregroundKeyStatus;
+    private DeviceCompassController deviceCompassController;
+    private boolean compassEnabledForPreview = true;
+    private boolean compassSensorAvailable;
+    private String currentCompassHeading = "NE";
+    private Runnable compassPreviewRefresh;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -573,6 +578,21 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        if (deviceCompassController != null && compassEnabledForPreview) {
+            compassSensorAvailable = deviceCompassController.start();
+            if (!compassSensorAvailable) currentCompassHeading = "NE";
+            if (compassPreviewRefresh != null) compassPreviewRefresh.run();
+        }
+    }
+
+    @Override protected void onPause() {
+        if (deviceCompassController != null) deviceCompassController.stop();
+        compassSensorAvailable = false;
+        super.onPause();
+    }
+
     @Override protected void onStop() {
         releaseStartupAudioPlayer();
         releaseVoiceRecognizer();
@@ -685,9 +705,14 @@ public final class MainActivity extends Activity {
             }
             addSection("Compass options (original meter settings)");
             android.content.SharedPreferences meterOptions = prefs;
+            deviceCompassController = new DeviceCompassController(this, heading -> {
+                currentCompassHeading = heading;
+                if (compassPreviewRefresh != null) compassPreviewRefresh.run();
+            });
             android.widget.CheckBox compassEnabled = new android.widget.CheckBox(this);
             compassEnabled.setText("Enable compass");
             compassEnabled.setChecked(meterOptions.getBoolean("compass_enabled", true));
+            compassEnabledForPreview = compassEnabled.isChecked();
             content.addView(compassEnabled);
             android.widget.CheckBox trackUp = new android.widget.CheckBox(this);
             trackUp.setText("Track-up mode (demo only)");
@@ -772,7 +797,7 @@ public final class MainActivity extends Activity {
                 MeterUnitSystem unitSystem = MeterUnitSystem.fromIndex(unitSelector.getSelectedItemPosition());
                 java.util.Map<String, String> demoValues = new java.util.HashMap<>(
                         CivicMeterDemoData.forSpeed(value, unitSystem).asTokenMap());
-                demoValues.put("compass", CivicCompassOptions.compassLabel("NE", trackUp.isChecked()));
+                demoValues.put("compass", CivicCompassOptions.compassLabel(currentCompassHeading, trackUp.isChecked()));
                 java.util.List<MeterPreset.ViewSpec> visibleSpecs =
                         CivicVehicleInfoLayout.apply(specs, vehicleInfoSelection);
                 visibleSpecs = CivicCompassOptions.apply(visibleSpecs, compassEnabled.isChecked());
@@ -781,7 +806,9 @@ public final class MainActivity extends Activity {
                 }
                 compassModeStatus.setText(CivicCompassOptions.modeDescription(
                         compassEnabled.isChecked(), trackUp.isChecked())
-                        + " · no compass sensor or live map is connected");
+                        + (compassSensorAvailable ? " · device sensor heading"
+                        : " · device compass sensor unavailable; showing demo heading")
+                        + " · track-up remains simulated without a navigation course");
                 display.setWidgets(widgets, meterColor);
                 status.setText("Preset: " + activePresetName[0] + " · "
                         + visibleSpecs.size() + " visible widgets");
@@ -807,6 +834,14 @@ public final class MainActivity extends Activity {
             });
             compassEnabled.setOnCheckedChangeListener((button, checked) -> {
                 meterOptions.edit().putBoolean("compass_enabled", checked).apply();
+                compassEnabledForPreview = checked;
+                if (checked && deviceCompassController != null) {
+                    compassSensorAvailable = deviceCompassController.start();
+                    if (!compassSensorAvailable) currentCompassHeading = "NE";
+                } else if (deviceCompassController != null) {
+                    deviceCompassController.stop();
+                    compassSensorAvailable = false;
+                }
                 trackUp.setEnabled(checked);
                 if (!checked) {
                     trackUp.setChecked(false);
@@ -814,6 +849,11 @@ public final class MainActivity extends Activity {
                 }
                 render.run();
             });
+            compassPreviewRefresh = render;
+            if (compassEnabledForPreview && deviceCompassController != null) {
+                compassSensorAvailable = deviceCompassController.start();
+                if (!compassSensorAvailable) currentCompassHeading = "NE";
+            }
             trackUp.setOnCheckedChangeListener((button, checked) -> {
                 meterOptions.edit().putBoolean("track_up_mode", checked).apply();
                 render.run();
