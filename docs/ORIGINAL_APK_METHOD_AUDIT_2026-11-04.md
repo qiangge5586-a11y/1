@@ -73,6 +73,18 @@
 - `VoiceAssistantActivity` is a preference screen; its test action calls `MyService.a(false)`. It is not itself the speech-recognition engine.
 - The rebuild uses user-selected local media previews and explicit on-device speech-recognition controls instead of hidden boot/background behavior.
 
+### 8. Civic meter selection and telemetry decoding cross-check
+
+- A normal JADX Java decompilation of `C0269ua.getMeterLayout()` incorrectly returned `meter_none` on all branches. This was not accepted as ground truth.
+- A class-only JADX pass using `--decompilation-mode fallback` exposed the raw DEX-derived instruction flow. The verified return branches are:
+  - `civic` / `clarity` → `meter_civic`.
+  - `crv` / `breeze` → `meter_crv`.
+  - `avancier` / `avancier240` / `urv` / `cdx` → `meter_avancier`.
+- The same class confirms a 500 ms polling loop for speed, with other telemetry fields refreshed every twentieth iteration (approximately every 10 seconds while the loop remains active).
+- `C0185dc` stores each integer under `/data/local/tmp/shared_files/<KEY>` and uses file-channel locks. `RunnableC0284xa` creates the directory/files and applies world-writable permissions.
+- The verified field transforms include distance unit code 0=km/other=mi; fuel codes 0=km/L, 1=mpg, 2=imperial mpg, other=L/100km; coolant raw value minus 40 then Celsius/Fahrenheit conversion; Trip A distance and fuel values divided by 10, with a special large-distance display branch.
+- Rebuild implementation: `CivicTelemetryDecoder` is a pure value transformer with tests. It intentionally does not implement the original privileged file IPC.
+
 ## Remaining DEX-level verification
 
 The second JADX pass can display the 31 fallback methods, but some are marked by JADX as inconsistent or have difficult switch reconstruction. Prioritize DEX/smali cross-checks for:
