@@ -32,7 +32,9 @@ public final class ObdLiveMeterValuesTest {
         assertEquals("2500", result.get("rpm"));
         assertEquals("60", result.get("fuel"));
         assertEquals("90", result.get("coolant"));
-        assertEquals("Market Road", result.get("next_road"));
+        assertEquals("--", result.get("next_road"));
+        assertEquals("--", result.get("distance_to_empty"));
+        assertEquals("--", result.get("avg_fuel_eff"));
         assertEquals("0", base.get("speed"));
     }
 
