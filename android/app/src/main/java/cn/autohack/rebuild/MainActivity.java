@@ -93,6 +93,7 @@ public final class MainActivity extends Activity {
         addLocalApkInstaller();
         addAudioFocusDemo();
         addStorageDiagnostics();
+        addAppCacheMaintenance();
         addDisplayControls();
         addOnDeviceVoiceAssistant();
 
@@ -919,6 +920,38 @@ public final class MainActivity extends Activity {
                 ? android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
                 : Math.max(1, Math.min(100, value)) / 100.0f;
         getWindow().setAttributes(attributes);
+    }
+
+    private void addAppCacheMaintenance() {
+        addSection("App cache maintenance · app-private only");
+        TextView usage = new TextView(this);
+        Runnable refresh = () -> usage.setText("App-private cache currently uses "
+                + formatStorageBytes(AppCacheMaintenance.calculateSize(getCacheDir())));
+        refresh.run();
+        content.addView(usage);
+
+        Button refreshButton = new Button(this);
+        refreshButton.setText("Refresh cache usage");
+        refreshButton.setOnClickListener(v -> refresh.run());
+        content.addView(refreshButton, matchWrap());
+
+        Button clear = new Button(this);
+        clear.setText("Clear app cache");
+        clear.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                .setTitle("Clear app cache?")
+                .setMessage("This removes files only from this app's private cache. Temporary meter-preview share links may stop working. Presets and app settings are stored separately and are not deleted.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Clear cache", (dialog, which) -> {
+                    boolean success = AppCacheMaintenance.clearContents(getCacheDir());
+                    refresh.run();
+                    toast(success ? "App cache cleared" : "Some cache files could not be removed");
+                }).show());
+        content.addView(clear, matchWrap());
+
+        TextView note = new TextView(this);
+        note.setText("No shared storage, downloads, user documents, other apps, presets, or system files are touched.");
+        note.setTextSize(12);
+        content.addView(note);
     }
 
     private void addStorageDiagnostics() {
