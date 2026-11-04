@@ -1,5 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 51 — Confirmed local voice commands (CI pending)
+
+- Added a conservative parser for local meter-editor and user-app launch phrases.
+- Recognized navigation/music phrases are explicitly marked unavailable; unknown speech creates no action.
+- Every supported action requires a separate Confirm button tap. App launches require exactly one matching installed user app.
+- Added parser unit tests and documentation.
+- No vehicle command, private Amap/QQ Music integration, media-key injection, wake word or background listening.
+- Details: `docs/VOICE_COMMAND_CONFIRMATION.md`.
+- Source/test commits: `1288e3c89aef95d395b83190387eaf1876ae72a0`, `f61e5e3dfd6ff8dc87cbc18205da8fee44c7e044`, `8108502f3a02819b26868cc6ec8148935a73602a`; CI pending.
+
 ## Phase 50 — Original voice assistant audit (analysis complete)
 
 - Confirmed original speech recognition uploads recorded MP3 audio through an HTTP form request; it is not on-device ASR.
