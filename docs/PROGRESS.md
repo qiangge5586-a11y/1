@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 25 — Shareable meter preview image (CI pending)
+
+- Added an explicit button to render the app's own meter preview into a PNG in private cache and share it via Android's share sheet.
+- Added a non-exported, read-only content provider with temporary URI grants and path validation.
+- Does not capture other apps/system UI, write to shared storage, or upload automatically.
+- Details: `docs/METER_PREVIEW_IMAGE_SHARING.md`.
+- Source/provider/manifest commits: `7896414df1b00aa54336c5bf1af340ec98741407`, `edb982cda85e10e0d0ef54e9e7b8145b28236efe`, `2931c525758d6274ef3c3d4a1b25ea69679d64e6`; CI pending.
+
 ## Phase 24 — Explicit on-device voice recognition (CI verified)
 
 - Added a user-started speech-recognition prototype for Android 12+ devices that expose an on-device recognition service.
