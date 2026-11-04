@@ -14,7 +14,7 @@ This matrix separates behavior observed in the 7.6.0 reverse-engineering report 
 | SD-card write repair | SdcardActivity; platform.xml overwrite | `feature-storage-diagnostics` | Diagnose scoped-storage/permission state and explain supported settings; never overwrite platform.xml | Partial — app-private/scoped storage diagnostics; no arbitrary SD-card repair |
 | Startup / autorun manager | StartupActivity; AutorunManagerActivity; boot receiver | `feature-startup-manager` | List this app's own startup behavior and supported app settings only; no force-stop/disable of system apps | Planned |
 | Cleanup / optimization | OptimizeActivity; CleanInternalSdActivity; process killing | `feature-maintenance` | Storage usage report and app-owned cache cleanup; no arbitrary process killing | Planned |
-| Display / screensaver / screenshots | SettingsActivity; screenshot hook; screen saver action | `feature-display` | In-app display preferences and Android-supported screenshot/share flow | Planned |
+| Display / screensaver / screenshots | SettingsActivity; screenshot hook; screen saver action | `feature-display` | In-app display preferences and Android-supported screenshot/share flow | Partial — app-window brightness and visible-only keep-awake; no screenshots/screensaver |
 | Voice assistant | VoiceAssistantActivity/Service; RECORD_AUDIO | `feature-voice` | Explicit microphone permission, visible listening state, on-device/mock first | Planned |
 | Mitsubishi / Clarion adapters | AIDL service names, power broadcasts, whitelist XML | `vehicle-adapter-mitsubishi`, `vehicle-adapter-clarion` | Separate optional adapters; disabled unless exact head-unit identity and interface are verified | Deferred |
 | Emergency mode | 5-tap sequence; motion-state guard | `feature-emergency` | UI-only demo until motion signal is verified; never bypass driving safety | Deferred |
@@ -24,7 +24,7 @@ This matrix separates behavior observed in the 7.6.0 reverse-engineering report 
 
 ## Current implementation status
 
-The safe baseline now includes the app shell, read-only capability snapshot, multi-widget offline meter editor, four-key mapping simulator, navigation-app launcher, user-confirmed local APK installer, read-only storage diagnostics, named preset management with JSON paste/share and direct document import/export, explicit audio-focus controls, startup editor preference, and local video selection/preview. These are independent safe implementations, not proof of full feature parity. GitHub Actions runs #47 and #48 verify the startup-video and direct JSON file workflows respectively. The vehicle adapter, physical steering-key capture, navigation-state bridge, voice assistant, app manager, and vehicle telemetry remain unimplemented or deferred.
+The safe baseline now includes the app shell, read-only capability snapshot, multi-widget offline meter editor, four-key mapping simulator, navigation-app launcher, user-confirmed local APK installer, read-only storage diagnostics, app-scoped display controls, named preset management with JSON paste/share and direct document import/export, explicit audio-focus controls, startup editor preference, and local video selection/preview. These are independent safe implementations, not proof of full feature parity. GitHub Actions runs #47 and #48 verify the startup-video and direct JSON file workflows respectively. The vehicle adapter, physical steering-key capture, navigation-state bridge, voice assistant, app manager, and vehicle telemetry remain unimplemented or deferred.
 
 ## Common architecture
 
