@@ -1,5 +1,12 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 38 — DEX-level Civic layout selector verification (analysis complete)
+
+- Rechecked `C0269ua.getMeterLayout()` in JADX raw-instruction fallback mode after normal Java output incorrectly reconstructed its switch return path.
+- Confirmed the actual DEX mapping: Civic/Clarity → `meter_civic`; CR-V/Breeze → `meter_crv`; Avancier/Avancier240/UR-V/CDX → `meter_avancier`.
+- This confirms the original APK's Civic-specific meter branch, but not compatibility with a 2019 Civic OEM center display or access to its proprietary data services.
+- Updated evidence: `docs/CIVIC_METER_LAYOUT_AUDIT.md` and `docs/ORIGINAL_APK_METHOD_AUDIT_2026-11-04.md`.
+
 ## Phase 37 — Source-derived Civic meter template (CI verified)
 
 - Resource audit found original `meter_civic.xml` layouts at 584×215 px and six vehicle-information fields.
