@@ -27,6 +27,8 @@ public final class MainActivity extends Activity {
     private android.net.Uri pendingApkUri;
     private android.speech.SpeechRecognizer speechRecognizer;
     private TextView voiceAssistantStatus;
+    private boolean foregroundKeyMonitorEnabled;
+    private TextView foregroundKeyStatus;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -1088,6 +1090,25 @@ public final class MainActivity extends Activity {
         status.setBackgroundColor(0xFFF5F6F7);
         content.addView(status);
 
+        android.widget.CheckBox monitor = new android.widget.CheckBox(this);
+        monitor.setText("Monitor hardware key events while this app is in foreground");
+        monitor.setChecked(false);
+        monitor.setOnCheckedChangeListener((button, checked) -> {
+            foregroundKeyMonitorEnabled = checked;
+            foregroundKeyStatus.setText(checked
+                    ? "Foreground key monitor enabled. Press a hardware key; events are observed and passed through."
+                    : "Foreground key monitor disabled.");
+            if (checked) {
+                content.setFocusableInTouchMode(true);
+                content.requestFocus();
+            }
+        });
+        content.addView(monitor);
+        foregroundKeyStatus = new TextView(this);
+        foregroundKeyStatus.setText("Foreground key monitor disabled.");
+        foregroundKeyStatus.setTextSize(13);
+        content.addView(foregroundKeyStatus);
+
         android.content.SharedPreferences prefs =
                 getSharedPreferences("key_mapping_demo", MODE_PRIVATE);
         String[] keyNames = {"Steering key A", "Steering key B",
@@ -1133,6 +1154,17 @@ public final class MainActivity extends Activity {
                     + "\nNo physical steering-wheel input was intercepted."));
             content.addView(simulate, matchWrap());
         }
+    }
+
+    @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (foregroundKeyMonitorEnabled && event.getAction() == android.view.KeyEvent.ACTION_DOWN
+                && foregroundKeyStatus != null) {
+            foregroundKeyStatus.setText("Foreground key observed: "
+                    + android.view.KeyEvent.keyCodeToString(event.getKeyCode())
+                    + " (code " + event.getKeyCode() + ")"
+                    + "\\nEvent is passed through unchanged; no vehicle action is triggered.");
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     private void addFeature(String name, String detail) {
