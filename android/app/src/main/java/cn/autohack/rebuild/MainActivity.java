@@ -86,13 +86,13 @@ public final class MainActivity extends Activity {
         scroll.addView(content);
         setContentView(scroll);
 
-        TextView title = new TextView(this);
+        TextView title = new ChineseTextView(this);
         title.setText("HondaHack Rebuild");
         title.setTextSize(26);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         content.addView(title);
 
-        TextView subtitle = new TextView(this);
+        TextView subtitle = new ChineseTextView(this);
         subtitle.setText("Independent safe baseline · offline demo mode");
         subtitle.setTextSize(14);
         subtitle.setPadding(0, dp(6), 0, dp(18));
@@ -100,13 +100,13 @@ public final class MainActivity extends Activity {
 
         android.content.SharedPreferences startupPrefs =
                 getSharedPreferences("startup_preferences", MODE_PRIVATE);
-        android.widget.CheckBox openMeterOnLaunch = new android.widget.CheckBox(this);
+        android.widget.CheckBox openMeterOnLaunch = new ChineseCheckBox(this);
         openMeterOnLaunch.setText("Open meter editor automatically on launch");
         openMeterOnLaunch.setChecked(startupPrefs.getBoolean("open_meter_on_launch", false));
         openMeterOnLaunch.setOnCheckedChangeListener((button, checked) ->
                 startupPrefs.edit().putBoolean("open_meter_on_launch", checked).apply());
         content.addView(openMeterOnLaunch);
-        TextView startupNote = new TextView(this);
+        TextView startupNote = new ChineseTextView(this);
         startupNote.setText("Optional local startup preference. It only scrolls to the offline meter editor; it does not start the app at device boot.");
         startupNote.setTextSize(12);
         content.addView(startupNote);
@@ -115,11 +115,11 @@ public final class MainActivity extends Activity {
         addStartupAppLauncher();
 
         addSection("Device capability (read-only)");
-        TextView facts = new TextView(this);
+        TextView facts = new ChineseTextView(this);
         facts.setTextSize(14);
         facts.setPadding(dp(14), dp(12), dp(14), dp(12));
         facts.setBackgroundColor(0xFFEFF2F5);
-        android.widget.CheckBox includeIdentifiers = new android.widget.CheckBox(this);
+        android.widget.CheckBox includeIdentifiers = new ChineseCheckBox(this);
         includeIdentifiers.setText("Include detailed firmware identifiers in report");
         includeIdentifiers.setChecked(false);
         Runnable refreshCompatibilityReport = () ->
@@ -129,11 +129,11 @@ public final class MainActivity extends Activity {
         content.addView(includeIdentifiers);
         includeIdentifiers.setOnCheckedChangeListener((button, checked) ->
                 refreshCompatibilityReport.run());
-        TextView privacyNote = new TextView(this);
+        TextView privacyNote = new ChineseTextView(this);
         privacyNote.setText("Detailed identifiers such as board, hardware and build fingerprint are excluded by default. Review the report before sharing it.");
         privacyNote.setTextSize(12);
         content.addView(privacyNote);
-        Button shareCapabilities = new Button(this);
+        Button shareCapabilities = new ChineseButton(this);
         shareCapabilities.setText("Share head-unit compatibility report");
         shareCapabilities.setOnClickListener(v -> {
             android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SEND);
@@ -158,12 +158,12 @@ public final class MainActivity extends Activity {
         addDisplayControls();
         addOnDeviceVoiceAssistant();
 
-        Button refresh = new Button(this);
+        Button refresh = new ChineseButton(this);
         refresh.setText("Refresh device information");
         refresh.setOnClickListener(v -> recreate());
         content.addView(refresh, matchWrap());
 
-        TextView safety = new TextView(this);
+        TextView safety = new ChineseTextView(this);
         safety.setText("Safety baseline: no root commands, Xposed hooks, signature spoofing, remote revocation, silent installs, or system-partition writes.");
         safety.setTextSize(12);
         safety.setPadding(0, dp(18), 0, 0);
@@ -184,7 +184,7 @@ public final class MainActivity extends Activity {
         java.util.List<StartupAppLauncher.Entry> apps =
                 StartupAppLauncher.listUserLaunchableApps(this);
         if (apps.isEmpty()) {
-            TextView empty = new TextView(this);
+            TextView empty = new ChineseTextView(this);
             empty.setText("No launchable user-installed apps were found.");
             content.addView(empty);
             return;
@@ -212,10 +212,10 @@ public final class MainActivity extends Activity {
         });
         content.addView(selector, matchWrap());
 
-        TextView status = new TextView(this);
+        TextView status = new ChineseTextView(this);
         status.setText("Select an installed app, then tap Launch. No automatic startup is configured.");
         content.addView(status);
-        Button launch = new Button(this);
+        Button launch = new ChineseButton(this);
         launch.setText("Launch selected app");
         launch.setOnClickListener(v -> {
             int index = selector.getSelectedItemPosition();
@@ -234,7 +234,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(launch, matchWrap());
 
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("Only user-installed apps with a launcher activity are listed. Launch requires a tap. No boot receiver, background auto-start, force-stop, play command or private app data access is used.");
         note.setTextSize(12);
         content.addView(note);
@@ -244,18 +244,18 @@ public final class MainActivity extends Activity {
         addSection("Startup video · local preview");
         android.content.SharedPreferences prefs =
                 getSharedPreferences("startup_preferences", MODE_PRIVATE);
-        android.widget.CheckBox enabled = new android.widget.CheckBox(this);
+        android.widget.CheckBox enabled = new ChineseCheckBox(this);
         enabled.setText("Enable local startup-video preview controls");
         enabled.setChecked(prefs.getBoolean("startup_video_enabled", false));
         enabled.setOnCheckedChangeListener((button, checked) ->
                 prefs.edit().putBoolean("startup_video_enabled", checked).apply());
         content.addView(enabled);
 
-        startupVideoStatus = new TextView(this);
+        startupVideoStatus = new ChineseTextView(this);
         updateStartupVideoStatus(prefs.getString("startup_video_uri", null));
         content.addView(startupVideoStatus);
 
-        Button choose = new Button(this);
+        Button choose = new ChineseButton(this);
         choose.setText("Choose local video");
         choose.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("video/*");
@@ -263,7 +263,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(choose, matchWrap());
 
-        Button preview = new Button(this);
+        Button preview = new ChineseButton(this);
         preview.setText("Preview selected video");
         preview.setOnClickListener(v -> {
             if (!enabled.isChecked()) {
@@ -279,7 +279,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(preview, matchWrap());
 
-        Button clear = new Button(this);
+        Button clear = new ChineseButton(this);
         clear.setText("Clear selected video");
         clear.setOnClickListener(v -> {
             String value = prefs.getString("startup_video_uri", null);
@@ -289,21 +289,21 @@ public final class MainActivity extends Activity {
         });
         content.addView(clear, matchWrap());
 
-        android.widget.CheckBox videoAudio = new android.widget.CheckBox(this);
+        android.widget.CheckBox videoAudio = new ChineseCheckBox(this);
         videoAudio.setText("Play video audio");
         videoAudio.setChecked(prefs.getBoolean("startup_video_audio_enabled", true));
         videoAudio.setOnCheckedChangeListener((button, checked) ->
                 prefs.edit().putBoolean("startup_video_audio_enabled", checked).apply());
         content.addView(videoAudio);
 
-        android.widget.CheckBox fadeOut = new android.widget.CheckBox(this);
+        android.widget.CheckBox fadeOut = new ChineseCheckBox(this);
         fadeOut.setText("Fade out at preview time limit");
         fadeOut.setChecked(prefs.getBoolean("startup_video_fade_out", true));
         fadeOut.setOnCheckedChangeListener((button, checked) ->
                 prefs.edit().putBoolean("startup_video_fade_out", checked).apply());
         content.addView(fadeOut);
 
-        TextView delayLabel = new TextView(this);
+        TextView delayLabel = new ChineseTextView(this);
         android.widget.SeekBar delay = new android.widget.SeekBar(this);
         delay.setMax(30);
         delay.setProgress(Math.max(0, Math.min(30,
@@ -319,7 +319,7 @@ public final class MainActivity extends Activity {
             @Override public void onStopTrackingTouch(android.widget.SeekBar bar) {}
         });
 
-        TextView maxTimeLabel = new TextView(this);
+        TextView maxTimeLabel = new ChineseTextView(this);
         android.widget.SeekBar maxTime = new android.widget.SeekBar(this);
         maxTime.setMax(55);
         maxTime.setProgress(Math.max(0, Math.min(55,
@@ -335,7 +335,7 @@ public final class MainActivity extends Activity {
             @Override public void onStopTrackingTouch(android.widget.SeekBar bar) {}
         });
 
-        TextView explanation = new TextView(this);
+        TextView explanation = new ChineseTextView(this);
         explanation.setText("The selected video is stored as a local document reference. Playback starts only after you tap Preview. No boot receiver, automatic playback, network access, or background service is used.");
         explanation.setTextSize(12);
         content.addView(explanation);
@@ -345,18 +345,18 @@ public final class MainActivity extends Activity {
         addSection("Startup audio · local preview");
         android.content.SharedPreferences prefs =
                 getSharedPreferences("startup_preferences", MODE_PRIVATE);
-        android.widget.CheckBox enabled = new android.widget.CheckBox(this);
+        android.widget.CheckBox enabled = new ChineseCheckBox(this);
         enabled.setText("Enable local startup-audio preview controls");
         enabled.setChecked(prefs.getBoolean("startup_audio_enabled", false));
         enabled.setOnCheckedChangeListener((button, checked) ->
                 prefs.edit().putBoolean("startup_audio_enabled", checked).apply());
         content.addView(enabled);
 
-        startupAudioStatus = new TextView(this);
+        startupAudioStatus = new ChineseTextView(this);
         updateStartupAudioStatus(prefs.getString("startup_audio_uri", null));
         content.addView(startupAudioStatus);
 
-        Button choose = new Button(this);
+        Button choose = new ChineseButton(this);
         choose.setText("Choose local audio");
         choose.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("audio/*");
@@ -364,7 +364,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(choose, matchWrap());
 
-        Button preview = new Button(this);
+        Button preview = new ChineseButton(this);
         preview.setText("Preview selected audio");
         preview.setOnClickListener(v -> {
             if (!enabled.isChecked()) {
@@ -380,7 +380,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(preview, matchWrap());
 
-        Button stop = new Button(this);
+        Button stop = new ChineseButton(this);
         stop.setText("Stop audio preview");
         stop.setOnClickListener(v -> {
             releaseStartupAudioPlayer();
@@ -388,7 +388,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(stop, matchWrap());
 
-        Button clear = new Button(this);
+        Button clear = new ChineseButton(this);
         clear.setText("Clear selected audio");
         clear.setOnClickListener(v -> {
             releaseStartupAudioPlayer();
@@ -399,7 +399,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(clear, matchWrap());
 
-        TextView explanation = new TextView(this);
+        TextView explanation = new ChineseTextView(this);
         explanation.setText("Audio is played only after you tap Preview and is stopped when the app screen stops. No boot playback, automatic playback, network upload, or background service is used.");
         explanation.setTextSize(12);
         content.addView(explanation);
@@ -527,7 +527,7 @@ public final class MainActivity extends Activity {
         frame.setOrientation(LinearLayout.VERTICAL);
         frame.addView(video, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(220)));
-        TextView playbackNote = new TextView(this);
+        TextView playbackNote = new ChineseTextView(this);
         playbackNote.setText("Manual local preview · max " + maxSeconds
                 + " seconds · audio " + (audioEnabled ? "on" : "off"));
         frame.addView(playbackNote);
@@ -903,16 +903,16 @@ public final class MainActivity extends Activity {
     private void addAudioFocusDemo() {
         addSection("Audio focus · explicit demo");
         audioFocusController = new AudioFocusController(this);
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("Audio focus is requested only after you enable this option and tap Request. No sound is played and system volume is not changed. Focus is released when this screen stops.");
         note.setTextSize(13); content.addView(note);
-        android.widget.CheckBox optIn = new android.widget.CheckBox(this);
+        android.widget.CheckBox optIn = new ChineseCheckBox(this);
         optIn.setText("I allow this app to request temporary navigation audio focus");
         content.addView(optIn);
-        audioFocusStatus = new TextView(this);
+        audioFocusStatus = new ChineseTextView(this);
         audioFocusStatus.setText("Audio focus: not requested");
         content.addView(audioFocusStatus);
-        Button request = new Button(this); request.setText("Request temporary audio focus");
+        Button request = new ChineseButton(this); request.setText("Request temporary audio focus");
         request.setOnClickListener(v -> {
             if (!optIn.isChecked()) { audioFocusStatus.setText("Enable the opt-in checkbox first."); return; }
             boolean granted = audioFocusController.requestTransientFocus(change -> runOnUiThread(() -> {
@@ -925,13 +925,13 @@ public final class MainActivity extends Activity {
             audioFocusStatus.setText(granted ? "Audio focus: granted (temporary)" : "Audio focus: not granted");
         });
         content.addView(request, matchWrap());
-        Button release = new Button(this); release.setText("Release audio focus");
+        Button release = new ChineseButton(this); release.setText("Release audio focus");
         release.setOnClickListener(v -> { audioFocusController.release(); audioFocusStatus.setText("Audio focus: released"); });
         content.addView(release, matchWrap());
     }
 
     private void addSection(String text) {
-        TextView label = new TextView(this);
+        TextView label = new ChineseTextView(this);
         label.setText(text);
         label.setTextSize(18);
         label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
@@ -945,7 +945,7 @@ public final class MainActivity extends Activity {
 
     private void addMeterPreview() {
         addSection("Multi-widget offline meter editor");
-        TextView offlineMeterNote = new TextView(this);
+        TextView offlineMeterNote = new ChineseTextView(this);
         offlineMeterNote.setText("Meter values are demo by default. A connected OBD adapter can supply live speed, RPM, coolant and fuel; road, navigation and other fields remain demo data.");
         offlineMeterNote.setTextSize(12);
         content.addView(offlineMeterNote);
@@ -974,15 +974,15 @@ public final class MainActivity extends Activity {
             displayParams.bottomMargin = dp(12);
             content.addView(display, displayParams);
 
-            TextView status = new TextView(this);
+            TextView status = new ChineseTextView(this);
             content.addView(status);
-            TextView speedLabel = new TextView(this);
+            TextView speedLabel = new ChineseTextView(this);
             SeekBar speed = new SeekBar(this);
             speed.setMax(240);
             speed.setProgress(Math.max(0, Math.min(240, speedValue[0])));
             addLabeledControl("Demo speed", speedLabel, speed);
 
-            TextView unitLabel = new TextView(this);
+            TextView unitLabel = new ChineseTextView(this);
             unitLabel.setText("Demo unit system");
             content.addView(unitLabel);
             String[] unitOptions = {"Metric (km, L/100km, °C)", "Metric (km, km/L, °C)",
@@ -1000,7 +1000,7 @@ public final class MainActivity extends Activity {
             for (int i = 0; i < CivicVehicleInfoLayout.FIELD_COUNT; i++) {
                 String key = "vehicle_info_" + CivicVehicleInfoLayout.KEYS[i];
                 vehicleInfoSelection[i] = prefs.getBoolean(key, defaultVehicleInfo[i]);
-                android.widget.CheckBox fieldCheck = new android.widget.CheckBox(this);
+                android.widget.CheckBox fieldCheck = new ChineseCheckBox(this);
                 fieldCheck.setText(CivicVehicleInfoLayout.LABELS[i]);
                 fieldCheck.setChecked(vehicleInfoSelection[i]);
                 vehicleInfoChecks[i] = fieldCheck;
@@ -1012,28 +1012,28 @@ public final class MainActivity extends Activity {
                 currentCompassHeading = heading;
                 if (compassPreviewRefresh != null) compassPreviewRefresh.run();
             });
-            android.widget.CheckBox compassEnabled = new android.widget.CheckBox(this);
+            android.widget.CheckBox compassEnabled = new ChineseCheckBox(this);
             compassEnabled.setText("Enable compass");
             compassEnabled.setChecked(meterOptions.getBoolean("compass_enabled", true));
             compassEnabledForPreview = compassEnabled.isChecked();
             content.addView(compassEnabled);
-            android.widget.CheckBox trackUp = new android.widget.CheckBox(this);
+            android.widget.CheckBox trackUp = new ChineseCheckBox(this);
             trackUp.setText("Track-up mode (demo only)");
             trackUp.setChecked(meterOptions.getBoolean("track_up_mode", false));
             trackUp.setEnabled(compassEnabled.isChecked());
             content.addView(trackUp);
-            TextView compassModeStatus = new TextView(this);
+            TextView compassModeStatus = new ChineseTextView(this);
             content.addView(compassModeStatus);
 
             addSection("GPS course · explicit foreground opt-in");
-            TextView gpsNote = new TextView(this);
+            TextView gpsNote = new ChineseTextView(this);
             gpsNote.setText("Uses only Android GPS_PROVIDER while this Activity is visible. Precise location permission is requested only after you enable this option. No coordinates are displayed, stored, uploaded or read from the network.");
             gpsNote.setTextSize(12);
             content.addView(gpsNote);
-            gpsCourseStatus = new TextView(this);
+            gpsCourseStatus = new ChineseTextView(this);
             gpsCourseStatus.setText("GPS course: off");
             content.addView(gpsCourseStatus);
-            gpsCourseOptInCheckbox = new android.widget.CheckBox(this);
+            gpsCourseOptInCheckbox = new ChineseCheckBox(this);
             gpsCourseOptInCheckbox.setText("Use GPS speed/course for track-up while this app is visible");
             android.content.SharedPreferences navigationPrefs =
                     getSharedPreferences("navigation_preferences", MODE_PRIVATE);
@@ -1082,22 +1082,22 @@ public final class MainActivity extends Activity {
             content.addView(gpsCourseOptInCheckbox);
 
             addSection("Road information (original preference options)");
-            android.widget.CheckBox roadInfoEnabled = new android.widget.CheckBox(this);
+            android.widget.CheckBox roadInfoEnabled = new ChineseCheckBox(this);
             roadInfoEnabled.setText("Enable road information");
             roadInfoEnabled.setChecked(prefs.getBoolean("enable_road_information", false));
             content.addView(roadInfoEnabled);
-            android.widget.CheckBox roadInfoVoice = new android.widget.CheckBox(this);
+            android.widget.CheckBox roadInfoVoice = new ChineseCheckBox(this);
             roadInfoVoice.setText("Enable road information voice alerts");
             roadInfoVoice.setChecked(prefs.getBoolean("play_road_information_voice", false));
             roadInfoVoice.setEnabled(roadInfoEnabled.isChecked());
             content.addView(roadInfoVoice);
-            TextView roadInfoPreview = new TextView(this);
+            TextView roadInfoPreview = new ChineseTextView(this);
             roadInfoPreview.setTextSize(13);
             content.addView(roadInfoPreview);
-            roadInfoStatus = new TextView(this);
+            roadInfoStatus = new ChineseTextView(this);
             roadInfoStatus.setText("Voice announcement has not been requested.");
             content.addView(roadInfoStatus);
-            Button speakRoadInfo = new Button(this);
+            Button speakRoadInfo = new ChineseButton(this);
             speakRoadInfo.setText("Speak one road-information demo instruction");
             content.addView(speakRoadInfo, matchWrap());
             Runnable updateRoadInfoOptions = () -> {
@@ -1137,9 +1137,9 @@ public final class MainActivity extends Activity {
             selector.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, labels));
             content.addView(selector, matchWrap());
 
-            TextView sizeLabel = new TextView(this), leftLabel = new TextView(this),
-                    topLabel = new TextView(this), widthLabel = new TextView(this),
-                    heightLabel = new TextView(this);
+            TextView sizeLabel = new ChineseTextView(this), leftLabel = new ChineseTextView(this),
+                    topLabel = new ChineseTextView(this), widthLabel = new ChineseTextView(this),
+                    heightLabel = new ChineseTextView(this);
             SeekBar size = new SeekBar(this), left = new SeekBar(this), top = new SeekBar(this),
                     width = new SeekBar(this), height = new SeekBar(this);
             size.setMax(86); left.setMax(99); top.setMax(99); width.setMax(99); height.setMax(99);
@@ -1274,7 +1274,7 @@ public final class MainActivity extends Activity {
             top.setOnSeekBarChangeListener(editor); width.setOnSeekBarChangeListener(editor);
             height.setOnSeekBarChangeListener(editor);
 
-            Button civicTemplate = new Button(this);
+            Button civicTemplate = new ChineseButton(this);
             civicTemplate.setText("Load Civic 584×215 meter layout demo");
             civicTemplate.setOnClickListener(v -> {
                 try {
@@ -1295,7 +1295,7 @@ public final class MainActivity extends Activity {
             });
             content.addView(civicTemplate, matchWrap());
 
-            Button add = new Button(this);
+            Button add = new ChineseButton(this);
             add.setText("Add widget");
             add.setOnClickListener(v -> {
                 if (specs.size() >= 32) { status.setText("Maximum 32 widgets reached"); return; }
@@ -1309,7 +1309,7 @@ public final class MainActivity extends Activity {
                 status.setText("Widget added. Press Save widget layout to store it.");
             });
             content.addView(add, matchWrap());
-            Button remove = new Button(this);
+            Button remove = new ChineseButton(this);
             remove.setText("Remove selected widget");
             remove.setOnClickListener(v -> {
                 if (specs.size() == 1) { status.setText("At least one widget must remain"); return; }
@@ -1323,7 +1323,7 @@ public final class MainActivity extends Activity {
             });
             content.addView(remove, matchWrap());
 
-            Button theme = new Button(this);
+            Button theme = new ChineseButton(this);
             theme.setText("Change meter background");
             theme.setOnClickListener(v -> {
                 meterColor = meterColor == 0xFF263746 ? 0xFF101820
@@ -1331,7 +1331,7 @@ public final class MainActivity extends Activity {
                 prefs.edit().putInt("background",meterColor).apply(); render.run();
             });
             content.addView(theme, matchWrap());
-            Button save = new Button(this);
+            Button save = new ChineseButton(this);
             save.setText("Save widget layout");
             save.setOnClickListener(v -> {
                 android.content.SharedPreferences.Editor edit = prefs.edit();
@@ -1346,11 +1346,11 @@ public final class MainActivity extends Activity {
                 edit.apply(); status.setText("Saved "+specs.size()+" widgets on this device");
             });
             content.addView(save, matchWrap());
-            Button sharePreview = new Button(this);
+            Button sharePreview = new ChineseButton(this);
             sharePreview.setText("Share meter preview image");
             sharePreview.setOnClickListener(v -> shareMeterPreview());
             content.addView(sharePreview, matchWrap());
-            Button reset = new Button(this);
+            Button reset = new ChineseButton(this);
             reset.setText("Reset meter editor");
             reset.setOnClickListener(v -> { prefs.edit().clear().apply(); recreate(); });
             content.addView(reset, matchWrap());
@@ -1399,7 +1399,7 @@ public final class MainActivity extends Activity {
 
     private void addPresetManagement() {
         addSection("Named meter presets");
-        Button save = new Button(this);
+        Button save = new ChineseButton(this);
         save.setText("Save current layout as named preset");
         save.setOnClickListener(v -> askPresetName("Preset name", name -> {
             try {
@@ -1410,11 +1410,11 @@ public final class MainActivity extends Activity {
             } catch (Exception e) { toast("Save failed: " + e.getMessage()); }
         }));
         content.addView(save, matchWrap());
-        Button manage = new Button(this);
+        Button manage = new ChineseButton(this);
         manage.setText("Manage / export saved presets");
         manage.setOnClickListener(v -> managePresets());
         content.addView(manage, matchWrap());
-        Button importButton = new Button(this);
+        Button importButton = new ChineseButton(this);
         importButton.setText("Import preset JSON (paste)");
         importButton.setOnClickListener(v -> {
             android.widget.EditText field = new android.widget.EditText(this);
@@ -1434,7 +1434,7 @@ public final class MainActivity extends Activity {
                 }).show();
         });
         content.addView(importButton, matchWrap());
-        Button importFile = new Button(this);
+        Button importFile = new ChineseButton(this);
         importFile.setText("Import preset JSON file");
         importFile.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("*/*");
@@ -1534,25 +1534,25 @@ public final class MainActivity extends Activity {
 
     private void addOnDeviceVoiceAssistant() {
         addSection("Voice assistant · on-device recognition");
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("Speech recognition starts only after you tap Start and grant microphone permission. This prototype uses Android's on-device recognizer only (Android 12+ where available); it does not fall back to cloud recognition, listen in the background, or send vehicle commands.");
         note.setTextSize(12);
         content.addView(note);
 
-        voiceAssistantStatus = new TextView(this);
+        voiceAssistantStatus = new ChineseTextView(this);
         voiceAssistantStatus.setText("Voice assistant: stopped");
         content.addView(voiceAssistantStatus);
-        voiceAssistantConfirm = new Button(this);
+        voiceAssistantConfirm = new ChineseButton(this);
         voiceAssistantConfirm.setText("Confirm suggested action");
         voiceAssistantConfirm.setEnabled(false);
         voiceAssistantConfirm.setOnClickListener(v -> executePendingVoiceCommand());
         content.addView(voiceAssistantConfirm, matchWrap());
-        Button start = new Button(this);
+        Button start = new ChineseButton(this);
         start.setText("Start on-device voice recognition");
         start.setOnClickListener(v -> requestOnDeviceVoiceRecognition());
         content.addView(start, matchWrap());
 
-        Button stop = new Button(this);
+        Button stop = new ChineseButton(this);
         stop.setText("Stop listening");
         stop.setOnClickListener(v -> {
             releaseVoiceRecognizer();
@@ -1751,7 +1751,7 @@ public final class MainActivity extends Activity {
         android.content.SharedPreferences prefs =
                 getSharedPreferences("display_preferences", MODE_PRIVATE);
 
-        android.widget.CheckBox keepAwake = new android.widget.CheckBox(this);
+        android.widget.CheckBox keepAwake = new ChineseCheckBox(this);
         keepAwake.setText("Keep screen awake while this app is visible");
         keepAwake.setChecked(prefs.getBoolean("keep_screen_awake", false));
         keepAwake.setOnCheckedChangeListener((button, checked) -> {
@@ -1761,12 +1761,12 @@ public final class MainActivity extends Activity {
         });
         content.addView(keepAwake);
 
-        android.widget.CheckBox useSystem = new android.widget.CheckBox(this);
+        android.widget.CheckBox useSystem = new ChineseCheckBox(this);
         useSystem.setText("Use system screen brightness");
         useSystem.setChecked(prefs.getBoolean("use_system_brightness", true));
         content.addView(useSystem);
 
-        TextView brightnessLabel = new TextView(this);
+        TextView brightnessLabel = new ChineseTextView(this);
         SeekBar brightness = new SeekBar(this);
         brightness.setMax(100);
         brightness.setProgress(Math.max(1, Math.min(100, prefs.getInt("app_brightness", 70))));
@@ -1791,13 +1791,13 @@ public final class MainActivity extends Activity {
             @Override public void onStartTrackingTouch(SeekBar bar) {}
             @Override public void onStopTrackingTouch(SeekBar bar) {}
         });
-        Button reset = new Button(this);
+        Button reset = new ChineseButton(this);
         reset.setText("Restore system brightness");
         reset.setOnClickListener(v -> useSystem.setChecked(true));
         content.addView(reset, matchWrap());
         apply.run();
 
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("Brightness affects only this app's window. Keep-awake is active only while this screen is visible and is cleared when the app screen stops. No global display setting is changed.");
         note.setTextSize(12);
         content.addView(note);
@@ -1813,18 +1813,18 @@ public final class MainActivity extends Activity {
 
     private void addAppCacheMaintenance() {
         addSection("App cache maintenance · app-private only");
-        TextView usage = new TextView(this);
+        TextView usage = new ChineseTextView(this);
         Runnable refresh = () -> usage.setText("App-private cache currently uses "
                 + formatStorageBytes(AppCacheMaintenance.calculateSize(getCacheDir())));
         refresh.run();
         content.addView(usage);
 
-        Button refreshButton = new Button(this);
+        Button refreshButton = new ChineseButton(this);
         refreshButton.setText("Refresh cache usage");
         refreshButton.setOnClickListener(v -> refresh.run());
         content.addView(refreshButton, matchWrap());
 
-        Button clear = new Button(this);
+        Button clear = new ChineseButton(this);
         clear.setText("Clear app cache");
         clear.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
                 .setTitle("Clear app cache?")
@@ -1837,7 +1837,7 @@ public final class MainActivity extends Activity {
                 }).show());
         content.addView(clear, matchWrap());
 
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("No shared storage, downloads, user documents, other apps, presets, or system files are touched.");
         note.setTextSize(12);
         content.addView(note);
@@ -1845,7 +1845,7 @@ public final class MainActivity extends Activity {
 
     private void addStorageDiagnostics() {
         addSection("Storage diagnostics · read-only");
-        TextView report = new TextView(this);
+        TextView report = new ChineseTextView(this);
         report.setTextSize(13);
         report.setPadding(dp(12), dp(12), dp(12), dp(12));
         report.setBackgroundColor(0xFFF5F6F7);
@@ -1853,12 +1853,12 @@ public final class MainActivity extends Activity {
         refresh.run();
         content.addView(report, matchWrap());
 
-        Button refreshButton = new Button(this);
+        Button refreshButton = new ChineseButton(this);
         refreshButton.setText("Refresh storage diagnostics");
         refreshButton.setOnClickListener(v -> refresh.run());
         content.addView(refreshButton, matchWrap());
 
-        Button share = new Button(this);
+        Button share = new ChineseButton(this);
         share.setText("Share storage report");
         share.setOnClickListener(v -> {
             android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SEND);
@@ -1868,7 +1868,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(share, matchWrap());
 
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("This diagnostic checks app-accessible storage only. It does not request all-files access, change platform.xml, remount partitions, or modify shared storage.");
         note.setTextSize(12);
         content.addView(note);
@@ -1908,11 +1908,11 @@ public final class MainActivity extends Activity {
 
     private void addLocalApkInstaller() {
         addSection("Local APK installer · system confirmation");
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("Choose an APK from a document provider. Android's package installer handles the installation and displays its own confirmation. This app never installs silently or uses root.");
         note.setTextSize(13);
         content.addView(note);
-        Button choose = new Button(this);
+        Button choose = new ChineseButton(this);
         choose.setText("Choose APK to install");
         choose.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("*/*");
@@ -1960,7 +1960,7 @@ public final class MainActivity extends Activity {
 
     private void addVehicleDataDemo() {
         addSection("Vehicle data adapter · offline demo");
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("The following values are sample data only. No CAN, OBD, ECU, Bluetooth adapter, or factory head-unit connection is active.");
         note.setTextSize(12);
         content.addView(note);
@@ -1968,7 +1968,7 @@ public final class MainActivity extends Activity {
         VehicleDataProvider provider = new MockVehicleDataProvider();
         android.content.SharedPreferences prefs =
                 getSharedPreferences("vehicle_data_demo", MODE_PRIVATE);
-        vehicleSnapshotStatus = new TextView(this);
+        vehicleSnapshotStatus = new ChineseTextView(this);
         String imported = prefs.getString("imported_snapshot_json", null);
         if (imported == null) {
             vehicleSnapshotStatus.setText(provider.getLatestSnapshot().toDisplayString());
@@ -1985,7 +1985,7 @@ public final class MainActivity extends Activity {
         vehicleSnapshotStatus.setBackgroundColor(0xFFF5F6F7);
         content.addView(vehicleSnapshotStatus, matchWrap());
 
-        Button refresh = new Button(this);
+        Button refresh = new ChineseButton(this);
         refresh.setText("Refresh demo vehicle values");
         refresh.setOnClickListener(v -> {
             prefs.edit().remove("imported_snapshot_json").apply();
@@ -1993,7 +1993,7 @@ public final class MainActivity extends Activity {
         });
         content.addView(refresh, matchWrap());
 
-        Button importSnapshot = new Button(this);
+        Button importSnapshot = new ChineseButton(this);
         importSnapshot.setText("Import vehicle snapshot JSON");
         importSnapshot.setOnClickListener(v -> {
             android.content.Intent intent = createOpenablePicker("*/*");
@@ -2003,29 +2003,29 @@ public final class MainActivity extends Activity {
         });
         content.addView(importSnapshot, matchWrap());
 
-        TextView importNote = new TextView(this);
+        TextView importNote = new ChineseTextView(this);
         importNote.setText("Imported data is a one-time snapshot, not a live car connection. Expected JSON fields: speedKph, engineRpm, fuelPercent, coolantTempC and gear. Values are range-checked before display.");
         importNote.setTextSize(12);
         content.addView(importNote);
 
         addSection("OBD-II Bluetooth adapter · optional read-only");
-        TextView obdNote = new TextView(this);
+        TextView obdNote = new ChineseTextView(this);
         obdNote.setText("Pair an ELM327-compatible Bluetooth SPP adapter in Android Settings first. This app only reads four standard Mode 01 PIDs (speed, RPM, coolant and fuel level). It sends no ECU control, clear-code or write commands. Connection is manual and ends when this Activity leaves the foreground.");
         obdNote.setTextSize(12);
         content.addView(obdNote);
-        obdStatus = new TextView(this);
+        obdStatus = new ChineseTextView(this);
         obdStatus.setText("OBD-II adapter: disconnected · demo values above remain separate");
         obdStatus.setTextSize(14);
         content.addView(obdStatus);
-        obdPidStatus = new TextView(this);
+        obdPidStatus = new ChineseTextView(this);
         obdPidStatus.setText("ECU-supported dashboard PIDs: not discovered");
         obdPidStatus.setTextSize(13);
         content.addView(obdPidStatus);
-        Button chooseObd = new Button(this);
+        Button chooseObd = new ChineseButton(this);
         chooseObd.setText("Choose paired OBD-II adapter");
         chooseObd.setOnClickListener(v -> choosePairedObdAdapter());
         content.addView(chooseObd, matchWrap());
-        Button disconnectObd = new Button(this);
+        Button disconnectObd = new ChineseButton(this);
         disconnectObd.setText("Disconnect OBD-II adapter");
         disconnectObd.setOnClickListener(v -> {
             if (obdController != null) obdController.disconnect();
@@ -2034,43 +2034,43 @@ public final class MainActivity extends Activity {
         });
         content.addView(disconnectObd, matchWrap());
 
-        obdDtcStatus = new TextView(this);
+        obdDtcStatus = new ChineseTextView(this);
         obdDtcStatus.setText("Stored trouble codes: not requested");
         obdDtcStatus.setTextSize(13);
         content.addView(obdDtcStatus);
-        obdEngineStatus = new TextView(this);
+        obdEngineStatus = new ChineseTextView(this);
         obdEngineStatus.setText("Engine status / MIL: not requested");
         obdEngineStatus.setTextSize(13);
         content.addView(obdEngineStatus);
-        Button readStored = new Button(this);
+        Button readStored = new ChineseButton(this);
         readStored.setText("Read stored fault codes (Mode 03)");
         readStored.setOnClickListener(v ->
                 confirmDiagnosticRead(ObdReadOnlyCommands.STORED_DTC, "stored"));
         content.addView(readStored, matchWrap());
 
-        Button readPending = new Button(this);
+        Button readPending = new ChineseButton(this);
         readPending.setText("Read pending fault codes (Mode 07)");
         readPending.setOnClickListener(v ->
                 confirmDiagnosticRead(ObdReadOnlyCommands.PENDING_DTC, "pending"));
         content.addView(readPending, matchWrap());
 
-        Button readPermanent = new Button(this);
+        Button readPermanent = new ChineseButton(this);
         readPermanent.setText("Read permanent fault codes (Mode 0A)");
         readPermanent.setOnClickListener(v ->
                 confirmDiagnosticRead(ObdReadOnlyCommands.PERMANENT_DTC, "permanent"));
         content.addView(readPermanent, matchWrap());
 
-        Button readEngineStatus = new Button(this);
+        Button readEngineStatus = new ChineseButton(this);
         readEngineStatus.setText("Read check-engine light status (PID 01)");
         readEngineStatus.setOnClickListener(v ->
                 confirmDiagnosticRead(ObdReadOnlyCommands.ENGINE_STATUS, "check-engine status"));
         content.addView(readEngineStatus, matchWrap());
 
-        Button copyReport = new Button(this);
+        Button copyReport = new ChineseButton(this);
         copyReport.setText("Copy OBD-II diagnostic report");
         copyReport.setOnClickListener(v -> copyObdDiagnosticReport());
         content.addView(copyReport, matchWrap());
-        TextView reportPrivacy = new TextView(this);
+        TextView reportPrivacy = new ChineseTextView(this);
         reportPrivacy.setText("The report is copied locally only. It excludes VIN, adapter MAC address and location; review it before sharing.");
         reportPrivacy.setTextSize(12);
         content.addView(reportPrivacy);
@@ -2307,7 +2307,7 @@ public final class MainActivity extends Activity {
 
     private void addNavigationDemo() {
         addSection("Navigation app integration");
-        TextView note = new TextView(this);
+        TextView note = new ChineseTextView(this);
         note.setText("Only detects and opens installed navigation apps after you tap. It never force-stops or changes another app.");
         note.setTextSize(13);
         content.addView(note);
@@ -2321,14 +2321,14 @@ public final class MainActivity extends Activity {
             String label = candidate[0];
             String packageName = candidate[1];
             boolean installed = NavigationAppHelper.isLaunchable(this, packageName);
-            TextView state = new TextView(this);
+            TextView state = new ChineseTextView(this);
             state.setText(label + " · " + (installed ? "Launchable" : "Not installed / no launcher")
                     + "\n" + packageName);
             state.setTextSize(14);
             state.setPadding(dp(10), dp(8), dp(10), dp(4));
             content.addView(state);
 
-            Button launch = new Button(this);
+            Button launch = new ChineseButton(this);
             launch.setText("Open " + label);
             launch.setEnabled(installed);
             launch.setOnClickListener(v -> {
@@ -2349,7 +2349,7 @@ public final class MainActivity extends Activity {
         homeDestination.setHint("Enter a place name or home address");
         homeDestination.setText(navigationPrefs.getString("home_destination", ""));
         content.addView(homeDestination, matchWrap());
-        Button saveHome = new Button(this);
+        Button saveHome = new ChineseButton(this);
         saveHome.setText("Save home destination");
         saveHome.setOnClickListener(v -> {
             try {
@@ -2367,7 +2367,7 @@ public final class MainActivity extends Activity {
             }
         });
         content.addView(saveHome, matchWrap());
-        Button clearHome = new Button(this);
+        Button clearHome = new ChineseButton(this);
         clearHome.setText("Clear saved home destination");
         clearHome.setOnClickListener(v -> {
             navigationPrefs.edit().remove("home_destination").apply();
@@ -2375,31 +2375,31 @@ public final class MainActivity extends Activity {
             toast("Saved home destination cleared");
         });
         content.addView(clearHome, matchWrap());
-        TextView homeNote = new TextView(this);
+        TextView homeNote = new ChineseTextView(this);
         homeNote.setText("Stored only in this app's private preferences. Voice command “回家” opens the public map chooser only after confirmation. No GPS or background location is used.");
         homeNote.setTextSize(12);
         content.addView(homeNote);
 
         addSection("Navigation state adapter · demo only");
-        TextView demoNote = new TextView(this);
+        TextView demoNote = new ChineseTextView(this);
         demoNote.setText("This is a local sample route used to verify the navigation display contract. It is not reading Amap, Baidu, GPS, or the vehicle.");
         demoNote.setTextSize(12);
         content.addView(demoNote);
         MockNavigationStateProvider demoProvider = new MockNavigationStateProvider();
-        TextView navigationState = new TextView(this);
+        TextView navigationState = new ChineseTextView(this);
         navigationState.setText(demoProvider.getCurrentState().toDisplayString());
         navigationState.setTextSize(14);
         navigationState.setPadding(dp(12), dp(12), dp(12), dp(12));
         navigationState.setBackgroundColor(0xFFF5F6F7);
         content.addView(navigationState, matchWrap());
 
-        Button nextState = new Button(this);
+        Button nextState = new ChineseButton(this);
         nextState.setText("Advance demo navigation state");
         nextState.setOnClickListener(v ->
                 navigationState.setText(demoProvider.advance().toDisplayString()));
         content.addView(nextState, matchWrap());
 
-        Button resetState = new Button(this);
+        Button resetState = new ChineseButton(this);
         resetState.setText("Reset demo route");
         resetState.setOnClickListener(v -> {
             demoProvider.reset();
@@ -2410,7 +2410,7 @@ public final class MainActivity extends Activity {
 
     private void addKeyMappingDemo() {
         addSection("Steering key mapping · foreground actions");
-        TextView status = new TextView(this);
+        TextView status = new ChineseTextView(this);
         status.setText("Capture up to ten Android hardware keys and map them to local app navigation. Mappings work only while this Activity is foregrounded and the monitor is enabled.");
         status.setTextSize(14);
         status.setPadding(dp(12), dp(12), dp(12), dp(12));
@@ -2429,7 +2429,7 @@ public final class MainActivity extends Activity {
                     ForegroundKeyMapping.KEYCODE_UNKNOWN);
         }
 
-        android.widget.CheckBox monitor = new android.widget.CheckBox(this);
+        android.widget.CheckBox monitor = new ChineseCheckBox(this);
         monitor.setText("Enable foreground hardware-key mapping");
         monitor.setChecked(false);
         monitor.setOnCheckedChangeListener((button, checked) -> {
@@ -2448,19 +2448,19 @@ public final class MainActivity extends Activity {
         });
         content.addView(monitor);
 
-        foregroundKeyStatus = new TextView(this);
+        foregroundKeyStatus = new ChineseTextView(this);
         foregroundKeyStatus.setText("Foreground key mapping disabled.");
         foregroundKeyStatus.setTextSize(13);
         content.addView(foregroundKeyStatus);
 
         for (int i = 0; i < keyNames.length; i++) {
             final int slot = i;
-            TextView label = new TextView(this);
+            TextView label = new ChineseTextView(this);
             label.setText(keyNames[i]);
             label.setTextSize(14);
             content.addView(label);
 
-            foregroundKeyCodeLabels[i] = new TextView(this);
+            foregroundKeyCodeLabels[i] = new ChineseTextView(this);
             updateForegroundKeyCodeLabel(i);
             content.addView(foregroundKeyCodeLabels[i]);
 
@@ -2486,7 +2486,7 @@ public final class MainActivity extends Activity {
             });
             content.addView(selector, matchWrap());
 
-            Button capture = new Button(this);
+            Button capture = new ChineseButton(this);
             capture.setText("Capture key for slot " + (i + 1));
             capture.setOnClickListener(v -> {
                 if (!monitor.isChecked()) {
@@ -2501,7 +2501,7 @@ public final class MainActivity extends Activity {
             });
             content.addView(capture, matchWrap());
 
-            Button simulate = new Button(this);
+            Button simulate = new ChineseButton(this);
             simulate.setText("Simulate slot " + (i + 1));
             simulate.setOnClickListener(v -> {
                 String action = String.valueOf(selector.getSelectedItem());
@@ -2664,7 +2664,7 @@ public final class MainActivity extends Activity {
     }
 
     private void addFeature(String name, String detail) {
-        TextView row = new TextView(this);
+        TextView row = new ChineseTextView(this);
         row.setText(name + "\n" + detail);
         row.setTextSize(14);
         row.setPadding(dp(14), dp(12), dp(14), dp(12));
