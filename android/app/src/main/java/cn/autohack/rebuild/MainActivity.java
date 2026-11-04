@@ -1074,12 +1074,9 @@ public final class MainActivity extends Activity {
                     widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(demoValues)));
                 }
                 compassModeStatus.setText(CivicCompassOptions.modeDescription(
-                        compassEnabled.isChecked(), trackUp.isChecked())
-                        + (compassSensorAvailable ? " · device sensor heading"
-                        : " · device compass sensor unavailable; showing demo heading")
-                        + (trackUp.isChecked()
-                        ? (gpsCourseAvailable ? " · GPS course active" : " · GPS course unavailable; fallback heading")
-                        : " · north-up mode")
+                        compassEnabled.isChecked(), trackUp.isChecked(), gpsCourseAvailable)
+                        + (compassSensorAvailable ? " · device sensor available"
+                        : " · device compass sensor unavailable; sample heading fallback")
                         + " · GPS is foreground-only and opt-in");
                 display.setWidgets(widgets, meterColor);
                 status.setText("Preset: " + activePresetName[0] + " · "
