@@ -24,6 +24,10 @@ This phase adds a pure parser for ELM327 text responses and common SAE J1979 Mod
 
 The parser accepts spaced or compact positive responses, optional 11-bit CAN headers, ELM command echo, SEARCHING text and the `>` prompt. Unsupported, negative or truncated responses return null rather than fabricated values.
 
+## Query planning
+
+The companion `ObdPidQueryPlan` starts with `0100`, follows only advertised `0120` / `0140` bitmap extensions, and schedules only supported common dashboard PIDs. It generates standard read-only Mode 01 commands only. See `docs/OBD2_READ_ONLY_QUERY_PLAN.md`.
+
 ## Important limitations
 
 - Standard PID support varies by vehicle ECU; a null result means the response was absent or invalid, not that the vehicle has no such sensor.
