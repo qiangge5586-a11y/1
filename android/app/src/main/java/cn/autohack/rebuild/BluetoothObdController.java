@@ -83,13 +83,33 @@ public final class BluetoothObdController {
             sendCommand(input, output, "ATH0", 1500, session);
             sendCommand(input, output, "ATSP0", 1500, session);
             if (!isActive(session)) return;
-            postState("Connected. Reading standard OBD-II PIDs only.", session);
+            postState("Connected. Discovering ECU-supported standard PIDs…", session);
+            String bitmap00 = sendCommand(input, output,
+                    ObdReadOnlyCommands.BITMAP_00, 1800, session);
+            String bitmap20 = null;
+            String bitmap40 = null;
+            String nextBitmap = ObdPidQueryPlan.nextBitmapCommand(bitmap00, 0x00);
+            if (nextBitmap != null && isActive(session)) {
+                bitmap20 = sendCommand(input, output, nextBitmap, 1800, session);
+                nextBitmap = ObdPidQueryPlan.nextBitmapCommand(bitmap20, 0x20);
+                if (nextBitmap != null && isActive(session)) {
+                    bitmap40 = sendCommand(input, output, nextBitmap, 1800, session);
+                }
+            }
+            java.util.List<String> supportedCommands =
+                    ObdPidQueryPlan.supportedReadCommands(bitmap00, bitmap20, bitmap40);
+            if (!isActive(session)) return;
+            postState("Connected. Polling only ECU-advertised read-only PIDs.", session);
 
             while (isActive(session) && activeSocket.isConnected()) {
-                Integer speed = decode(ObdReadOnlyCommands.commandAt(0), input, output, session, 0);
-                Integer rpm = decode(ObdReadOnlyCommands.commandAt(1), input, output, session, 1);
-                Integer coolant = decode(ObdReadOnlyCommands.commandAt(2), input, output, session, 2);
-                Integer fuel = decode(ObdReadOnlyCommands.commandAt(3), input, output, session, 3);
+                Integer speed = supportedCommands.contains(ObdReadOnlyCommands.SPEED)
+                        ? decode(ObdReadOnlyCommands.SPEED, input, output, session, 0) : null;
+                Integer rpm = supportedCommands.contains(ObdReadOnlyCommands.ENGINE_RPM)
+                        ? decode(ObdReadOnlyCommands.ENGINE_RPM, input, output, session, 1) : null;
+                Integer coolant = supportedCommands.contains(ObdReadOnlyCommands.COOLANT_TEMP)
+                        ? decode(ObdReadOnlyCommands.COOLANT_TEMP, input, output, session, 2) : null;
+                Integer fuel = supportedCommands.contains(ObdReadOnlyCommands.FUEL_LEVEL)
+                        ? decode(ObdReadOnlyCommands.FUEL_LEVEL, input, output, session, 3) : null;
                 if (!isActive(session)) break;
                 postTelemetry(speed, rpm, coolant, fuel, session);
                 Thread.sleep(1000L);
