@@ -65,6 +65,7 @@ public final class BluetoothObdController {
 
     private void runSession(BluetoothDevice device, long session) {
         BluetoothSocket activeSocket = null;
+        String terminalState = "OBD-II adapter disconnected.";
         try {
             postState("Connecting to paired OBD-II adapter…", session);
             activeSocket = device.createRfcommSocketToServiceRecord(SPP_UUID);
@@ -96,13 +97,13 @@ public final class BluetoothObdController {
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         } catch (Exception error) {
-            if (isActive(session)) postState("OBD-II connection failed: "
-                    + safeMessage(error), session);
+            if (isActive(session))
+                terminalState = "OBD-II connection failed: " + safeMessage(error);
         } finally {
             if (session == generation) {
                 stopped = true;
                 if (socket == activeSocket) socket = null;
-                postState("OBD-II adapter disconnected.", session);
+                postState(terminalState, session);
             }
             closeSocket(activeSocket);
         }
