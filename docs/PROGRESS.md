@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 67 — Pending and permanent DTC reads (CI pending)
+## Phase 67 — Pending and permanent DTC reads (CI verified)
 
 - Extended the decoder to parse Mode 07 positive responses (`47`) and Mode 0A positive responses (`4A`) in addition to stored Mode 03 (`43`).
 - Added exact command allowlisting for `03`, `07` and `0A`; Mode 04 clear-DTC and all other write/control commands remain blocked.
@@ -8,7 +8,9 @@
 - Added separate confirmed UI actions for stored, pending and permanent codes. Results are decoded and displayed with the existing cautious generic descriptions.
 - Tests cover positive markers, cross-mode rejection and exact diagnostic command allowlisting.
 - Details: `docs/OBD2_DTC_READ.md`.
-- Source/test commits: `6d1ccb79c1ea8583be86a3efca4acb4c0003a1ab`, `4f45a208b9349859d3760e028fc751fb68c2ffb1`, `a15bc400e5006aaff382d033bd35c13a4a83fd6b`, `0cc3bfe903948c88a7542954660154315b9ebc6f`, `0fe2957e16d7e8c632a9a307caf03b34238373f3`, `6d56747311376bd9714955576878c37ec1a7f887`; CI pending.
+- Initial integration builds exposed a staged MainActivity callback update; the final build includes all three request buttons and the matching listener implementation.
+- Source/test commits: `6d1ccb79c1ea8583be86a3efca4acb4c0003a1ab`, `4f45a208b9349859d3760e028fc751fb68c2ffb1`, `a15bc400e5006aaff382d033bd35c13a4a83fd6b`, `0cc3bfe903948c88a7542954660154315b9ebc6f`, `0fe2957e16d7e8c632a9a307caf03b34238373f3`, `6d56747311376bd9714955576878c37ec1a7f887`.
+- GitHub Actions run #220 (ID 41780292500) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41780292500. Artifact ID: 13299395095; APK artifact ZIP size: 100,668 bytes.
 
 
 ## Phase 66 — Offline generic DTC descriptions (CI verified)
