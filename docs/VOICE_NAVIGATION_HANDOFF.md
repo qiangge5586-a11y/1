@@ -13,15 +13,15 @@ The recognized destination is shown first. The user must tap **Confirm suggested
 
 - The user chooses which installed map/navigation app receives the destination.
 - No specific Amap/Baidu package is assumed or launched directly.
-- No private broadcasts, navigation app process hooks, POI service APIs, home address, route guidance or background location are used.
-- “回家” remains unsupported because no saved home destination exists.
+- No private broadcasts, navigation app process hooks, POI service APIs, automatic route guidance or background location are used. Home destinations are entered by the user and stored locally.
+- “回家” uses the saved home destination when configured; without one, no map action is created. See `docs/SAVED_HOME_DESTINATION.md`.
 - If no app handles the geo URI, the app reports that no compatible map app is installed.
 
 ## Validation
 
 Parser tests cover destination extraction and unsupported shortcuts. Device-level map chooser behavior depends on installed applications and requires manual validation.
 
-## Phase 53 — Navigation phrase normalization and destination validation
+## Phase 54 — Navigation phrase normalization and destination validation
 
 - Expanded supported speech variants with polite prefixes such as “请帮我导航到”.
 - Removes common spoken trailing particles and punctuation before showing the destination for confirmation.
