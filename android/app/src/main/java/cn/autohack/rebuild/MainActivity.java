@@ -50,7 +50,6 @@ public final class MainActivity extends Activity {
         content.addView(facts);
 
         addSection("Feature preview");
-        addFeature("Steering key mapping", "Demo only — no vehicle key interception");
         addMeterPreview();
         addFeature("Navigation state", "Waiting for a supported navigation integration");
         addFeature("Audio focus", "No audio changes until explicitly enabled");
