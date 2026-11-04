@@ -79,135 +79,157 @@ public final class MainActivity extends Activity {
     }
 
     private void addMeterPreview() {
-        addSection("Offline meter editor");
+        addSection("Multi-widget offline meter editor");
         try {
             MeterPreset preset = MeterPresetRepository.loadDemo(this);
-            MeterPreset.ViewSpec spec = preset.primaryView;
-            android.content.SharedPreferences prefs =
-                    getSharedPreferences("meter_editor", MODE_PRIVATE);
+            android.content.SharedPreferences prefs = getSharedPreferences("meter_editor", MODE_PRIVATE);
             meterColor = prefs.getInt("background", 0xFF263746);
-            meterTextSize = prefs.getInt("text_size", spec.textSize);
-            meterTextColor = prefs.getInt("text_color", 0xFFFFFFFF);
-            int initialSpeed = prefs.getInt("speed", 0);
-            int initialLeft = prefs.getInt("left", spec.left);
-            int initialTop = prefs.getInt("top", spec.top);
-
-            meterDisplay = new MeterCanvasView(this);
+            java.util.List<MeterPreset.ViewSpec> specs = new java.util.ArrayList<>(preset.views);
+            int[] speedValue = {prefs.getInt("speed", 0)};
+            MeterCanvasView display = new MeterCanvasView(this);
             LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(180));
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(190));
             displayParams.bottomMargin = dp(12);
-            content.addView(meterDisplay, displayParams);
+            content.addView(display, displayParams);
 
+            TextView status = new TextView(this);
+            content.addView(status);
             TextView speedLabel = new TextView(this);
             SeekBar speed = new SeekBar(this);
             speed.setMax(240);
-            speed.setProgress(Math.max(0, Math.min(240, initialSpeed)));
+            speed.setProgress(Math.max(0, Math.min(240, speedValue[0])));
             addLabeledControl("Demo speed", speedLabel, speed);
 
-            TextView sizeLabel = new TextView(this);
-            SeekBar size = new SeekBar(this);
-            size.setMax(38);
-            size.setProgress(Math.max(0, Math.min(38, meterTextSize - 18)));
+            String[] labels = new String[specs.size()];
+            for (int i = 0; i < labels.length; i++) labels[i] = "Widget " + (i + 1);
+            Spinner selector = new Spinner(this);
+            selector.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, labels));
+            content.addView(selector, matchWrap());
+
+            TextView sizeLabel = new TextView(this), leftLabel = new TextView(this),
+                    topLabel = new TextView(this), widthLabel = new TextView(this),
+                    heightLabel = new TextView(this);
+            SeekBar size = new SeekBar(this), left = new SeekBar(this), top = new SeekBar(this),
+                    width = new SeekBar(this), height = new SeekBar(this);
+            size.setMax(86); left.setMax(99); top.setMax(99); width.setMax(99); height.setMax(99);
             addLabeledControl("Text size", sizeLabel, size);
-
-            TextView leftLabel = new TextView(this);
-            SeekBar left = new SeekBar(this);
-            left.setMax(100 - spec.width);
-            left.setProgress(Math.max(0, Math.min(left.getMax(), initialLeft)));
             addLabeledControl("Horizontal position", leftLabel, left);
-
-            TextView topLabel = new TextView(this);
-            SeekBar top = new SeekBar(this);
-            top.setMax(100 - spec.height);
-            top.setProgress(Math.max(0, Math.min(top.getMax(), initialTop)));
             addLabeledControl("Vertical position", topLabel, top);
+            addLabeledControl("Widget width", widthLabel, width);
+            addLabeledControl("Widget height", heightLabel, height);
+            int[] selected = {0};
 
-            Runnable update = () -> {
-                int value = speed.getProgress();
-                int rpm = 850 + value * 32;
-                String previewText = preset.name + "\n"
-                        + spec.renderMock(value, rpm, 68, 82)
-                        + "\nFuel: 68% · Coolant: 82 °C";
-                meterDisplay.setPreview(previewText, meterTextSize, meterTextColor,
-                        meterColor, left.getProgress(), top.getProgress(),
-                        spec.width, spec.height);
+            Runnable render = () -> {
+                java.util.List<MeterCanvasView.Widget> widgets = new java.util.ArrayList<>();
+                int value = speed.getProgress(), rpm = 850 + value * 32;
+                for (MeterPreset.ViewSpec spec : specs) {
+                    widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(value, rpm, 68, 82)));
+                }
+                display.setWidgets(widgets, meterColor);
+                status.setText("Preset: " + preset.name + " · " + specs.size() + " widgets");
                 speedLabel.setText("Demo speed: " + value + " km/h");
-                sizeLabel.setText("Text size: " + meterTextSize + " sp");
-                leftLabel.setText("Horizontal position: " + left.getProgress() + "%");
-                topLabel.setText("Vertical position: " + top.getProgress() + "%");
+                MeterPreset.ViewSpec s = specs.get(selected[0]);
+                sizeLabel.setText("Text size: " + s.textSize + " sp");
+                leftLabel.setText("Horizontal position: " + s.left + "%");
+                topLabel.setText("Vertical position: " + s.top + "%");
+                widthLabel.setText("Widget width: " + s.width + "%");
+                heightLabel.setText("Widget height: " + s.height + "%");
             };
-
+            Runnable loadSelected = () -> {
+                MeterPreset.ViewSpec s = specs.get(selected[0]);
+                size.setProgress(s.textSize - 10);
+                left.setProgress(s.left); top.setProgress(s.top);
+                width.setProgress(s.width - 1); height.setProgress(s.height - 1);
+                render.run();
+            };
+            selector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override public void onItemSelected(AdapterView<?> parent, android.view.View view,
+                        int position, long id) { selected[0] = position; loadSelected.run(); }
+                @Override public void onNothingSelected(AdapterView<?> parent) {}
+            });
             speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override public void onProgressChanged(SeekBar bar, int value, boolean user) {
-                    update.run();
-                    if (user) prefs.edit().putInt("speed", value).apply();
+                    render.run(); if (user) prefs.edit().putInt("speed", value).apply();
                 }
                 @Override public void onStartTrackingTouch(SeekBar bar) {}
                 @Override public void onStopTrackingTouch(SeekBar bar) {}
             });
-            size.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            android.widget.SeekBar.OnSeekBarChangeListener editor = new android.widget.SeekBar.OnSeekBarChangeListener() {
                 @Override public void onProgressChanged(SeekBar bar, int value, boolean user) {
-                    meterTextSize = value + 18;
-                    update.run();
-                    if (user) prefs.edit().putInt("text_size", meterTextSize).apply();
+                    if (!user) return;
+                    MeterPreset.ViewSpec prior = specs.get(selected[0]);
+                    int l = bar == left ? value : left.getProgress();
+                    int t = bar == top ? value : top.getProgress();
+                    int w = bar == width ? value + 1 : width.getProgress() + 1;
+                    int h = bar == height ? value + 1 : height.getProgress() + 1;
+                    int z = bar == size ? value + 10 : size.getProgress() + 10;
+                    MeterPreset.ViewSpec next = new MeterPreset.ViewSpec(l,t,w,h,
+                            prior.template,prior.alignment,z,prior.textColor);
+                    specs.set(selected[0], next);
+                    prefs.edit().putInt("left_" + selected[0],next.left)
+                            .putInt("top_" + selected[0],next.top).putInt("width_" + selected[0],next.width)
+                            .putInt("height_" + selected[0],next.height).putInt("size_" + selected[0],next.textSize).apply();
+                    render.run();
                 }
                 @Override public void onStartTrackingTouch(SeekBar bar) {}
                 @Override public void onStopTrackingTouch(SeekBar bar) {}
+            };
+            size.setOnSeekBarChangeListener(editor); left.setOnSeekBarChangeListener(editor);
+            top.setOnSeekBarChangeListener(editor); width.setOnSeekBarChangeListener(editor);
+            height.setOnSeekBarChangeListener(editor);
+
+            Button add = new Button(this);
+            add.setText("Add widget");
+            add.setOnClickListener(v -> {
+                if (specs.size() >= 32) { status.setText("Maximum 32 widgets reached"); return; }
+                specs.add(new MeterPreset.ViewSpec(10,10,35,20,"{rpm} rpm","center",20,"#ffffd54f"));
+                String[] updated = new String[specs.size()];
+                for (int i=0;i<updated.length;i++) updated[i]="Widget "+(i+1);
+                selector.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,updated));
+                selector.setSelection(specs.size()-1);
+                status.setText("Widget added. Press Save widget layout to store it.");
+                render.run();
             });
-            left.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar bar, int value, boolean user) {
-                    update.run();
-                    if (user) prefs.edit().putInt("left", value).apply();
-                }
-                @Override public void onStartTrackingTouch(SeekBar bar) {}
-                @Override public void onStopTrackingTouch(SeekBar bar) {}
+            content.addView(add, matchWrap());
+            Button remove = new Button(this);
+            remove.setText("Remove selected widget");
+            remove.setOnClickListener(v -> {
+                if (specs.size() == 1) { status.setText("At least one widget must remain"); return; }
+                specs.remove(selected[0]);
+                String[] updated = new String[specs.size()];
+                for (int i=0;i<updated.length;i++) updated[i]="Widget "+(i+1);
+                selector.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,updated));
+                selected[0]=Math.min(selected[0],specs.size()-1); selector.setSelection(selected[0]);
+                render.run();
             });
-            top.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar bar, int value, boolean user) {
-                    update.run();
-                    if (user) prefs.edit().putInt("top", value).apply();
-                }
-                @Override public void onStartTrackingTouch(SeekBar bar) {}
-                @Override public void onStopTrackingTouch(SeekBar bar) {}
-            });
+            content.addView(remove, matchWrap());
 
             Button theme = new Button(this);
             theme.setText("Change meter background");
             theme.setOnClickListener(v -> {
-                if (meterColor == 0xFF263746) meterColor = 0xFF101820;
-                else if (meterColor == 0xFF101820) meterColor = 0xFF173D32;
-                else meterColor = 0xFF263746;
-                prefs.edit().putInt("background", meterColor).apply();
-                update.run();
+                meterColor = meterColor == 0xFF263746 ? 0xFF101820
+                        : (meterColor == 0xFF101820 ? 0xFF173D32 : 0xFF263746);
+                prefs.edit().putInt("background",meterColor).apply(); render.run();
             });
             content.addView(theme, matchWrap());
-
-            Button textColor = new Button(this);
-            textColor.setText("Change meter text color");
-            textColor.setOnClickListener(v -> {
-                if (meterTextColor == 0xFFFFFFFF) meterTextColor = 0xFFFFD54F;
-                else if (meterTextColor == 0xFFFFD54F) meterTextColor = 0xFF80CBC4;
-                else meterTextColor = 0xFFFFFFFF;
-                prefs.edit().putInt("text_color", meterTextColor).apply();
-                update.run();
+            Button save = new Button(this);
+            save.setText("Save widget layout");
+            save.setOnClickListener(v -> {
+                android.content.SharedPreferences.Editor edit = prefs.edit();
+                for (int i=0;i<specs.size();i++) {
+                    MeterPreset.ViewSpec s=specs.get(i);
+                    edit.putInt("left_"+i,s.left).putInt("top_"+i,s.top)
+                            .putInt("width_"+i,s.width).putInt("height_"+i,s.height)
+                            .putInt("size_"+i,s.textSize).putString("color_"+i,s.textColor);
+                }
+                edit.apply(); status.setText("Saved "+specs.size()+" widgets on this device");
             });
-            content.addView(textColor, matchWrap());
-
+            content.addView(save, matchWrap());
             Button reset = new Button(this);
             reset.setText("Reset meter editor");
-            reset.setOnClickListener(v -> {
-                speed.setProgress(0);
-                size.setProgress(Math.max(0, Math.min(38, spec.textSize - 18)));
-                left.setProgress(spec.left);
-                top.setProgress(spec.top);
-                meterColor = 0xFF263746;
-                meterTextColor = 0xFFFFFFFF;
-                prefs.edit().clear().apply();
-                update.run();
-            });
+            reset.setOnClickListener(v -> { prefs.edit().clear().apply(); recreate(); });
             content.addView(reset, matchWrap());
-
-            update.run();
+            loadSelected.run();
         } catch (Exception error) {
             addFeature("Instrument meter", "Demo preset unavailable: " + error.getMessage());
         }
