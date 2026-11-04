@@ -9,9 +9,13 @@
 - Skips `0000` padding.
 - Negative, no-data, truncated, oversized or malformed responses return an empty list.
 
+## Optional explicit read action
+
+After a paired ELM327 adapter is connected, the user can tap **Read stored fault codes (Mode 03)** and confirm a second dialog. The request is queued on the Bluetooth session worker so it does not race the telemetry poller. The result is displayed in memory only. The action is never automatic on connection.
+
 ## Safety boundary
 
-This phase is parser-only. It does not send Mode 03 requests, clear DTCs, erase freeze-frame data, reset an ECU or write to a vehicle. The existing Bluetooth command allowlist remains unchanged. A later UI integration must require a separate user action and must remain read-only.
+Only the exact standard command `03` is allowed for this diagnostic read. No `04` clear-DTC request, freeze-frame erase, ECU reset, actuator control, coding or write command is permitted. The request requires an active foreground adapter session and an explicit confirmation tap.
 
 ## Validation
 
