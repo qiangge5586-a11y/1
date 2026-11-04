@@ -4,10 +4,13 @@ import android.app.Activity;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 /** Safe, offline-first shell for the independent HondaHack rebuild. */
@@ -220,25 +223,56 @@ public final class MainActivity extends Activity {
     private void addKeyMappingDemo() {
         addSection("Steering key mapping · simulator");
         TextView status = new TextView(this);
-        status.setText("No physical buttons are intercepted. Tap a sample action below.");
+        status.setText("Assign actions to simulated steering keys. No physical key events are captured.");
         status.setTextSize(14);
         status.setPadding(dp(12), dp(12), dp(12), dp(12));
         status.setBackgroundColor(0xFFF5F6F7);
         content.addView(status);
-        String[] labels = {"Volume +", "Next track", "Show meter", "Voice assistant"};
-        String[] actions = {"Increase demo volume", "Skip to next demo track",
-                "Toggle demo meter visibility", "Open voice assistant demo"};
-        for (int i = 0; i < labels.length; i++) {
-            final String action = actions[i];
-            Button button = new Button(this);
-            button.setText(labels[i]);
-            button.setOnClickListener(v -> {
-                status.setText("Simulated mapping action: " + action
-                        + "\nThis does not send commands to the car.");
-                getSharedPreferences("key_mapping_demo", MODE_PRIVATE)
-                        .edit().putString("last_action", action).apply();
+
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("key_mapping_demo", MODE_PRIVATE);
+        String[] keyNames = {"Steering key A", "Steering key B",
+                "Steering key C", "Steering key D"};
+        String[] defaults = {"Volume up", "Next track", "Show meter", "Voice assistant"};
+        String[] actions = {"No action", "Volume up", "Volume down", "Next track",
+                "Previous track", "Play / pause", "Show meter", "Voice assistant",
+                "Open navigation"};
+        for (int i = 0; i < keyNames.length; i++) {
+            final String keyName = keyNames[i];
+            final String preferenceKey = "mapping_" + i;
+            TextView label = new TextView(this);
+            label.setText(keyName);
+            label.setTextSize(14);
+            content.addView(label);
+
+            Spinner selector = new Spinner(this);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item, actions);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            selector.setAdapter(adapter);
+            String saved = prefs.getString(preferenceKey, defaults[i]);
+            int selected = 0;
+            for (int j = 0; j < actions.length; j++) {
+                if (actions[j].equals(saved)) selected = j;
+            }
+            selector.setSelection(selected);
+            selector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override public void onItemSelected(AdapterView<?> parent,
+                        android.view.View view, int position, long id) {
+                    prefs.edit().putString(preferenceKey, actions[position]).apply();
+                    status.setText(keyName + " is assigned to: " + actions[position]
+                            + "\\nSimulation only — no command is sent to the car.");
+                }
+                @Override public void onNothingSelected(AdapterView<?> parent) {}
             });
-            content.addView(button, matchWrap());
+            content.addView(selector, matchWrap());
+
+            Button simulate = new Button(this);
+            simulate.setText("Simulate " + keyName);
+            simulate.setOnClickListener(v -> status.setText("Simulated " + keyName
+                    + " → " + selector.getSelectedItem()
+                    + "\\nNo physical steering-wheel input was intercepted."));
+            content.addView(simulate, matchWrap());
         }
     }
 
