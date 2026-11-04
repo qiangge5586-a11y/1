@@ -31,6 +31,9 @@ public final class MainActivity extends Activity {
     private TextView voiceAssistantStatus;
     private TextView vehicleSnapshotStatus;
     private boolean foregroundKeyMonitorEnabled;
+    private android.speech.tts.TextToSpeech roadInfoTts;
+    private boolean roadInfoTtsInitializing;
+    private TextView roadInfoStatus;
     private TextView foregroundKeyStatus;
 
     @Override public void onCreate(Bundle state) {
@@ -693,6 +696,56 @@ public final class MainActivity extends Activity {
             content.addView(trackUp);
             TextView compassModeStatus = new TextView(this);
             content.addView(compassModeStatus);
+
+            addSection("Road information (original preference options)");
+            android.widget.CheckBox roadInfoEnabled = new android.widget.CheckBox(this);
+            roadInfoEnabled.setText("Enable road information");
+            roadInfoEnabled.setChecked(prefs.getBoolean("enable_road_information", false));
+            content.addView(roadInfoEnabled);
+            android.widget.CheckBox roadInfoVoice = new android.widget.CheckBox(this);
+            roadInfoVoice.setText("Enable road information voice alerts");
+            roadInfoVoice.setChecked(prefs.getBoolean("play_road_information_voice", false));
+            roadInfoVoice.setEnabled(roadInfoEnabled.isChecked());
+            content.addView(roadInfoVoice);
+            TextView roadInfoPreview = new TextView(this);
+            roadInfoPreview.setTextSize(13);
+            content.addView(roadInfoPreview);
+            roadInfoStatus = new TextView(this);
+            roadInfoStatus.setText("Voice announcement has not been requested.");
+            content.addView(roadInfoStatus);
+            Button speakRoadInfo = new Button(this);
+            speakRoadInfo.setText("Speak one road-information demo instruction");
+            content.addView(speakRoadInfo, matchWrap());
+            Runnable updateRoadInfoOptions = () -> {
+                boolean enabled = roadInfoEnabled.isChecked();
+                roadInfoVoice.setEnabled(enabled);
+                if (!enabled && roadInfoVoice.isChecked()) roadInfoVoice.setChecked(false);
+                roadInfoPreview.setText(enabled
+                        ? RoadInformationDemo.displayText()
+                                + "\\nOffline sample only · no navigation app connected"
+                        : "Road information demo is disabled.");
+                speakRoadInfo.setEnabled(enabled && roadInfoVoice.isChecked());
+            };
+            roadInfoEnabled.setOnCheckedChangeListener((button, checked) -> {
+                prefs.edit().putBoolean("enable_road_information", checked).apply();
+                if (!checked) {
+                    roadInfoVoice.setChecked(false);
+                    prefs.edit().putBoolean("play_road_information_voice", false).apply();
+                }
+                updateRoadInfoOptions.run();
+            });
+            roadInfoVoice.setOnCheckedChangeListener((button, checked) -> {
+                prefs.edit().putBoolean("play_road_information_voice", checked).apply();
+                updateRoadInfoOptions.run();
+            });
+            speakRoadInfo.setOnClickListener(v -> {
+                if (!roadInfoEnabled.isChecked() || !roadInfoVoice.isChecked()) {
+                    roadInfoStatus.setText("Enable both road-information options first.");
+                    return;
+                }
+                speakRoadInformationDemo();
+            });
+            updateRoadInfoOptions.run();
 
             String[] labels = new String[specs.size()];
             for (int i = 0; i < labels.length; i++) labels[i] = "Widget " + (i + 1);
@@ -1554,6 +1607,74 @@ public final class MainActivity extends Activity {
                     + "\nNo physical steering-wheel input was intercepted."));
             content.addView(simulate, matchWrap());
         }
+    }
+
+    private void speakRoadInformationDemo() {
+        if (roadInfoTtsInitializing) {
+            roadInfoStatus.setText("Preparing the offline speech engine…");
+            return;
+        }
+        if (roadInfoTts == null) {
+            roadInfoTtsInitializing = true;
+            roadInfoTts = new android.speech.tts.TextToSpeech(this, status -> {
+                roadInfoTtsInitializing = false;
+                if (status != android.speech.tts.TextToSpeech.SUCCESS) {
+                    roadInfoStatus.setText("Speech engine initialization failed.");
+                    return;
+                }
+                if (!selectOfflineSpeechVoice(roadInfoTts)) {
+                    roadInfoStatus.setText("No installed offline speech voice is available. No network voice will be used.");
+                    roadInfoTts.shutdown();
+                    roadInfoTts = null;
+                    return;
+                }
+                int result = roadInfoTts.speak(RoadInformationDemo.announcementText(),
+                        android.speech.tts.TextToSpeech.QUEUE_FLUSH, null,
+                        "hondahack-road-information-demo");
+                roadInfoStatus.setText(result == android.speech.tts.TextToSpeech.SUCCESS
+                        ? "Offline demo instruction requested from the installed speech engine."
+                        : "Speech request failed.");
+            });
+        } else {
+            int result = roadInfoTts.speak(RoadInformationDemo.announcementText(),
+                    android.speech.tts.TextToSpeech.QUEUE_FLUSH, null,
+                    "hondahack-road-information-demo");
+            roadInfoStatus.setText(result == android.speech.tts.TextToSpeech.SUCCESS
+                    ? "Offline demo instruction requested from the installed speech engine."
+                    : "Speech request failed.");
+        }
+    }
+
+    private boolean selectOfflineSpeechVoice(android.speech.tts.TextToSpeech engine) {
+        java.util.Set<android.speech.tts.Voice> voices = engine.getVoices();
+        if (voices == null) return false;
+        android.speech.tts.Voice selected = null;
+        String preferredLanguage = java.util.Locale.getDefault().getLanguage();
+        for (android.speech.tts.Voice voice : voices) {
+            if (!voice.isNetworkConnectionRequired()
+                    && voice.getLocale().getLanguage().equals(preferredLanguage)) {
+                selected = voice;
+                break;
+            }
+        }
+        if (selected == null) {
+            for (android.speech.tts.Voice voice : voices) {
+                if (!voice.isNetworkConnectionRequired()) {
+                    selected = voice;
+                    break;
+                }
+            }
+        }
+        return selected != null && engine.setVoice(selected) == android.speech.tts.TextToSpeech.SUCCESS;
+    }
+
+    @Override protected void onDestroy() {
+        if (roadInfoTts != null) {
+            roadInfoTts.stop();
+            roadInfoTts.shutdown();
+            roadInfoTts = null;
+        }
+        super.onDestroy();
     }
 
     @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
