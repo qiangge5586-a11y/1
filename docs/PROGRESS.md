@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 59 — Paired Bluetooth ELM327 read-only adapter (CI pending)
+
+- Added manual selection from already paired Bluetooth Classic devices; no scanning or in-app pairing.
+- Android 12+ connect permission is requested only after the user opens the paired-device picker.
+- Connect requires a second confirmation. The controller uses a secure SPP socket and a worker thread, then disconnects in `onPause`; no background reconnect.
+- Adapter setup commands are allowlisted (`ATZ`, `ATE0`, `ATL0`, `ATS0`, `ATH0`, `ATSP0`). The only ECU requests are four fixed Mode 01 read PIDs: `010D`, `010C`, `0105`, `012F`.
+- No clear-DTC, control, coding, actuator, write or enhanced Honda PID commands. Live values stay in memory and remain separate from the demo snapshot.
+- Added strict command allowlist tests. Physical adapter/vehicle validation remains pending.
+- Details: `docs/BLUETOOTH_OBD_ADAPTER.md` and `docs/OBD2_ELM327_DECODER.md`.
+- Source/test/manifest commits: `bb62179baf7af7ba5960d6b3c08bb68801ca481a`, `35de13ec1dfb95016b103cd458da18173f3669e0`, `e3b89d782b6b769684f3822483ac25ebebfb50f4`, `31f5998d8898501dd8dfc909da69c1b096f1ca34`, `6f1720a83a56cc21136dbdffd853a8cba263691c`, `bf93b0515bdd82a82c3ae3868293472ae079c9d9`, `1c5810e039543ccef97d4f48ecc4165fa0224900`; CI pending.
+
 ## Phase 59 — Deterministic spoken app matching (CI verified)
 
 - Refactored voice app resolution into `VoiceAppMatcher`: exact app-label/package matches take priority, then unique partial matches are considered.
