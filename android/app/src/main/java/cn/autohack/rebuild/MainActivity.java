@@ -66,6 +66,12 @@ public final class MainActivity extends Activity {
     private android.widget.CheckBox gpsCourseOptInCheckbox;
     private BluetoothObdController obdController;
     private TextView obdStatus;
+    private Runnable meterPreviewRender;
+    private boolean obdLiveConnected;
+    private Integer obdLiveSpeedKph;
+    private Integer obdLiveEngineRpm;
+    private Integer obdLiveCoolantTempC;
+    private Integer obdLiveFuelPercent;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -814,8 +820,14 @@ public final class MainActivity extends Activity {
         if (foregroundGpsController != null) foregroundGpsController.stop();
         if (obdController != null) {
             obdController.disconnect();
+            obdLiveConnected = false;
+            obdLiveSpeedKph = null;
+            obdLiveEngineRpm = null;
+            obdLiveCoolantTempC = null;
+            obdLiveFuelPercent = null;
             if (obdStatus != null)
                 obdStatus.setText("OBD-II disconnected while app left the foreground; reconnect manually.");
+            if (meterPreviewRender != null) meterPreviewRender.run();
         }
         compassSensorAvailable = false;
         gpsCourseAvailable = false;
@@ -876,7 +888,7 @@ public final class MainActivity extends Activity {
     private void addMeterPreview() {
         addSection("Multi-widget offline meter editor");
         TextView offlineMeterNote = new TextView(this);
-        offlineMeterNote.setText("Civic template values are simulated. Metric units shown are demo defaults; no vehicle, GPS or live navigation source is connected.");
+        offlineMeterNote.setText("Meter values are demo by default. A connected OBD adapter can supply live speed, RPM, coolant and fuel; road, navigation and other fields remain demo data.");
         offlineMeterNote.setTextSize(12);
         content.addView(offlineMeterNote);
         try {
@@ -1084,6 +1096,9 @@ public final class MainActivity extends Activity {
                 MeterUnitSystem unitSystem = MeterUnitSystem.fromIndex(unitSelector.getSelectedItemPosition());
                 java.util.Map<String, String> demoValues = new java.util.HashMap<>(
                         CivicMeterDemoData.forSpeed(value, unitSystem).asTokenMap());
+                demoValues.putAll(ObdLiveMeterValues.overlay(demoValues, obdLiveConnected,
+                        obdLiveSpeedKph, obdLiveEngineRpm, obdLiveCoolantTempC,
+                        obdLiveFuelPercent, unitSystem));
                 String compassHeading = trackUp.isChecked() && gpsCourseAvailable
                         ? CompassHeading.fromAzimuth(gpsBearingDegrees) : currentCompassHeading;
                 demoValues.put("compass", CivicCompassOptions.compassLabel(
@@ -1110,6 +1125,7 @@ public final class MainActivity extends Activity {
                 widthLabel.setText("Widget width: " + s.width + "%");
                 heightLabel.setText("Widget height: " + s.height + "%");
             };
+            meterPreviewRender = render;
             Runnable loadSelected = () -> {
                 MeterPreset.ViewSpec s = specs.get(selected[0]);
                 size.setProgress(s.textSize - 10);
@@ -1954,6 +1970,7 @@ public final class MainActivity extends Activity {
         disconnectObd.setText("Disconnect OBD-II adapter");
         disconnectObd.setOnClickListener(v -> {
             if (obdController != null) obdController.disconnect();
+            clearLiveObdOverlay();
             obdStatus.setText("OBD-II adapter disconnected by user.");
         });
         content.addView(disconnectObd, matchWrap());
@@ -2030,24 +2047,51 @@ public final class MainActivity extends Activity {
 
     private void connectObdAdapter(android.bluetooth.BluetoothDevice device) {
         if (obdController != null) obdController.disconnect();
+        clearLiveObdOverlay();
         obdController = new BluetoothObdController(new BluetoothObdController.Listener() {
             @Override public void onState(String state) {
-                if (!isFinishing() && !isDestroyed() && obdStatus != null)
-                    obdStatus.setText(state);
+                if (isFinishing() || isDestroyed()) return;
+                if (state.startsWith("Connected.")) {
+                    obdLiveConnected = true;
+                    obdLiveSpeedKph = null;
+                    obdLiveEngineRpm = null;
+                    obdLiveCoolantTempC = null;
+                    obdLiveFuelPercent = null;
+                    if (meterPreviewRender != null) meterPreviewRender.run();
+                } else if (state.startsWith("OBD-II adapter disconnected")
+                        || state.startsWith("OBD-II connection failed")) {
+                    clearLiveObdOverlay();
+                }
+                if (obdStatus != null) obdStatus.setText(state);
             }
             @Override public void onTelemetry(Integer speedKph, Integer engineRpm,
                     Integer coolantTempC, Integer fuelPercent) {
                 if (isFinishing() || isDestroyed() || obdStatus == null) return;
+                obdLiveConnected = true;
+                obdLiveSpeedKph = speedKph;
+                obdLiveEngineRpm = engineRpm;
+                obdLiveCoolantTempC = coolantTempC;
+                obdLiveFuelPercent = fuelPercent;
+                if (meterPreviewRender != null) meterPreviewRender.run();
                 obdStatus.setText("OBD-II live read-only snapshot"
                         + "\\nSpeed: " + displayObdValue(speedKph, "km/h")
                         + "\\nEngine RPM: " + displayObdValue(engineRpm, "rpm")
                         + "\\nCoolant: " + displayObdValue(coolantTempC, "°C")
                         + "\\nFuel level: " + displayObdValue(fuelPercent, "%")
-                        + "\\nUnavailable PIDs remain --; values are not stored.");
+                        + "\\nFour live meter fields are overlaid; other tokens remain demo.");
             }
         });
         obdController.connect(device);
         obdStatus.setText("Connecting to paired OBD-II adapter…");
+    }
+
+    private void clearLiveObdOverlay() {
+        obdLiveConnected = false;
+        obdLiveSpeedKph = null;
+        obdLiveEngineRpm = null;
+        obdLiveCoolantTempC = null;
+        obdLiveFuelPercent = null;
+        if (meterPreviewRender != null) meterPreviewRender.run();
     }
 
     private String displayObdValue(Integer value, String unit) {
