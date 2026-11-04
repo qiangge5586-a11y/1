@@ -462,10 +462,14 @@ public final class MainActivity extends Activity {
         try {
             android.media.MediaPlayer player = new android.media.MediaPlayer();
             startupAudioPlayer = player;
-            player.setAudioAttributes(new android.media.AudioAttributes.Builder()
-                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build());
+            if (android.os.Build.VERSION.SDK_INT >= 21) {
+                player.setAudioAttributes(new android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build());
+            } else {
+                player.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
+            }
             player.setDataSource(this, uri);
             player.setOnPreparedListener(prepared -> {
                 if (startupAudioPlayer == prepared) {
@@ -635,7 +639,7 @@ public final class MainActivity extends Activity {
             try {
                 int granted = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
                 if (granted == 0) throw new SecurityException("Read permission was not granted");
-                getContentResolver().takePersistableUriPermission(uri, granted);
+                getContentResolver().takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
             } catch (SecurityException ignored) {
                 toast("The document provider did not grant persistent access. Choose a file from a supported provider.");
                 return;
@@ -677,7 +681,7 @@ public final class MainActivity extends Activity {
                 String json = PresetLibrary.exportPreset(p.getString("library", ""), name);
                 try (java.io.OutputStream output = getContentResolver().openOutputStream(uri, "w")) {
                     if (output == null) throw new java.io.IOException("Unable to open destination");
-                    output.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    output.write(json.getBytes(java.nio.charset.Charset.forName("UTF-8")));
                     output.flush();
                 }
                 toast("Saved JSON file: " + name);
@@ -688,7 +692,7 @@ public final class MainActivity extends Activity {
             int readGrant = data.getFlags() & android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
             if (readGrant != 0) {
                 try {
-                    getContentResolver().takePersistableUriPermission(uri, readGrant);
+                    getContentResolver().takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 } catch (SecurityException ignored) {}
             }
             getSharedPreferences("apk_installer", MODE_PRIVATE).edit()
@@ -735,7 +739,7 @@ public final class MainActivity extends Activity {
                 if (total > 65536) throw new java.io.IOException("Snapshot JSON exceeds 64 KiB");
                 output.write(buffer, 0, count);
             }
-            return new String(output.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+            return new String(output.toByteArray(), java.nio.charset.Charset.forName("UTF-8"));
         }
     }
 
@@ -751,7 +755,7 @@ public final class MainActivity extends Activity {
                 if (total > 1024 * 1024) throw new java.io.IOException("JSON file exceeds 1 MB");
                 output.write(buffer, 0, count);
             }
-            return new String(output.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+            return new String(output.toByteArray(), java.nio.charset.Charset.forName("UTF-8"));
         }
     }
 
@@ -1016,9 +1020,11 @@ public final class MainActivity extends Activity {
                 } else if (foregroundGpsController != null
                         && foregroundGpsController.hasFinePermission()) {
                     startForegroundGpsCourse();
-                } else {
+                } else if (android.os.Build.VERSION.SDK_INT >= 23) {
                     requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION,
                             android.Manifest.permission.ACCESS_COARSE_LOCATION}, 7608);
+                } else {
+                    startForegroundGpsCourse();
                 }
             });
             content.addView(gpsCourseOptInCheckbox);
@@ -2063,10 +2069,15 @@ public final class MainActivity extends Activity {
 
     private void showPairedObdAdapters() {
         try {
-            android.bluetooth.BluetoothManager manager =
-                    (android.bluetooth.BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
-            android.bluetooth.BluetoothAdapter adapter = manager == null
-                    ? android.bluetooth.BluetoothAdapter.getDefaultAdapter() : manager.getAdapter();
+            android.bluetooth.BluetoothAdapter adapter;
+            if (android.os.Build.VERSION.SDK_INT >= 18) {
+                android.bluetooth.BluetoothManager manager =
+                        (android.bluetooth.BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
+                adapter = manager == null ? android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+                        : manager.getAdapter();
+            } else {
+                adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            }
             if (adapter == null) {
                 obdStatus.setText("This device has no Bluetooth adapter.");
                 return;
@@ -2456,6 +2467,10 @@ public final class MainActivity extends Activity {
     }
 
     private void speakRoadInformationDemo() {
+        if (android.os.Build.VERSION.SDK_INT < 21) {
+            roadInfoStatus.setText("Offline voice selection requires Android 5.0 or newer; speech is disabled on this legacy device.");
+            return;
+        }
         if (roadInfoTtsInitializing) {
             roadInfoStatus.setText("Preparing the offline speech engine…");
             return;
@@ -2491,6 +2506,7 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @android.annotation.TargetApi(21)
     private boolean selectOfflineSpeechVoice(android.speech.tts.TextToSpeech engine) {
         java.util.Set<android.speech.tts.Voice> voices = engine.getVoices();
         if (voices == null) return false;
