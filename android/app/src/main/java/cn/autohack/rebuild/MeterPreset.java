@@ -31,7 +31,7 @@ public final class MeterPreset {
    boolean hasToken=false;
    for(String token:supported){String marker="{"+token+"}";if(template.contains(marker)){hasToken=true;unsupported=unsupported.replace(marker,"");}}
    if(!hasToken||unsupported.contains("{")||unsupported.contains("}"))throw new JSONException("Unsupported telemetry token in view "+i);
-   String alignment=item.optString("alignment","center").toLowerCase();
+   String alignment=item.optString("alignment","center").toLowerCase(java.util.Locale.ROOT);
    if(!alignment.equals("left")&&!alignment.equals("center")&&!alignment.equals("right"))throw new JSONException("Invalid alignment in view "+i);
    String color=item.optString("textColor","#ffffffff");
    if(!color.matches("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))throw new JSONException("Invalid textColor in view "+i);
