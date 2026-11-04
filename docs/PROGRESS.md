@@ -1,13 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 69 — ECU-supported dashboard PID visibility (CI pending)
+## Phase 69 — ECU-supported dashboard PID visibility (CI verified)
 
 - The Bluetooth session now reports the intersection of ECU-advertised support bitmaps and the four live dashboard PIDs.
 - The UI labels each supported item (speed, RPM, coolant, fuel) and shows the exact standard PID; if none are advertised, it says so explicitly.
 - The list is connection-scoped and cleared on disconnect. It does not infer support from the vehicle model or substitute demo values.
 - Added a listener callback carrying an immutable copy of the supported PID list.
 - Details: `docs/OBD_SUPPORTED_DASHBOARD_PIDS.md`.
-- Source commits: `573b63691bee91bea4821c8cfc7ebf2c59de6c53`, `00e1ead2ca5bc5ac31c76c9ead0169adc2f868aa`; CI pending.
+- The first build exposed the new listener callback not yet implemented in MainActivity; the follow-up added the UI callback and PID status text.
+- Source commits: `573b63691bee91bea4821c8cfc7ebf2c59de6c53`, `00e1ead2ca5bc5ac31c76c9ead0169adc2f868aa`.
+- GitHub Actions run #227 (ID 41780690440) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41780690440. Artifact ID: 13298876947; APK artifact ZIP size: 102,209 bytes.
 
 
 ## Phase 68 — Read-only ELM protocol identification (CI verified)
