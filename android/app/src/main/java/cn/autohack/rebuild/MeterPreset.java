@@ -32,7 +32,7 @@ public final class MeterPreset {
         String template = first.optString("text", "{speed}");
         String unsupported = template.replace("{speed}", "").replace("{rpm}", "")
                 .replace("{fuel}", "").replace("{coolant}", "");
-        if (!template.matches(".*\\\\{(speed|rpm|fuel|coolant)\\\\}.*")
+        if (!template.matches(".*\\{(speed|rpm|fuel|coolant)\\}.*")
                 || unsupported.contains("{") || unsupported.contains("}")) {
             throw new JSONException("Template contains an unsupported telemetry token");
         }
