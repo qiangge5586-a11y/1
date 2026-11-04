@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 34 — Privacy-aware compatibility report (CI pending)
+
+- Fixed the compatibility report so the default includes manufacturer/model, Android/API, ABIs and display metrics.
+- Detailed device/product/board/hardware/build-fingerprint identifiers are excluded by default and included only after the user enables an explicit checkbox.
+- The opt-in is not persisted; the share action regenerates the report from the current selection.
+- Added unit tests for default redaction, opt-in details and missing values.
+- Details: `docs/COMPATIBILITY_REPORT_PRIVACY.md`.
+- Source/test commits: `d4644ab69fd18994fa98ba3f5993dd57086ba1c7`, `1e138d508249a72d174ac80fa1bcb628cf071184`, `afde30bb8a0ff06c117f2c6c325b0d36de1bc4ff`; CI pending.
+
 ## Phase 33 — Physical device validation checklist (documentation)
 
 - Added a structured checklist for spare-device installation, local feature checks, head-unit identity capture and vehicle-integration gates.
