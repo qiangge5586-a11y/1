@@ -1493,6 +1493,21 @@ public final class MainActivity extends Activity {
                         + ". Tap Confirm to open a public map-app chooser.");
                 voiceAssistantConfirm.setEnabled(true);
                 break;
+            case NAVIGATE_HOME:
+                String home = getSharedPreferences("navigation_preferences", MODE_PRIVATE)
+                        .getString("home_destination", "");
+                if (SavedHomeDestination.isValid(home)) {
+                    pendingVoiceCommand = new VoiceCommandParser.Command(
+                            VoiceCommandParser.Type.NAVIGATE_TO,
+                            SavedHomeDestination.normalize(home));
+                    voiceAssistantStatus.setText("Recognized: " + recognizedText
+                            + "\\nSaved home: " + home + ". Tap Confirm to choose a map app.");
+                    voiceAssistantConfirm.setEnabled(true);
+                } else {
+                    voiceAssistantStatus.setText("Recognized: " + recognizedText
+                            + "\\nNo home destination is saved. Add one in Navigation settings first.");
+                }
+                break;
             case NAVIGATION_UNAVAILABLE:
                 voiceAssistantStatus.setText("Recognized: " + recognizedText
                         + "\\nThis navigation shortcut needs a saved destination or a live navigation provider.");
