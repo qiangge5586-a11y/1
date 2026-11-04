@@ -85,6 +85,15 @@
 - The verified field transforms include distance unit code 0=km/other=mi; fuel codes 0=km/L, 1=mpg, 2=imperial mpg, other=L/100km; coolant raw value minus 40 then Celsius/Fahrenheit conversion; Trip A distance and fuel values divided by 10, with a special large-distance display branch.
 - Rebuild implementation: `CivicTelemetryDecoder` is a pure value transformer with tests. It intentionally does not implement the original privileged file IPC.
 
+### 9. Startup app selection and automatic launch
+
+- `StartupActivity.b()` offers None, Default launcher, Screen saver and installed non-system applications; it excludes the app itself.
+- `DialogInterfaceOnClickListenerC0216jc.onClick` persists `auto_start_app_name` and `auto_start_app`.
+- `StartupActivity.a()` enables the startup delay and optional play-command controls when an app is selected.
+- `MyService.a()` waits the configured delay, then launches the HOME intent, starts the screen-saver path, or obtains `getLaunchIntentForPackage(packageName)` for the selected package.
+- If the play-command option is enabled, it waits another delay and executes `/system/bin/input keyevent 126` through the shell helper.
+- The rebuild deliberately keeps app selection and launch user-initiated. It does not add a boot receiver, background startup service, automatic third-party app launch, shell media-key injection or screen-saver system launch.
+
 ## Remaining DEX-level verification
 
 The second JADX pass can display the 31 fallback methods, but some are marked by JADX as inconsistent or have difficult switch reconstruction. Prioritize DEX/smali cross-checks for:
