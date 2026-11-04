@@ -1,0 +1,15 @@
+{
+  "name": "HondaHack Rebuild Demo",
+  "views": [
+    {
+      "left": 5,
+      "top": 5,
+      "width": 90,
+      "height": 90,
+      "text": "{speed} km/h",
+      "alignment": "center",
+      "textSize": 48,
+      "textColor": "#ffffffff"
+    }
+  ]
+}
