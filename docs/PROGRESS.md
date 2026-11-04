@@ -1,13 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 32 — One-time vehicle snapshot JSON import (CI pending)
+## Phase 32 — One-time vehicle snapshot JSON import (CI verified)
 
 - Added document-picker import for vehicle telemetry snapshots, capped at 64 KiB.
 - Strictly validates required fields, integer/boolean types and vehicle value ranges before display.
 - Persists the imported snapshot locally; users can clear it by restoring demo values.
 - This is a one-time snapshot only, not live CAN/OBD/ECU access and not access to protected /data/local/tmp/shared_files.
 - Details: docs/VEHICLE_SNAPSHOT_JSON_IMPORT.md.
-- Source/test commits: 6b47baee893ec0c6fc7e1fc49616f030c14aa6e5, c4ed36dd75ae17f914db117d42ce5391d579fd0f, 8c1778030fefcfface78418c6d136940d0bf4f2c, 7cc1d6d2862107daa50149efb1e53572fd08f5e4; CI pending.
+- GitHub Actions run #81 (ID 41763810035) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41763810035
+- Final source/test commit: `7cc1d6d2862107daa50149efb1e53572fd08f5e4`; artifact ID: 13291648129; APK size: 57,156 bytes; SHA-256: `d21bcbf22b41f5b396dbe6afd2098aa88492a5038d19d0928ac170eb951fb113`.
 
 ## Phase 31 — Local startup audio selection and preview (CI verified)
 
