@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 29 — Head-unit compatibility diagnostics (CI pending)
+
+- Extended read-only device identity with board, hardware and Android build fingerprint.
+- Added real display resolution and density information plus a user-invoked share report.
+- No root probes, protected file reads, OEM service calls or settings changes.
+- Details: `docs/HEAD_UNIT_COMPATIBILITY_DIAGNOSTICS.md`.
+- Source commits: `d599dc05b8dff806a55270fa569ff66d00d3db69`, `2cea6a364aca070c6cb608216286d011c0ac81f7`; CI pending.
+
 ## Phase 28 — Foreground hardware key event monitor (CI pending)
 
 - Added an opt-in, foreground-only Android key event monitor in the steering-key simulator section.
