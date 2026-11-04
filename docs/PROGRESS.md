@@ -9,7 +9,7 @@
 - Details: `docs/VEHICLE_DATA_ADAPTER.md`.
 - Source/test commits: `53060570a6edd7b17873de387f931772a58f6c7a`, `100156af771534ccaffa2ba74ebc85e37644d4d7`, `5dad8bef70e57916d28b1a3983e2c4d6a1c11fd3`, `a9e0110248ad22569461da1e74decc08aa58a97b`, `54210046c14866bd59ee228c6bfb4496bd6793f4`; CI pending.
 
-## Phase 26 — Navigation state provider contract and demo (CI pending)
+## Phase 26 — Navigation state provider contract and demo (CI verified)
 
 - Added immutable, validated `NavigationState` snapshots and a read-only `NavigationStateProvider` interface.
 - Added deterministic mock navigation states (maneuver, distance, ETA, inactive) and UI controls to advance/reset them.
