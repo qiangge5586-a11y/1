@@ -56,6 +56,7 @@ public final class BluetoothObdController {
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && appContext.getApplicationInfo().targetSdkVersion >= 31
                 && appContext.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
                         != PackageManager.PERMISSION_GRANTED) {
             postState("OBD-II Bluetooth connect permission is missing.", generation);
