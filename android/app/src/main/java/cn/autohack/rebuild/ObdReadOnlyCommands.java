@@ -9,6 +9,7 @@ public final class ObdReadOnlyCommands {
     public static final String BITMAP_00 = "0100";
     public static final String BITMAP_20 = "0120";
     public static final String BITMAP_40 = "0140";
+    public static final String STORED_DTC = "03";
     public static final int POLL_COUNT = 4;
 
     private ObdReadOnlyCommands() {}
@@ -30,6 +31,13 @@ public final class ObdReadOnlyCommands {
                 || COOLANT_TEMP.equals(normalized) || FUEL_LEVEL.equals(normalized)
                 || BITMAP_00.equals(normalized) || BITMAP_20.equals(normalized)
                 || BITMAP_40.equals(normalized);
+    }
+
+
+    /** Explicitly requested standard Mode 03 read of stored diagnostic codes. */
+    public static boolean isDiagnosticReadCommand(String command) {
+        return command != null && STORED_DTC.equals(
+                command.trim().toUpperCase(java.util.Locale.ROOT));
     }
 
     public static boolean isAdapterSetupCommand(String command) {
