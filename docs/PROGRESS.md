@@ -1,5 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 48 — Startup app selection (CI pending)
+
+- Added a picker for installed user apps with public launcher activities.
+- Saves the selected package and launches only after an explicit tap.
+- Excludes system apps and the rebuild app. No boot-time automation or private app access.
+- Added unit coverage for eligibility rules.
+- Details: `docs/STARTUP_APP_SELECTION.md`.
+- Commits: `92cc1fbf65638e9626e05dfca668840c82e99153`, `b5a4bac85acce038bba5025029d22aa9d7d50081`, `cff839b06583e00d626f51401c30581014f48126`; CI pending.
+
 ## Phase 47 — Bounded startup-video preview options (CI verified)
 
 - Added local preview settings for audio on/off, a 0–30 second delay, a 5–60 second maximum duration and optional fade-out.
