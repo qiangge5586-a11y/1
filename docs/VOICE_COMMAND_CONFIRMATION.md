@@ -13,7 +13,7 @@ Destination phrases such as “导航到 [地点]” and “带我去 [地点]�
 
 - Recognition never directly executes a command.
 - A separate **Confirm suggested action** button must be tapped.
-- App launch is restricted to exactly one matching user-installed app with a public launcher activity.
+- App launch is restricted to exactly one matching user-installed app with a public launcher activity. Exact label/package matches take priority; partial matches are accepted only when unique. Empty and one-character targets are rejected. See `docs/VOICE_APP_MATCHING.md`.
 - Ambiguous app matches are rejected and direct the user to the app picker.
 - Public map handoff uses Android `ACTION_VIEW` with a `geo:` URI only after confirmation; the user chooses the receiving app. No vehicle commands, Amap private broadcasts, QQ Music internal actions, media key injection, wake word or background listening are used.
 
