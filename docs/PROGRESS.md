@@ -1,5 +1,12 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 23 — App-scoped display controls (CI pending)
+
+- Added an opt-in keep-screen-awake switch, active only while the app screen is visible.
+- Added per-window brightness override with a system-default reset; does not alter global brightness settings.
+- Details: `docs/APP_SCOPED_DISPLAY_CONTROLS.md`.
+- Source commits: `2246f64cbfe5bf8da78956fc5871260d84f29d09` and `9b43671e9a57a1a6a25cd82779fe63b3c0490807`; CI validation pending.
+
 ## Phase 22 — Read-only storage diagnostics (CI verified)
 
 - Replaced the placeholder storage card with a live diagnostic report for Android API level, shared-storage state, app-private files/cache capacity, app-specific external storage and emulation state.
