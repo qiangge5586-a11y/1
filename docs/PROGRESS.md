@@ -1,13 +1,14 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 27 — Vehicle telemetry adapter contract and demo (CI pending)
+## Phase 27 — Vehicle telemetry adapter contract and demo (CI verified)
 
 - Added immutable, range-validated `VehicleSnapshot` for speed, RPM, fuel, coolant temperature and gear.
 - Added read-only `VehicleDataProvider` contract and static `MockVehicleDataProvider`.
 - Added a clearly labelled offline demo panel and refresh control; no CAN/OBD/ECU/Bluetooth/OEM service is accessed and no vehicle commands are sent.
 - Added unit tests for mock values, disconnected state and invalid ranges.
 - Details: `docs/VEHICLE_DATA_ADAPTER.md`.
-- Source/test commits: `53060570a6edd7b17873de387f931772a58f6c7a`, `100156af771534ccaffa2ba74ebc85e37644d4d7`, `5dad8bef70e57916d28b1a3983e2c4d6a1c11fd3`, `a9e0110248ad22569461da1e74decc08aa58a97b`, `54210046c14866bd59ee228c6bfb4496bd6793f4`; CI pending.
+- GitHub Actions run #69 (ID 41763169818) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41763169818
+- Final source/test commit: `54210046c14866bd59ee228c6bfb4496bd6793f4`; artifact ID: 13291577259; APK size: 50,453 bytes; SHA-256: `9f386f806126fbe0d49a15f8181e78a5f5e561f9d4e1badcb6131f01498e8d88`.
 
 ## Phase 26 — Navigation state provider contract and demo (CI verified)
 
