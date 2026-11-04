@@ -27,7 +27,7 @@ public final class MeterPreset {
    String unsupported=template;
    String[] supported={"speed","rpm","fuel","coolant","distance_to_empty","current_distance",
     "avg_fuel_eff","trip_a_distance","avg_fuel_eff_a","compass","next_road","cur_road",
-    "route_remain","seg_dist","speed_limit","camera_dist"};
+    "route_remain","seg_dist","speed_limit","camera_dist","distance_unit","fuel_eff_unit","coolant_unit"};
    boolean hasToken=false;
    for(String token:supported){String marker="{"+token+"}";if(template.contains(marker)){hasToken=true;unsupported=unsupported.replace(marker,"");}}
    if(!hasToken||unsupported.contains("{")||unsupported.contains("}"))throw new JSONException("Unsupported telemetry token in view "+i);
