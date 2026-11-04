@@ -1,12 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 40 — Explicit Civic demo units (CI pending)
+## Phase 40 — Explicit Civic demo units (CI verified)
 
 - Added separate tokens for distance, fuel-efficiency and coolant-temperature units.
 - Civic sample template now displays km, L/100km and °C labels; these are explicit demo defaults, not vehicle-derived settings.
 - Added a UI warning that values and units are simulated, and tests for token rendering and unit values.
 - Details: `docs/CIVIC_METER_LAYOUT_AUDIT.md`.
-- Source/test commits: `c458e27326e454898ecf3a7ee0eb623edc26f6b0`, `0ce56f28f4837856778b3d144762840a9a251f95`, `4275ad88b49bf07ebdeaaa3ffa4870da56ae5b7c`, `511b7d2da820971cc43455111789f2cacc9fcee1`, `920b0aa590dc0326d28b5e55afbd9d95b8302cb8`, `8050a4008b6e876e58418923686c9387da238bc1`; CI pending.
+- GitHub Actions run #99 (ID 41773148350) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41773148350
+- Final test commit: `8050a4008b6e876e58418923686c9387da238bc1`; artifact ID: 13295239494; APK size: 61,324 bytes; SHA-256: `eda10a1a72a2405e0cc572755da7bda7b7bf8df46127254bf07db52d4929e2d9`.
 
 ## Phase 39 — Original vehicle telemetry transport audit (analysis complete)
 
