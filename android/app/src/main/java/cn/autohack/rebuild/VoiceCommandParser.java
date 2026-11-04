@@ -9,6 +9,7 @@ public final class VoiceCommandParser {
     public enum Type {
         SHOW_METER,
         OPEN_APP,
+        NAVIGATE_TO,
         NAVIGATION_UNAVAILABLE,
         MUSIC_UNAVAILABLE,
         UNKNOWN
@@ -36,7 +37,12 @@ public final class VoiceCommandParser {
                 "showmeter", "openmeter")) {
             return new Command(Type.SHOW_METER, "");
         }
-        if (containsAny(text, "导航到", "导航去", "带我去", "回家", "打开导航", "开始导航")) {
+        Matcher destination = Pattern.compile("^(?:导航带我去|导航去|导航到|带我去|带我到|我要去|前往|去)(.+)$")
+                .matcher(text);
+        if (destination.matches()) {
+            return new Command(Type.NAVIGATE_TO, destination.group(1));
+        }
+        if (containsAny(text, "回家", "打开导航", "开始导航")) {
             return new Command(Type.NAVIGATION_UNAVAILABLE, "");
         }
         if (containsAny(text, "播放", "来一首", "音乐", "听歌", "playmusic")) {
