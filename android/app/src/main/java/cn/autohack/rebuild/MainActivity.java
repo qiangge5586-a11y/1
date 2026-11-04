@@ -532,7 +532,7 @@ public final class MainActivity extends Activity {
                 + " seconds · audio " + (audioEnabled ? "on" : "off"));
         frame.addView(playbackNote);
         android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
-                .setTitle("Local video preview")
+                .setTitle(ChineseText.translate("Local video preview"))
                 .setView(frame)
                 .setPositiveButton("Close", null)
                 .create();
@@ -1420,7 +1420,7 @@ public final class MainActivity extends Activity {
             android.widget.EditText field = new android.widget.EditText(this);
             field.setHint("Paste a JSON preset");
             field.setMinLines(4);
-            new android.app.AlertDialog.Builder(this).setTitle("Import preset")
+            new android.app.AlertDialog.Builder(this).setTitle(ChineseText.translate("Import preset"))
                 .setView(field).setNegativeButton("Cancel", null)
                 .setPositiveButton("Import", (d,w) -> {
                     try {
@@ -1471,7 +1471,7 @@ public final class MainActivity extends Activity {
             String[] labels = new String[names.length()];
             for(int i=0;i<names.length();i++) labels[i]=names.getString(i);
             if(labels.length==0){toast("No saved presets");return;}
-            new android.app.AlertDialog.Builder(this).setTitle("Select preset")
+            new android.app.AlertDialog.Builder(this).setTitle(ChineseText.translate("Select preset"))
                 .setItems(labels,(d,index)->presetActions(labels[index])).show();
         } catch(Exception e){toast(e.getMessage());}
     }
@@ -1523,7 +1523,7 @@ public final class MainActivity extends Activity {
         new android.app.AlertDialog.Builder(this).setTitle(title).setView(field)
             .setNegativeButton("Cancel",null).setPositiveButton("OK",(d,w)->callback.accept(field.getText().toString())).show();
     }
-    private void toast(String value){android.widget.Toast.makeText(this,value,android.widget.Toast.LENGTH_LONG).show();}
+    private void toast(String value){android.widget.Toast.makeText(this,ChineseText.translate(value),android.widget.Toast.LENGTH_LONG).show();}
 
     private void addLabeledControl(String title, TextView label, SeekBar control) {
         label.setText(title);
@@ -1827,8 +1827,8 @@ public final class MainActivity extends Activity {
         Button clear = new ChineseButton(this);
         clear.setText("Clear app cache");
         clear.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
-                .setTitle("Clear app cache?")
-                .setMessage("This removes files only from this app's private cache. Temporary meter-preview share links may stop working. Presets and app settings are stored separately and are not deleted.")
+                .setTitle(ChineseText.translate("Clear app cache?"))
+                .setMessage(ChineseText.translate("This removes files only from this app's private cache. Temporary meter-preview share links may stop working. Presets and app settings are stored separately and are not deleted."))
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Clear cache", (dialog, which) -> {
                     boolean success = AppCacheMaintenance.clearContents(getCacheDir());
@@ -2079,7 +2079,7 @@ public final class MainActivity extends Activity {
     private void confirmDiagnosticRead(String command, String category) {
         new android.app.AlertDialog.Builder(this)
                 .setTitle("Read " + category + " trouble codes?")
-                .setMessage("Sends one standard read-only OBD request after confirmation. It does not clear codes, reset the ECU or change vehicle settings.")
+                .setMessage(ChineseText.translate("Sends one standard read-only OBD request after confirmation. It does not clear codes, reset the ECU or change vehicle settings."))
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Read codes", (dialog, which) -> {
                     boolean isEngineStatus = ObdReadOnlyCommands.ENGINE_STATUS.equals(command);
@@ -2176,7 +2176,7 @@ public final class MainActivity extends Activity {
                         ? "Bluetooth device" : name) + " · ••" + suffix;
             }
             new android.app.AlertDialog.Builder(this)
-                    .setTitle("Select a paired OBD-II adapter")
+                    .setTitle(ChineseText.translate("Select a paired OBD-II adapter"))
                     .setItems(labels, (dialog, which) -> {
                         if (which >= 0 && which < devices.size())
                             confirmObdAdapter(devices.get(which), labels[which]);
@@ -2193,7 +2193,7 @@ public final class MainActivity extends Activity {
     private void confirmObdAdapter(android.bluetooth.BluetoothDevice device, String label) {
         new android.app.AlertDialog.Builder(this)
                 .setTitle("Connect to " + label + "?")
-                .setMessage("The adapter will receive only the allowlisted ELM setup commands and read-only standard OBD-II Mode 01 requests. No vehicle control or diagnostic clearing command is sent.")
+                .setMessage(ChineseText.translate("The adapter will receive only the allowlisted ELM setup commands and read-only standard OBD-II Mode 01 requests. No vehicle control or diagnostic clearing command is sent."))
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Connect", (dialog, which) -> connectObdAdapter(device))
                 .show();
