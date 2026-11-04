@@ -77,17 +77,20 @@ public final class ForegroundGpsController implements LocationListener {
 
     @Override public void onLocationChanged(Location location) {
         if (location == null || listener == null) return;
-        boolean hasSpeed = location.hasSpeed();
+        boolean hasSpeed = android.os.Build.VERSION.SDK_INT >= 26
+                ? location.hasSpeed() : location.getSpeed() > 0f;
         float speedKmh = hasSpeed ? location.getSpeed() * 3.6f : -1f;
-        boolean hasBearing = location.hasBearing();
+        boolean hasBearing = android.os.Build.VERSION.SDK_INT >= 26
+                ? location.hasBearing() : hasSpeed;
         float bearing = hasBearing ? location.getBearing() : -1f;
-        boolean hasAccuracy = location.hasAccuracy();
+        boolean hasAccuracy = android.os.Build.VERSION.SDK_INT >= 26
+                ? location.hasAccuracy() : location.getAccuracy() > 0f;
         float accuracy = hasAccuracy ? location.getAccuracy() : -1f;
         listener.onGpsUpdate(hasSpeed, speedKmh, hasBearing, bearing, hasAccuracy, accuracy);
     }
 
     @Override public void onProviderDisabled(String provider) {
-        registered = false;
+        stop();
         notifyUnavailable("GPS provider was disabled.");
     }
 
