@@ -1,5 +1,15 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 42 — Source-derived Civic telemetry decoder (CI pending)
+
+- Added a pure decoder for the original Civic meter's integer fields: speed, distance-to-empty, Trip A distance, average fuel efficiency, unit codes and coolant temperature.
+- Reproduces verified original scaling: trip/fuel tenths, large Trip A distance formatting, distance/fuel unit codes, coolant offset (-40) and Celsius/Fahrenheit conversion.
+- Missing values or missing unit metadata remain placeholders; no guessed units.
+- Added tests for metric/mile conversions, all fuel-efficiency unit codes, large-distance formatting, missing values and missing unit metadata.
+- The decoder transforms supplied values only. It does not read privileged shared files, start shell/root/Xposed, access CAN/OBD/ECU or connect to a vehicle.
+- Details: `docs/CIVIC_TELEMETRY_DECODER.md`.
+- Source/test commits: `6591471c8e2d522675b4f32cd19ebae9acd825cd`, `6e04b1a1557f5bc013cdc02848a3e779d2177306`, `df3743f20cf4cad30d2177942d9e9ad5ab1b53ac`, `2cf9187a003d88fcc01742044abf956bd6209293`, `8afbdf93769b81c8632b8d60f27d6805d55f7205`, `35f1b9f1c700e075931fdd3b7436532b28bdad89`; CI pending.
+
 ## Phase 42 — Original Civic vehicle-information field selection (CI verified)
 
 - Reproduced the original six selectable Civic meter fields and the original first-three default selection.
