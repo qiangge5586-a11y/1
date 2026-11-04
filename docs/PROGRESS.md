@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 74 — Simplified Chinese app localization (CI pending)
+## Phase 74 — Simplified Chinese app localization (CI verified)
 
 - Launcher label changed to **本田黑科技** with a Chinese string resource.
 - Added centralized phrase translation and localized TextView/Button/CheckBox widgets so static and dynamic app-authored screen copy is translated.
@@ -8,7 +8,11 @@
 - Localized dialog titles/messages and Toast messages. User-entered preset names and destinations remain unchanged; protocol IDs, JSON keys and package identifiers remain stable.
 - Added unit tests for app name, safety labels, dynamic OBD/voice strings and user-entered text preservation.
 - Details: `docs/CHINESE_LOCALIZATION.md`.
-- Source commits: `d18da869f2769e04930595f8845e8a11511a12a5`, `efeb7098e7ee26e554f589c7bec60fccaf7cbed4`, `02b47ae711d6f31d5301d9d5dea0fe117cbc4002`, `0cc489f568a9af7ab30eec0a32981fae7a6a7ff2`, `a8af94bd9f3d518cdce4df47560144ea55e2a08e`, `50225fdd80e2bd4a4893428b5c900c06ac4c185b`, `c51b3fd4d68c75a5fbfeaa4ddaaaa8f30e2ea4e0`, `88e87122397fe6bc20a343b2bf4abda0e1c6bcfd`; CI pending.
+- Source commits: `d18da869f2769e04930595f8845e8a11511a12a5`, `efeb7098e7ee26e554f589c7bec60fccaf7cbed4`, `02b47ae711d6f31d5301d9d5dea0fe117cbc4002`, `0cc489f568a9af7ab30eec0a32981fae7a6a7ff2`, `a8af94bd9f3d518cdce4df47560144ea55e2a08e`, `50225fdd80e2bd4a4893428b5c900c06ac4c185b`, `c51b3fd4d68c75a5fbfeaa4ddaaaa8f30e2ea4e0`, `88e87122397fe6bc20a343b2bf4abda0e1c6bcfd`, `bcabad7e1db2edc7b68f8231a90fe5eae08a0442`, `af84854564020fecf8a8a36b4564d263ce19401c`, `9b7b46a47f944342a6c380bd9625afa82530f25c`.
+- GitHub Actions run #276 (ID 41790989761) completed successfully; packaged APK metadata assertions and artifact uploads passed: https://github.com/qiangge5586-a11y/1/actions/runs/41790989761.
+- Artifact ID 13302749305; APK 121,225 bytes; SHA-256 `568b3388f789e230228bc927bdfaa923b9fd194e25212ca62e33e8cac0b48053`; package `cn.autohack.rebuild`; minSdk 17; targetSdk 28; debug-signed. Local copy: `本田黑科技_简体中文版_API17_debug.apk`.
+- Note: this workflow's “Assemble debug APK” step completed, but the log's Gradle task summary shows `BUILD SUCCESSFUL` and not an explicit unit-test task result. The ChineseText tests are committed; do not treat unit-test execution as verified until workflow explicitly runs `testDebugUnitTest`.
+- Physical-device visual review and exact vehicle head-unit validation remain outstanding.
 
 
 ## Phase 73 — Explicit MIL / check-engine status read (CI verified)
