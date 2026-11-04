@@ -47,7 +47,7 @@ public final class VoiceCommandParser {
                 return new Command(Type.NAVIGATE_TO, target);
             }
         }
-        if (text.contains("回家")) {
+        if (isExplicitHomeCommand(navigationText)) {
             return new Command(Type.NAVIGATE_HOME, "");
         }
         if (containsAny(text, "打开导航", "开始导航")) {
@@ -62,6 +62,19 @@ public final class VoiceCommandParser {
             if (!target.isEmpty()) return new Command(Type.OPEN_APP, target);
         }
         return new Command(Type.UNKNOWN, "");
+    }
+
+    private static boolean isExplicitHomeCommand(String text) {
+        return containsAnyExact(text, "回家", "回家吧", "我想回家", "我要回家",
+                "带我回家", "请带我回家", "送我回家", "导航回家",
+                "请帮我回家", "导航带我回家");
+    }
+
+    private static boolean containsAnyExact(String text, String... phrases) {
+        for (String phrase : phrases) {
+            if (phrase.equals(text)) return true;
+        }
+        return false;
     }
 
     private static String cleanDestination(String value) {
