@@ -1,5 +1,13 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 45 — Original screen-casting integration audit (analysis complete)
+
+- Confirmed original screen casting binds to the private SystemUI `TakeScreenshotService` through an Xposed process hook.
+- Verified the Messenger frame protocol: message 100 initializes a 400×240 ARGB_8888 buffer, 101 streams 384,000-byte frames, 102 releases resources; quality values 5/8/12/15 control the frame loop.
+- Confirmed private `START_CAST` / `STOP_CAST` broadcasts and source-state gating.
+- This is not public MediaProjection and is not assumed available on the 2019 Civic OEM screen. The rebuild will not bind private SystemUI services or inject Xposed hooks.
+- Details: `docs/SCREEN_CAST_INTEGRATION_AUDIT.md`.
+
 ## Phase 45 — Road information and offline voice demo (CI verified)
 
 - Added the original road-information and voice-alert preference controls to the Civic meter demo.
