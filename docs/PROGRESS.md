@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 73 — Explicit MIL / check-engine status read (CI pending)
+## Phase 73 — Explicit MIL / check-engine status read (CI verified)
 
 - Added a parser for standard Mode 01 PID 01 response `41 01`.
 - Extracts MIL on/off from bit 7 of the first data byte and stored DTC count from the lower 7 bits; retains remaining monitor bytes without claiming a full readiness interpretation.
@@ -8,7 +8,11 @@
 - Request is serialized on the Bluetooth worker with PID polling and DTC reads. No automatic query, DTC clearing, ECU reset or write command.
 - Added unit tests for MIL on/off, DTC count, CAN header, no-data, negative and truncated responses. Local diagnostic report now includes the MIL result.
 - Details: `docs/OBD_ENGINE_STATUS.md`.
-- Source/test commits: `1354383ab4469565a2fdaf89de0ed7c1da75dd68`, `9d9b1e3fd7b74f47fba079af6b5de0569c1a25d1`, `edccbfa4f61abe3fa716eec0fc12aca9e1316f9d`, `b139b1eb177f3b8d21a3cc81624d6e1ab2badffb`, `928da245de215b22f7b31aa65b6157ec7f4db13c`, `8a187b848cb54ee0f1ed279ca2695908d1ac8de1`, `4ef546c30d247b3038a9eeb362db78a87d00c3d0`, `2c6a59d36bdf15c133e21019c8f6b5e7c115b588`; CI pending.
+- Source/test commits: `1354383ab4469565a2fdaf89de0ed7c1da75dd68`, `9d9b1e3fd7b74f47fba079af6b5de0569c1a25d1`, `edccbfa4f61abe3fa716eec0fc12aca9e1316f9d`, `b139b1eb177f3b8d21a3cc81624d6e1ab2badffb`, `928da245de215b22f7b31aa65b6157ec7f4db13c`, `8a187b848cb54ee0f1ed279ca2695908d1ac8de1`, `4ef546c30d247b3038a9eeb362db78a87d00c3d0`, `2c6a59d36bdf15c133e21019c8f6b5e7c115b588`, `4777564332636d3e4be2afec2842d5599d80aa3e`.
+- Early CI runs exposed a report-size-bound test failure; the report section cap was adjusted and the final run passed the unit-test task, lint, APK assembly, metadata assertions and artifact upload.
+- GitHub Actions run #267 (ID 41783473903) passed: https://github.com/qiangge5586-a11y/1/actions/runs/41783473903.
+- Artifact ID: 13299184922. APK: 110,493 bytes; SHA-256 `ef9dae4ece078b7bf0d8c29fff9e76732d8ad1a1f1c4dcda0bae49a6eddfcf21`; package `cn.autohack.rebuild`; minSdk 17; targetSdk 28; debug-signed. ZIP artifact: 106,938 bytes.
+- Physical OBD adapter and vehicle response validation remain outstanding.
 
 
 ## Phase 72 — APK manifest verification and build metadata (CI verified)
