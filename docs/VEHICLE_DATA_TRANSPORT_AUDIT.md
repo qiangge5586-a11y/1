@@ -23,3 +23,14 @@ The original meter does not simply read standard OBD-II values from a Bluetooth 
 - Keep all current Civic values as static demo data.
 - Do not create `/data/local/tmp/shared_files`, grant broad file permissions, read privileged logcat, or install Xposed/root hooks.
 - A real vehicle adapter requires a documented, authorized read-only interface for the exact 2019 Civic head unit, validated on a bench/spare device before any in-vehicle trial.
+
+
+## Original display-unit conversions observed
+
+The original meter also contains unit-code and scaling logic:
+
+- Distance unit code `0` maps to km; nonzero maps to miles.
+- Fuel-efficiency unit code `0` maps to km/L, `1` to mpg, `2` to imperial mpg, and other values to L/100km.
+- Coolant unit code `0` maps to Celsius; nonzero maps to Fahrenheit. The raw coolant integer is adjusted by 40 before display conversion.
+- Trip distance and average fuel-efficiency integers are divided by 10 for display; distance-to-empty is displayed as an integer.
+- These transformations are specific to the original file protocol. They must not be applied to an OBD or other adapter without matching its documented scaling and unit metadata.
