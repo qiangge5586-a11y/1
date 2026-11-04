@@ -701,6 +701,13 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @android.annotation.TargetApi(19)
+    private void addMimeTypes(android.content.Intent intent, String[] mimeTypes) {
+        if (android.os.Build.VERSION.SDK_INT >= 19) {
+            intent.putExtra(android.content.Intent.EXTRA_MIME_TYPES, mimeTypes);
+        }
+    }
+
     private android.content.Intent createOpenablePicker(String mimeType) {
         int sdk = android.os.Build.VERSION.SDK_INT;
         android.content.Intent intent = new android.content.Intent(sdk >= 19
