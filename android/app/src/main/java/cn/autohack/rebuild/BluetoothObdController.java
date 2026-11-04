@@ -27,6 +27,7 @@ public final class BluetoothObdController {
     private final Listener listener;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private volatile boolean stopped = true;
+    private volatile long generation;
     private volatile BluetoothSocket socket;
     private ExecutorService worker;
 
@@ -37,68 +38,85 @@ public final class BluetoothObdController {
     public synchronized void connect(BluetoothDevice device) {
         disconnect();
         if (device == null) {
-            postState("No Bluetooth adapter selected.");
+            postState("No Bluetooth adapter selected.", generation);
             return;
         }
+        final long session = generation;
         stopped = false;
         worker = Executors.newSingleThreadExecutor();
-        worker.execute(() -> runSession(device));
+        worker.execute(() -> runSession(device, session));
     }
 
     public synchronized void disconnect() {
+        generation++;
         stopped = true;
-        closeSocket();
+        BluetoothSocket active = socket;
+        socket = null;
+        closeSocket(active);
         if (worker != null) {
             worker.shutdownNow();
             worker = null;
         }
     }
 
-    private void runSession(BluetoothDevice device) {
+    private boolean isActive(long session) {
+        return !stopped && session == generation;
+    }
+
+    private void runSession(BluetoothDevice device, long session) {
+        BluetoothSocket activeSocket = null;
         try {
-            postState("Connecting to paired OBD-II adapter…");
-            BluetoothSocket activeSocket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+            postState("Connecting to paired OBD-II adapter…", session);
+            activeSocket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+            if (!isActive(session)) return;
             socket = activeSocket;
             activeSocket.connect();
+            if (!isActive(session)) return;
             InputStream input = activeSocket.getInputStream();
             OutputStream output = activeSocket.getOutputStream();
 
-            sendCommand(input, output, "ATZ", 3500);
-            sendCommand(input, output, "ATE0", 1500);
-            sendCommand(input, output, "ATL0", 1500);
-            sendCommand(input, output, "ATS0", 1500);
-            sendCommand(input, output, "ATH0", 1500);
-            sendCommand(input, output, "ATSP0", 1500);
-            postState("Connected. Reading standard OBD-II PIDs only.");
+            sendCommand(input, output, "ATZ", 3500, session);
+            sendCommand(input, output, "ATE0", 1500, session);
+            sendCommand(input, output, "ATL0", 1500, session);
+            sendCommand(input, output, "ATS0", 1500, session);
+            sendCommand(input, output, "ATH0", 1500, session);
+            sendCommand(input, output, "ATSP0", 1500, session);
+            if (!isActive(session)) return;
+            postState("Connected. Reading standard OBD-II PIDs only.", session);
 
-            while (!stopped && activeSocket.isConnected()) {
+            while (isActive(session) && activeSocket.isConnected()) {
                 Integer speed = decode(ObdReadOnlyCommands.POLL_COMMANDS[0],
-                        input, output, 0x0D, 1, 0);
+                        input, output, 0x0D, 1, session, 0);
                 Integer rpm = decode(ObdReadOnlyCommands.POLL_COMMANDS[1],
-                        input, output, 0x0C, 2, 1);
+                        input, output, 0x0C, 2, session, 1);
                 Integer coolant = decode(ObdReadOnlyCommands.POLL_COMMANDS[2],
-                        input, output, 0x05, 1, 2);
+                        input, output, 0x05, 1, session, 2);
                 Integer fuel = decode(ObdReadOnlyCommands.POLL_COMMANDS[3],
-                        input, output, 0x2F, 1, 3);
-                if (stopped) break;
-                postTelemetry(speed, rpm, coolant, fuel);
+                        input, output, 0x2F, 1, session, 3);
+                if (!isActive(session)) break;
+                postTelemetry(speed, rpm, coolant, fuel, session);
                 Thread.sleep(1000L);
             }
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         } catch (Exception error) {
-            if (!stopped) postState("OBD-II connection failed: " + safeMessage(error));
+            if (isActive(session)) postState("OBD-II connection failed: "
+                    + safeMessage(error), session);
         } finally {
-            stopped = true;
-            closeSocket();
-            postState("OBD-II adapter disconnected.");
+            if (session == generation) {
+                stopped = true;
+                if (socket == activeSocket) socket = null;
+                postState("OBD-II adapter disconnected.", session);
+            }
+            closeSocket(activeSocket);
         }
     }
 
     private Integer decode(String command, InputStream input, OutputStream output,
-            int pid, int byteCount, int field) throws IOException, InterruptedException {
+            int pid, int byteCount, long session, int field)
+            throws IOException, InterruptedException {
         if (!ObdReadOnlyCommands.isAllowed(command)) return null;
-        String response = sendCommand(input, output, command, 1800);
+        String response = sendCommand(input, output, command, 1800, session);
         switch (field) {
             case 0: return ObdPidDecoder.speedKph(response);
             case 1: return ObdPidDecoder.engineRpm(response);
@@ -109,17 +127,18 @@ public final class BluetoothObdController {
     }
 
     private String sendCommand(InputStream input, OutputStream output,
-            String command, int timeoutMs) throws IOException, InterruptedException {
+            String command, int timeoutMs, long session)
+            throws IOException, InterruptedException {
         if (!ObdReadOnlyCommands.isAllowed(command)
-                && !command.startsWith("AT")) {
-            throw new SecurityException("Only adapter setup and allowlisted read-only PIDs are permitted");
+                && !ObdReadOnlyCommands.isAdapterSetupCommand(command)) {
+            throw new SecurityException("Only allowlisted adapter setup and read-only PIDs are permitted");
         }
-        if (stopped) return "";
+        if (!isActive(session)) return "";
         output.write((command + "\r").getBytes(StandardCharsets.US_ASCII));
         output.flush();
         ByteArrayOutputStream response = new ByteArrayOutputStream();
         long deadline = System.currentTimeMillis() + timeoutMs;
-        while (!stopped && System.currentTimeMillis() < deadline
+        while (isActive(session) && System.currentTimeMillis() < deadline
                 && response.size() < 4096) {
             if (input.available() > 0) {
                 int value = input.read();
@@ -132,13 +151,18 @@ public final class BluetoothObdController {
         return response.toString("US-ASCII");
     }
 
-    private void postState(String state) {
-        if (listener != null) mainHandler.post(() -> listener.onState(state));
+    private void postState(String state, long session) {
+        if (listener != null) mainHandler.post(() -> {
+            if (session == generation) listener.onState(state);
+        });
     }
 
-    private void postTelemetry(Integer speed, Integer rpm, Integer coolant, Integer fuel) {
-        if (listener != null) mainHandler.post(() ->
-                listener.onTelemetry(speed, rpm, coolant, fuel));
+    private void postTelemetry(Integer speed, Integer rpm, Integer coolant,
+            Integer fuel, long session) {
+        if (listener != null) mainHandler.post(() -> {
+            if (session == generation)
+                listener.onTelemetry(speed, rpm, coolant, fuel);
+        });
     }
 
     private static String safeMessage(Exception error) {
@@ -147,9 +171,7 @@ public final class BluetoothObdController {
                 ? error.getClass().getSimpleName() : message;
     }
 
-    private synchronized void closeSocket() {
-        BluetoothSocket active = socket;
-        socket = null;
+    private static void closeSocket(BluetoothSocket active) {
         if (active != null) {
             try { active.close(); } catch (IOException ignored) {}
         }
