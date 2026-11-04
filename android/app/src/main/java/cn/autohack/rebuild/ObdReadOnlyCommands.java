@@ -14,4 +14,12 @@ public final class ObdReadOnlyCommands {
         }
         return false;
     }
+
+    public static boolean isAdapterSetupCommand(String command) {
+        if (command == null) return false;
+        String normalized = command.trim().toUpperCase(java.util.Locale.ROOT);
+        return "ATZ".equals(normalized) || "ATE0".equals(normalized)
+                || "ATL0".equals(normalized) || "ATS0".equals(normalized)
+                || "ATH0".equals(normalized) || "ATSP0".equals(normalized);
+    }
 }
