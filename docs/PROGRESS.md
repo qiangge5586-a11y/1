@@ -10,27 +10,19 @@
 - GitHub Actions run #136 (ID 41776272254) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776272254
 - Final source/test commit: `cff839b06583e00d626f51401c30581014f48126`; artifact ID: 13297027510; APK size: 77,543 bytes; SHA-256: `880ecaa7a822705058d55d8870a2396e94d7cc25d843fc08e3d02434b0aee0ba`.
 
-## Phase 47 — Bounded startup-video preview options (CI verified)
+## Phase 47 — Startup video preview controls (CI verified)
 
+- Audited the original settings: audio on by default, delay 0 seconds (0–30), max preview 30 seconds (5–60), fade-out on by default.
 - Added local preview settings for audio on/off, a 0–30 second delay, a 5–60 second maximum duration and optional fade-out.
 - Settings apply only to the selected local document after the user explicitly taps Preview; no boot playback, network, background service or storage scanning is introduced.
 - Preview callbacks are cancelled and playback is stopped when the dialog closes.
 - Added a bounded options model and unit tests for valid values and clamping.
+- Preview is manually launched only; no boot playback, background service, online video picker, unrestricted storage scan, file deletion or copying to fixed paths. Closing the dialog cancels callbacks and stops playback.
+- Added a bounded options model and tests for valid values and clamping.
 - Details: `docs/STARTUP_VIDEO_PREVIEW_OPTIONS.md`.
-- GitHub Actions run #131 (ID 41776032442) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776032442
-- Source/model commits: `142eeba245558c89d7843f17e6d61238d4d97f80`, `98fddd2c3a74d7ad7119fff59b260b05a1efcb20`; artifact ID: 13296738360; APK size: 75,187 bytes; SHA-256: `233c76239111cdd8781c3705b0093748c09b0ccd05bfc2955f16088856207f07`.
-
-
-## Phase 47 — Startup video preview playback controls (CI verified)
-
-- Audited original startup video settings: audio on by default, 0-second delay (0–30), max play 30 seconds (5–60), fade-out on by default.
-- Added those controls to the existing SAF-selected local-video preview only.
-- Preview remains manually launched; no boot playback, background service, online video picker, unrestricted storage scan, file deletion or copy to fixed paths.
-- Preview stops at its time limit; optional one-second volume fade is used when audio is enabled. Closing the dialog cancels pending callbacks.
-- Added bounded options model and unit tests.
-- Details: `docs/STARTUP_VIDEO_PREVIEW_OPTIONS.md`.
-- GitHub Actions run #133 (ID 41776056994) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776056994
+- GitHub Actions run #131 (ID 41776032442) and run #133 (ID 41776056994) passed unit tests, debug APK assembly and artifact upload. Final verification: https://github.com/qiangge5586-a11y/1/actions/runs/41776056994
 - Final source/test commit: `7fb6ee0dab316c22155190b157b9e66725f905d1`; artifact ID: 13296299094; APK size: 75,234 bytes; SHA-256: `e4b57e3ff0194eaeae6d8898c8f484fc9a2b765e385df2bf93af1af47cacc48b`.
+
 
 ## Phase 46 — Foreground device compass sensor (CI verified)
 
