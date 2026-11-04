@@ -24,8 +24,13 @@ public final class MeterPreset {
    int width=bounded(item,"width",1,100),height=bounded(item,"height",1,100);
    if(left+width>100||top+height>100)throw new JSONException("View "+i+" bounds exceed canvas");
    String template=item.optString("text","{speed}");
-   String unsupported=template.replace("{speed}","").replace("{rpm}","").replace("{fuel}","").replace("{coolant}","");
-   if(!template.matches(".*\\{(speed|rpm|fuel|coolant)\\}.*")||unsupported.contains("{")||unsupported.contains("}"))throw new JSONException("Unsupported telemetry token in view "+i);
+   String unsupported=template;
+   String[] supported={"speed","rpm","fuel","coolant","distance_to_empty","current_distance",
+    "avg_fuel_eff","trip_a_distance","avg_fuel_eff_a","compass","next_road","cur_road",
+    "route_remain","seg_dist","speed_limit","camera_dist"};
+   boolean hasToken=false;
+   for(String token:supported){String marker="{"+token+"}";if(template.contains(marker)){hasToken=true;unsupported=unsupported.replace(marker,"");}}
+   if(!hasToken||unsupported.contains("{")||unsupported.contains("}"))throw new JSONException("Unsupported telemetry token in view "+i);
    String alignment=item.optString("alignment","center").toLowerCase();
    if(!alignment.equals("left")&&!alignment.equals("center")&&!alignment.equals("right"))throw new JSONException("Invalid alignment in view "+i);
    String color=item.optString("textColor","#ffffffff");
@@ -41,6 +46,20 @@ public final class MeterPreset {
    left=Math.max(0,Math.min(l,99));top=Math.max(0,Math.min(t,99));width=Math.max(1,Math.min(w,100-left));height=Math.max(1,Math.min(h,100-top));
    template=text==null?"{speed}":text;alignment=align==null?"center":align;textSize=Math.max(10,Math.min(size,96));textColor=color==null?"#ffffffff":color;
   }
-  public String renderMock(int speed,int rpm,int fuel,int coolant){return template.replace("{speed}",String.valueOf(speed)).replace("{rpm}",String.valueOf(rpm)).replace("{fuel}",String.valueOf(fuel)).replace("{coolant}",String.valueOf(coolant));}
+  public String renderMock(int speed,int rpm,int fuel,int coolant){
+   java.util.Map<String,String> values=new java.util.HashMap<>();
+   values.put("speed",String.valueOf(speed));values.put("rpm",String.valueOf(rpm));
+   values.put("fuel",String.valueOf(fuel));values.put("coolant",String.valueOf(coolant));
+   return renderMock(values);
+  }
+  public String renderMock(java.util.Map<String,String> values){
+   String rendered=template;
+   String[] tokens={"speed","rpm","fuel","coolant","distance_to_empty","current_distance",
+    "avg_fuel_eff","trip_a_distance","avg_fuel_eff_a","compass","next_road","cur_road",
+    "route_remain","seg_dist","speed_limit","camera_dist"};
+   for(String token:tokens){String value=values==null?null:values.get(token);
+    rendered=rendered.replace("{"+token+"}",value==null?"--":value);}
+   return rendered;
+  }
  }
 }
