@@ -9,7 +9,7 @@
 - Details: `docs/CIVIC_COMPASS_OPTIONS.md`.
 - Source/test commits: `472ec6aa4504210a2b90ab6a937019a1c4145fa2`, `59fdd6dd0967cfea49bc2d1b1faddbe8bebdc20e`, `7de1068d4f4b1bf60936c468473350ef59bbfadd`; CI pending.
 
-## Phase 42 — Source-derived Civic telemetry decoder (CI pending)
+## Phase 42 — Source-derived Civic telemetry decoder (CI verified)
 
 - Added a pure decoder for the original Civic meter's integer fields: speed, distance-to-empty, Trip A distance, average fuel efficiency, unit codes and coolant temperature.
 - Reproduces verified original scaling: trip/fuel tenths, large Trip A distance formatting, distance/fuel unit codes, coolant offset (-40) and Celsius/Fahrenheit conversion.
@@ -17,7 +17,8 @@
 - Added tests for metric/mile conversions, all fuel-efficiency unit codes, large-distance formatting, missing values and missing unit metadata.
 - The decoder transforms supplied values only. It does not read privileged shared files, start shell/root/Xposed, access CAN/OBD/ECU or connect to a vehicle.
 - Details: `docs/CIVIC_TELEMETRY_DECODER.md`.
-- Source/test commits: `6591471c8e2d522675b4f32cd19ebae9acd825cd`, `6e04b1a1557f5bc013cdc02848a3e779d2177306`, `df3743f20cf4cad30d2177942d9e9ad5ab1b53ac`, `2cf9187a003d88fcc01742044abf956bd6209293`, `8afbdf93769b81c8632b8d60f27d6805d55f7205`, `35f1b9f1c700e075931fdd3b7436532b28bdad89`; CI pending.
+- GitHub Actions run #121 (ID 41775390619) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41775390619
+- Final source commit: `196e94df486f15de090f895ca0d7cd2d62191843`; artifact ID: 13296662705; APK size: 67,445 bytes; SHA-256: `b39d8511252ecb132b4dbd0473bacf80b488dd123f1290a8300aac55798e6318`.
 
 ## Phase 42 — Original Civic vehicle-information field selection (CI verified)
 
