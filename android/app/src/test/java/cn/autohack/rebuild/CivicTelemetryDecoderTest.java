@@ -34,6 +34,17 @@ public final class CivicTelemetryDecoderTest {
         assertEquals("1000.1 L/100km", values.get("avg_fuel_eff_a"));
     }
 
+    @Test public void missingUnitMetadataDoesNotGuessDisplayUnits() {
+        Map<String, String> values = CivicTelemetryDecoder.decode(
+                40, 300, 123, -1, 55, -1, 66, -1, 80, -1);
+        assertEquals("---", values.get("distance_to_empty"));
+        assertEquals("--.-", values.get("trip_a_distance"));
+        assertEquals("--.-", values.get("avg_fuel_eff"));
+        assertEquals("--.-", values.get("avg_fuel_eff_a"));
+        assertEquals("---", values.get("coolant"));
+        assertEquals("unknown", values.get("distance_unit"));
+    }
+
     @Test public void missingValuesUseOriginalPlaceholders() {
         Map<String, String> values = CivicTelemetryDecoder.decode(
                 -1, -1, -1, 0, -1, 0, -1, 0, CivicTelemetryDecoder.MISSING, 0);
