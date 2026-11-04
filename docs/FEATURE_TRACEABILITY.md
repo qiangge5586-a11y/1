@@ -52,3 +52,12 @@ The intended first test target is a 2019 Honda Civic factory head unit. The reve
 - Each feature explains the exact permission it requests.
 - No network calls are required for core functions.
 - No Xposed, app_process, platform.xml, silent package install, remote revocation or system partition writes.
+
+
+## Fresh source audit notes (2026-11-04)
+
+- Main UI flow confirmed in `MainActivity` and `C0234na`; `MeterActivity` is the settings surface.
+- Original steering-key capture depends on vendor logcat tags, privileged log access, Xposed hooks and synthetic InputManager events; the rebuild intentionally uses only its simulator and foreground-only pass-through key monitor.
+- Original meter/navigation data hooks are coupled to Xposed hooks into Amap/Waze internals and Mitsubishi/Clarion binder services. The rebuild's navigation/vehicle provider interfaces remain mock/demo until a documented read-only integration is verified.
+- The supplied modified APK's `C0270ub` license stubs and `C0234na.c` privileged bootstrap are not reproduced.
+- See `docs/ORIGINAL_APK_METHOD_AUDIT_2026-11-04.md` for method-level evidence and remaining DEX checks.
