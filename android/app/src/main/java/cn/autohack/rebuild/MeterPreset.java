@@ -30,8 +30,11 @@ public final class MeterPreset {
             throw new JSONException("View bounds exceed the 0..100 canvas");
         }
         String template = first.optString("text", "{speed}");
-        if (!template.matches(".*\\{(speed|rpm|fuel|coolant)\\}.*")) {
-            throw new JSONException("Template must include a supported telemetry token");
+        String unsupported = template.replace("{speed}", "").replace("{rpm}", "")
+                .replace("{fuel}", "").replace("{coolant}", "");
+        if (!template.matches(".*\\\\{(speed|rpm|fuel|coolant)\\\\}.*")
+                || unsupported.contains("{") || unsupported.contains("}")) {
+            throw new JSONException("Template contains an unsupported telemetry token");
         }
         return new MeterPreset(name, new ViewSpec(left, top, width, height,
                 template, first.optString("alignment", "center"),
