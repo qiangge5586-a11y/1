@@ -36,13 +36,32 @@ public final class VehicleSnapshot {
             if (!object.has(key) || object.isNull(key))
                 throw new org.json.JSONException("Missing required field: " + key);
         }
+        String gear = object.getString("gear");
+        if (gear.trim().isEmpty()) throw new org.json.JSONException("gear must not be empty");
+        boolean connected = true;
+        if (object.has("connected")) {
+            Object value = object.get("connected");
+            if (!(value instanceof Boolean)) throw new org.json.JSONException("connected must be boolean");
+            connected = (Boolean) value;
+        }
         return new VehicleSnapshot("Imported JSON snapshot",
-                object.getInt("speedKph"),
-                object.getInt("engineRpm"),
-                object.getInt("fuelPercent"),
-                object.getInt("coolantTempC"),
-                object.getString("gear"),
-                object.optBoolean("connected", true));
+                requireInteger(object, "speedKph"),
+                requireInteger(object, "engineRpm"),
+                requireInteger(object, "fuelPercent"),
+                requireInteger(object, "coolantTempC"),
+                gear, connected);
+    }
+
+    private static int requireInteger(org.json.JSONObject object, String key)
+            throws org.json.JSONException {
+        Object value = object.get(key);
+        if (!(value instanceof Number)) throw new org.json.JSONException(key + " must be an integer");
+        double number = ((Number) value).doubleValue();
+        if (Double.isNaN(number) || Double.isInfinite(number)
+                || number != Math.rint(number)
+                || number < Integer.MIN_VALUE || number > Integer.MAX_VALUE)
+            throw new org.json.JSONException(key + " must be an integer");
+        return (int) number;
     }
 
     public String toDisplayString() {
