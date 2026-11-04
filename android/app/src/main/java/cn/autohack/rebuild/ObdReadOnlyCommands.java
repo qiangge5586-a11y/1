@@ -1,18 +1,30 @@
 package cn.autohack.rebuild;
 
-/** Fixed allowlist of standard OBD-II read-only Mode 01 requests used by this rebuild. */
+/** Fixed allowlist of standard OBD-II read commands and harmless ELM adapter setup commands. */
 public final class ObdReadOnlyCommands {
-    public static final String[] POLL_COMMANDS = {"010D", "010C", "0105", "012F"};
+    public static final String SPEED = "010D";
+    public static final String ENGINE_RPM = "010C";
+    public static final String COOLANT_TEMP = "0105";
+    public static final String FUEL_LEVEL = "012F";
+    public static final int POLL_COUNT = 4;
 
     private ObdReadOnlyCommands() {}
+
+    public static String commandAt(int index) {
+        switch (index) {
+            case 0: return SPEED;
+            case 1: return ENGINE_RPM;
+            case 2: return COOLANT_TEMP;
+            case 3: return FUEL_LEVEL;
+            default: return null;
+        }
+    }
 
     public static boolean isAllowed(String command) {
         if (command == null) return false;
         String normalized = command.trim().toUpperCase(java.util.Locale.ROOT);
-        for (String allowed : POLL_COMMANDS) {
-            if (allowed.equals(normalized)) return true;
-        }
-        return false;
+        return SPEED.equals(normalized) || ENGINE_RPM.equals(normalized)
+                || COOLANT_TEMP.equals(normalized) || FUEL_LEVEL.equals(normalized);
     }
 
     public static boolean isAdapterSetupCommand(String command) {
