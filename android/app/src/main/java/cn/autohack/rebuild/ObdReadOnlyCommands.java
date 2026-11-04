@@ -6,6 +6,9 @@ public final class ObdReadOnlyCommands {
     public static final String ENGINE_RPM = "010C";
     public static final String COOLANT_TEMP = "0105";
     public static final String FUEL_LEVEL = "012F";
+    public static final String BITMAP_00 = "0100";
+    public static final String BITMAP_20 = "0120";
+    public static final String BITMAP_40 = "0140";
     public static final int POLL_COUNT = 4;
 
     private ObdReadOnlyCommands() {}
@@ -24,7 +27,9 @@ public final class ObdReadOnlyCommands {
         if (command == null) return false;
         String normalized = command.trim().toUpperCase(java.util.Locale.ROOT);
         return SPEED.equals(normalized) || ENGINE_RPM.equals(normalized)
-                || COOLANT_TEMP.equals(normalized) || FUEL_LEVEL.equals(normalized);
+                || COOLANT_TEMP.equals(normalized) || FUEL_LEVEL.equals(normalized)
+                || BITMAP_00.equals(normalized) || BITMAP_20.equals(normalized)
+                || BITMAP_40.equals(normalized);
     }
 
     public static boolean isAdapterSetupCommand(String command) {
