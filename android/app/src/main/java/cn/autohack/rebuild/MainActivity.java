@@ -680,6 +680,19 @@ public final class MainActivity extends Activity {
                 vehicleInfoChecks[i] = fieldCheck;
                 content.addView(fieldCheck);
             }
+            addSection("Compass options (original meter settings)");
+            android.content.SharedPreferences meterOptions = prefs;
+            android.widget.CheckBox compassEnabled = new android.widget.CheckBox(this);
+            compassEnabled.setText("Enable compass");
+            compassEnabled.setChecked(meterOptions.getBoolean("compass_enabled", true));
+            content.addView(compassEnabled);
+            android.widget.CheckBox trackUp = new android.widget.CheckBox(this);
+            trackUp.setText("Track-up mode (demo only)");
+            trackUp.setChecked(meterOptions.getBoolean("track_up_mode", false));
+            trackUp.setEnabled(compassEnabled.isChecked());
+            content.addView(trackUp);
+            TextView compassModeStatus = new TextView(this);
+            content.addView(compassModeStatus);
 
             String[] labels = new String[specs.size()];
             for (int i = 0; i < labels.length; i++) labels[i] = "Widget " + (i + 1);
@@ -704,12 +717,18 @@ public final class MainActivity extends Activity {
                 java.util.List<MeterCanvasView.Widget> widgets = new java.util.ArrayList<>();
                 int value = speed.getProgress();
                 MeterUnitSystem unitSystem = MeterUnitSystem.fromIndex(unitSelector.getSelectedItemPosition());
-                java.util.Map<String, String> demoValues = CivicMeterDemoData.forSpeed(value, unitSystem).asTokenMap();
+                java.util.Map<String, String> demoValues = new java.util.HashMap<>(
+                        CivicMeterDemoData.forSpeed(value, unitSystem).asTokenMap());
+                demoValues.put("compass", CivicCompassOptions.compassLabel("NE", trackUp.isChecked()));
                 java.util.List<MeterPreset.ViewSpec> visibleSpecs =
                         CivicVehicleInfoLayout.apply(specs, vehicleInfoSelection);
+                visibleSpecs = CivicCompassOptions.apply(visibleSpecs, compassEnabled.isChecked());
                 for (MeterPreset.ViewSpec spec : visibleSpecs) {
                     widgets.add(new MeterCanvasView.Widget(spec, spec.renderMock(demoValues)));
                 }
+                compassModeStatus.setText(CivicCompassOptions.modeDescription(
+                        compassEnabled.isChecked(), trackUp.isChecked())
+                        + " · no compass sensor or live map is connected");
                 display.setWidgets(widgets, meterColor);
                 status.setText("Preset: " + activePresetName[0] + " · "
                         + visibleSpecs.size() + " visible widgets");
@@ -732,6 +751,19 @@ public final class MainActivity extends Activity {
                 @Override public void onItemSelected(AdapterView<?> parent, android.view.View view,
                         int position, long id) { selected[0] = position; loadSelected.run(); }
                 @Override public void onNothingSelected(AdapterView<?> parent) {}
+            });
+            compassEnabled.setOnCheckedChangeListener((button, checked) -> {
+                meterOptions.edit().putBoolean("compass_enabled", checked).apply();
+                trackUp.setEnabled(checked);
+                if (!checked) {
+                    trackUp.setChecked(false);
+                    meterOptions.edit().putBoolean("track_up_mode", false).apply();
+                }
+                render.run();
+            });
+            trackUp.setOnCheckedChangeListener((button, checked) -> {
+                meterOptions.edit().putBoolean("track_up_mode", checked).apply();
+                render.run();
             });
             for (int i = 0; i < vehicleInfoChecks.length; i++) {
                 final int fieldIndex = i;
