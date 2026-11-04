@@ -71,3 +71,8 @@ The fresh resource audit identified a 584×215 px Civic layout and the original 
 ## Civic meter demo units
 
 The source-derived Civic template exposes explicit demo unit tokens for distance (km), fuel efficiency (L/100km) and coolant temperature (°C). These metric labels are fixed preview defaults only; they are not read from the vehicle's configuration. See `docs/CIVIC_METER_LAYOUT_AUDIT.md`.
+
+
+## Selectable meter demo unit systems
+
+The Civic meter preview supports metric, km/L, US customary and imperial unit display modes. Values are converted from fixed sample data and the selection is stored only in the editor preferences. It does not access or modify vehicle settings.
