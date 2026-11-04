@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 58 — Deterministic spoken app matching (CI pending)
+## Phase 59 — Deterministic spoken app matching (CI verified)
 
 - Refactored voice app resolution into `VoiceAppMatcher`: exact app-label/package matches take priority, then unique partial matches are considered.
 - Rejects empty and one-character targets, ambiguous exact/partial matches and missing apps rather than guessing.
@@ -8,7 +8,8 @@
 - Added unit tests for exact priority, unique partial matches, ambiguity, empty/short targets and case/whitespace normalization.
 - Original behavior reference: the Library reverse-engineering report describes the original “打开/运行 …” installed-app launch family; this phase documents report-level traceability and does not claim line-by-line parity with unavailable decompiled source.
 - Details: `docs/VOICE_APP_MATCHING.md` and `docs/VOICE_COMMAND_CONFIRMATION.md`.
-- Source commits: `64fd3c719ff14e39ec2674aaa9ff76b7d51fd703`, `f9872883501e2b76ba750eba1f97df10c403bc05`, `af2904db2db9bec2b255170514c31750a72b6228`; CI pending.
+- GitHub Actions run #178 (ID 41778451015) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41778451015
+- Source commits: `64fd3c719ff14e39ec2674aaa9ff76b7d51fd703`, `f9872883501e2b76ba750eba1f97df10c403bc05`, `af2904db2db9bec2b255170514c31750a72b6228`; artifact ID: 13297663538; APK artifact ZIP size: 87,070 bytes. (No APK SHA-256 is recorded for this artifact.)
 
 
 ## Phase 58 — Standard OBD-II / ELM327 protocol decoder (CI verified)
