@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 71 — Android API 17 compatibility target (CI pending)
+## Phase 71 — Android API 17 compatibility target (CI verified)
 
 - Original APK manifest in the Library reverse-engineering report specifies `minSdk=17`; rebuild previously used `minSdk=23`, excluding Android 4.2.2 / API 17.
 - Lowered rebuild `minSdk` to 17 while retaining compileSdk 35 and targetSdk 28.
@@ -8,7 +8,8 @@
 - Related 10th-gen Civic research reports Android 4.2.2 for most 2016–2021 head units but warns that some lower trims differ; 2019 China-market 劲动 trim sources confirm CarPlay/basic display context but do not confirm its exact OS or APK sideload capability.
 - This is an API compatibility target, not a claim that the user's exact factory screen accepts APK installation. Physical API 17/19 head-unit testing remains outstanding.
 - Details: `docs/ANDROID_API17_COMPATIBILITY.md`.
-- Source/workflow commits: `33f8f20a1e986fd1ffd20a34c8932f4b0e99ec04`, `297689c0647f3d23067e2446c2cae50250354620`, `6cf89c282832bed44f1fbfe89ff0d4b28f1b9488`, `cefdcdff74cde694437d2ee0892efbe6512d893d`, `e132656c703afd61b1d960a394823adafcb74aba`, `eabfd90da49a302c5b51131d87923596e63f02c7`; CI pending.
+- Source/workflow commits: `33f8f20a1e986fd1ffd20a34c8932f4b0e99ec04`, `297689c0647f3d23067e2446c2cae50250354620`, `6cf89c282832bed44f1fbfe89ff0d4b28f1b9488`, `cefdcdff74cde694437d2ee0892efbe6512d893d`, `e132656c703afd61b1d960a394823adafcb74aba`, `eabfd90da49a302c5b51131d87923596e63f02c7`, `279e309bb7e22987d8a1bb1b4f4b0c53ad52fbea`, `416b483ffafab9d4cc9c4ff8f1160130b4775c03`, `fa5e81fab5366e507049551d0271941f50e22844`, `9c6e0bf5d314e93a89b1ca17679f2c473c36e4af`, `5aa255f911935f10107796bdf2bc9749af15ad99`, `fd11f81b8b6bdb9fbc64c1a46f893b7ff6501f55`, `d35f6d1db20432819cf99c2a23ae81e821b997af`, `c03e8c397e475de8a7accc9ba30816a358a15de1`, `ca02a11cc9c68623aa555b2db19173cf75e9c3c5`, `57dea772b299c2a89a3ff3a87cdac2e113d06bc2`, `f01747a3be495226af35b1af70bb30b0a0f30ca0`, `d2ad643969e2b91aed3f67028776e5a2167aa0c2`, `bede4a8e4338beb9482d4499965cdffa5fab66c9`, `6941c3ce5e0a6be36014e06da12458fb3688818d`, `1af3af1d6e79afeee757848460b74b4da7e62eda`, `ff63e9ecab2f9b2ea540a3d1771c71b38dd311ce`, `2df044dfed551810631e2b037dd6c2872feba2f5`, `e7ed3694053d883daa2a66eba6b7edfe6a0f97e8`, `7a4f5a0e913e30f7ad10c7adc74ec643ef201f5f`.
+- GitHub Actions run #256 (ID 41782680586) passed unit tests, `lintDebug` and debug APK assembly: https://github.com/qiangge5586-a11y/1/actions/runs/41782680586. Debug APK artifact ID: 13299752518 (ZIP 105,033 bytes); lint report artifact ID: 13299762540 (ZIP 20,165 bytes). Physical API 17/19 and exact vehicle validation remain outstanding.
 
 
 ## Phase 70 — Local OBD diagnostic report copy (CI verified)
