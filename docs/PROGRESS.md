@@ -1,5 +1,16 @@
 # HondaHack 7.6.0 Rebuild Progress
 
+## Phase 47 — Bounded startup-video preview options (CI verified)
+
+- Added local preview settings for audio on/off, a 0–30 second delay, a 5–60 second maximum duration and optional fade-out.
+- Settings apply only to the selected local document after the user explicitly taps Preview; no boot playback, network, background service or storage scanning is introduced.
+- Preview callbacks are cancelled and playback is stopped when the dialog closes.
+- Added a bounded options model and unit tests for valid values and clamping.
+- Details: `docs/STARTUP_VIDEO_PREVIEW_OPTIONS.md`.
+- GitHub Actions run #131 (ID 41776032442) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776032442
+- Source/model commits: `142eeba245558c89d7843f17e6d61238d4d97f80`, `98fddd2c3a74d7ad7119fff59b260b05a1efcb20`; artifact ID: 13296738360; APK size: 75,187 bytes; SHA-256: `233c76239111cdd8781c3705b0093748c09b0ccd05bfc2955f16088856207f07`.
+
+
 ## Phase 46 — Startup video preview playback controls (CI verified)
 
 - Audited original startup video settings: audio on by default, 0-second delay (0–30), max play 30 seconds (5–60), fade-out on by default.
@@ -11,7 +22,7 @@
 - GitHub Actions run #133 (ID 41776056994) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776056994
 - Final source/test commit: `7fb6ee0dab316c22155190b157b9e66725f905d1`; artifact ID: 13296299094; APK size: 75,234 bytes; SHA-256: `e4b57e3ff0194eaeae6d8898c8f484fc9a2b765e385df2bf93af1af47cacc48b`.
 
-## Phase 46 — Foreground device compass sensor (CI pending)
+## Phase 46 — Foreground device compass sensor (CI verified)
 
 - Added Android public `TYPE_ROTATION_VECTOR` support for the Civic meter compass when the sensor exists.
 - Converts azimuth to eight compass directions and remaps axes for display rotation.
@@ -20,7 +31,9 @@
 - Track-up remains simulated because device orientation is not a verified direction-of-travel source.
 - Added unit tests for cardinal/intercardinal directions, angle normalization, boundaries and invalid values.
 - Details: `docs/DEVICE_COMPASS_SENSOR.md`.
-- Source/test commits: `b6b60ddf9195b98321a27ad6baa8bb3e1ef3b0fc`, `68793720c57dac01fa2f03cc1bc19c9752e66dfa`, `dc84db3d0770825f10afe415a806e9d745c29d4b`, `47158b25c19a2b8377e5a6b745fb94afb6690aa4`, `dae73ec6fac4388b48d3b7648cb64877a5006f89`; CI pending.
+- Corrected the NW/N sector-boundary test in commit `b7a8cc3a52b91b7844c213b90697e4944f6ca079`.
+- GitHub Actions run #131 (ID 41776032442) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41776032442
+- Final source/test commit: `98fddd2c3a74d7ad7119fff59b260b05a1efcb20`; artifact ID: 13296738360; APK size: 75,187 bytes; SHA-256: `233c76239111cdd8781c3705b0093748c09b0ccd05bfc2955f16088856207f07`.
 
 ## Phase 45 — Original screen-casting integration audit (analysis complete)
 
