@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 57 — Opt-in foreground GPS course (CI pending)
+## Phase 57 — Opt-in foreground GPS course (CI verified)
 
 - Added GPS_PROVIDER-only location updates after the user enables the meter setting; fine+coarse permissions are requested together only on that explicit opt-in, and GPS course requires precise access.
 - Updates run only while the Activity is foregrounded and stop in `onPause`. No network provider, coordinates display/storage/upload, contacts, background location or map-app internals.
@@ -8,7 +8,8 @@
 - GPS speed is labelled separately and is not treated as ECU/CAN/OBD vehicle speed.
 - Added tests for course threshold, missing data, invalid speeds and compass-mode descriptions.
 - Details: `docs/FOREGROUND_GPS_COURSE.md`.
-- Source/test/manifest commits: `61f23288f69cffb46fdddf5f42d411c1264f36e1`, `9dd38038a4308dd801740d66c2bf193a7d7c625f`, `3fc917a62553c09505158c4ebc99cdbfad1b49a6`, `a8fd9c3ef0a0c54e7647c7057ca248ca45e4a7bf`, `797fdfc2d777e1a5e3468455d955554457dfc757`, `cec76c845d91f0c92b1fa0f1d269e63c98e0db9d`, `79aa0c0b6d0b4eaf2aa0affac2ac40578da9472e`, `0db093ed2a39510db0e48b9afc61af7061a023fc`, `585a778571d80cb10cac5cf766a723a286f79da3`, `9a93f4950dd5e46792449b2c3b5e1920c928a672`, `7e65d378206c45bf8bd5f8aa1d7c299ad79fad83`; CI pending.
+- GitHub Actions run #172 (ID 41778171954) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41778171954
+- Final source/manifest commit: `7e65d378206c45bf8bd5f8aa1d7c299ad79fad83`; artifact ID: 13297348399; APK size: 88,480 bytes; SHA-256: `bd39bcb74ff13e3dfacf56e4c43da4b63c377a3b2ce6b33e83bc06b39eb744d2`.
 
 ## Phase 56 — Explicit return-home phrase guard (CI verified)
 
