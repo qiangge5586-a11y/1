@@ -1,6 +1,6 @@
 # HondaHack 7.6.0 Rebuild Progress
 
-## Phase 65 — Explicit read-only stored fault-code request (CI pending)
+## Phase 65 — Explicit read-only stored fault-code request (CI verified)
 
 - Added a separate exact allowlist for standard Mode 03 command `03`; Mode 04 clear-DTC and all other commands remain blocked.
 - Added a user-visible “Read stored fault codes” button with a second confirmation dialog. The request is queued on the Bluetooth worker so it cannot write to the socket concurrently with the telemetry poller.
@@ -8,7 +8,9 @@
 - If there is no active paired adapter session, the UI asks the user to connect first.
 - Tests cover the exact Mode 03 allowlist boundary; parser tests remain in Phase 64.
 - Details: `docs/OBD2_DTC_READ.md`.
-- Source/test commits: `c2b0e719c6726424aab5502b16690cc25319f906`, `2d82b192d5eaed7ca1e42091c5edcbcc5862a0f4`, `45506dd455b6651776ef3a3c1987a16845f5f082`, `0a61396365226ffbf09506da4fc37959df850d22`; CI pending.
+- The first controller-only build exposed the required new listener callback not yet implemented in MainActivity; the UI callback was added in the follow-up commit.
+- Source/test commits: `c2b0e719c6726424aab5502b16690cc25319f906`, `2d82b192d5eaed7ca1e42091c5edcbcc5862a0f4`, `45506dd455b6651776ef3a3c1987a16845f5f082`, `0a61396365226ffbf09506da4fc37959df850d22`.
+- GitHub Actions run #211 (ID 41779787123) passed unit tests, debug APK assembly and artifact upload: https://github.com/qiangge5586-a11y/1/actions/runs/41779787123. Artifact ID: 13298641561; APK artifact ZIP size: 99,105 bytes.
 
 
 ## Phase 64 — Standard OBD-II stored trouble-code decoder (CI verified)
