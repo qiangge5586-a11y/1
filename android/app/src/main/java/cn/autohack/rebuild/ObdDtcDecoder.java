@@ -7,24 +7,32 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Decodes standard SAE J1979 Mode 03 stored diagnostic trouble-code responses. */
+/** Decodes standard SAE J1979 stored, pending and permanent DTC responses. */
 public final class ObdDtcDecoder {
     private static final String[] CATEGORIES = {"P", "C", "B", "U"};
     private static final int MAX_RESPONSE_HEX_CHARS = 256;
 
     private ObdDtcDecoder() {}
 
-    /**
-     * Returns ordered unique DTCs from a positive 0x43 response.
-     * Invalid, negative, no-data and truncated responses return an empty list.
-     */
     public static List<String> decodeStoredCodes(String response) {
+        return decode(response, "43");
+    }
+
+    public static List<String> decodePendingCodes(String response) {
+        return decode(response, "47");
+    }
+
+    public static List<String> decodePermanentCodes(String response) {
+        return decode(response, "4A");
+    }
+
+    private static List<String> decode(String response, String positiveMarker) {
         if (response == null) return Collections.emptyList();
         String compact = response.toUpperCase(Locale.ROOT).replaceAll("[^0-9A-F]", "");
-        int marker = compact.indexOf("43");
+        int marker = compact.indexOf(positiveMarker);
         if (marker < 0) return Collections.emptyList();
 
-        String payload = compact.substring(marker + 2);
+        String payload = compact.substring(marker + positiveMarker.length());
         if (payload.isEmpty() || payload.length() > MAX_RESPONSE_HEX_CHARS
                 || payload.length() % 4 != 0) {
             return Collections.emptyList();
