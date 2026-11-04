@@ -24,3 +24,14 @@ The rebuild now declares `minSdk=17` while retaining a modern compile SDK. CI al
 - Original sample reverse-engineering report in the Library: APK manifest minSdk 17.
 - https://github.com/librick/ic1101 — 10th-gen Civic head-unit research and explicit trim caveat.
 - 2019 China-market Civic trim coverage: https://www.sohu.com/a/346038777_215942 — 2019 CVT 劲动/燃动 lower trims and CarPlay context.
+
+
+## Legacy API 17 fallbacks added
+
+- Uses a Holo theme on API 17–20 and the Material theme from API 21.
+- Uses legacy CPU ABI fields before API 21.
+- Uses the legacy permission-check API on older Android; runtime permission prompts are only used from API 23/31 where available.
+- Uses `ACTION_GET_CONTENT` on API 17 instead of the API 19 document picker. Selected media and APK files are copied into app-private storage with size caps so temporary URI grants are not relied on across restarts.
+- Audio preview falls back to the legacy music stream API; API 17–20 disables the newer offline TTS voice-selection feature rather than risking a network voice.
+- JSON file export is unavailable before API 19, but the existing Share JSON action remains available.
+- The build keeps targetSdk 28 for the privately deployed legacy head-unit profile; this intentional trade-off is excluded from the expired-target lint rule only. The app is not represented as a Google Play release.
