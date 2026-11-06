@@ -25,6 +25,7 @@ jobs:
             DiPlay/compat/iap2/Iap2DuplexByteStream.java \
             DiPlay/compat/iap2/Iap2StreamDuplexAdapter.java \
             DiPlay/compat/iap2/Iap2LinkPump.java \
+            DiPlay/compat/iap2/Iap2CsmPumpSender.java \
             DiPlay/compat/iap2/Iap2LinkModelPumpDriver.java \
             DiPlay/compat/iap2/Iap2WirelessHandshake.java \
             DiPlay/compat/iap2/IapTunnelFrameDecoder.java \
@@ -47,6 +48,7 @@ jobs:
             DiPlay/compat/iap2/Iap2LinkEngineModel.java \
             DiPlay/compat/iap2/test/Iap2DuplexByteStreamTest.java \
             DiPlay/compat/iap2/test/Iap2LinkPumpContractTest.java \
+            DiPlay/compat/iap2/test/Iap2CsmPumpSenderTest.java \
             DiPlay/compat/iap2/test/Iap2LinkModelPumpDriverTest.java \
             DiPlay/compat/iap2/test/Iap2WirelessHandshakeTest.java \
             DiPlay/compat/iap2/test/IapTunnelFramingTest.java \
@@ -68,6 +70,7 @@ jobs:
             DiPlay/compat/iap2/test/Iap2LinkEngineModelTest.java
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2DuplexByteStreamTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkPumpContractTest
+          java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmPumpSenderTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkModelPumpDriverTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2WirelessHandshakeTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.IapTunnelFramingTest
