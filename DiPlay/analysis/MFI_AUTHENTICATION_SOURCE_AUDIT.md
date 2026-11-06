@@ -347,3 +347,57 @@ Channel-scope validation after adding `MfiIap2Channel`:
   https://github.com/qiangge5586-a11y/1/actions/runs/42213523381
 Both completed successfully for implementation commit
 `1ad00a11a63ba61219d9d948e13d278915936368`.
+
+
+## Runtime diagnostic correlation — OnePlus PLC110 / Android 16 (2026-11-07)
+
+A user-supplied private-beta diagnostic report from a OnePlus PLC110
+(Android 16, API 36, MT6991) records the following active connection state:
+
+- Transport selected: wireless.
+- MFi discovery backend: Linux I2C, path `/dev/i2c-1`.
+- Authentication initialization fails immediately with `errno=2 (No such file or directory)`.
+- The app reports a local experimental beta identity and no remote fallback.
+- Wi-Fi and Bluetooth framework services are enabled, but no USB device or
+  USB-Bluetooth dongle is attached and no ACL peer is connected.
+- The app's display is the phone's built-in 1272x2800 panel; no presentation
+  display is exposed. The CarPlay session remains in CONNECTING and video
+  negotiation logs do not demonstrate an active media stream.
+
+### Interpretation
+
+This is direct runtime evidence that the tested OnePlus environment cannot
+open the configured Linux I2C device node. The failure occurs during MFi
+provider discovery, before a successful iAP2 authentication exchange; it is
+not evidence of a TLS, H.264 decoder, USB enumeration, or display-rendering
+failure.
+
+The report is from the OnePlus phone, not the Honda MY16ADA / Android 4.2.2
+head unit. It therefore does not establish whether the Civic head unit exposes
+a usable MFi I2C coprocessor or device node. The earlier source audit found
+that the original app's persisted MFi target can differ from constructor
+defaults; the runtime report confirms I2C is the selected backend in this
+particular session, but does not identify whether that selection came from a
+saved preference or a build-time override.
+
+### Safe next checks
+
+1. On the actual Honda head unit, collect read-only evidence for
+   `/dev/i2c-*`, `/sys/bus/i2c/devices`, and permissions/ownership of any
+   candidate node. Do not write to I2C registers as a discovery probe.
+2. Confirm that the selected target matches hardware actually present:
+   I2C requires a compatible MFi authentication coprocessor and working bus
+   access; USB_CH341 requires the supported external bridge physically
+   attached and recognized; REMOTE requires an explicitly configured,
+   trusted provider. Do not switch to LOCAL as a workaround.
+3. Treat `ENOENT` as a deterministic backend-unavailable result for this
+   attempt. Avoid a rapid reconnect loop that repeats the same failing open;
+   surface the selected backend, path and failure class without logging
+   certificate, challenge, signature or identity bytes.
+4. Only after a supported provider is detected should the iAP2 MFi exchange
+   and subsequent AirPlay type-130 / video stages be evaluated.
+
+No backend selection, credential, certificate, private key, authentication
+success condition, or vehicle configuration was changed as a result of this
+report. No physical MFi coprocessor or Honda head unit was tested in this
+runtime session.
