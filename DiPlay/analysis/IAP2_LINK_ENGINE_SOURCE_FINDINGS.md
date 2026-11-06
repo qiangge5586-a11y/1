@@ -67,7 +67,7 @@ A reset bit causes terminal failure. A synchronization bit decodes the synchroni
 - Outgoing packet headers carry `lastReceivedInOrder` in the acknowledgement field.
 - An ACK-only packet uses the current send sequence and the current in-order receive acknowledgement.
 - Normal ACK processing updates `lastSentAcknowledged`, removes acknowledged entries from the unacknowledged queue using the circular sequence-distance rule and peer ACK window plus slack 10, then drains queued packets while the negotiated outgoing window permits.
-- The engine becomes NORMAL/writable only after it has received peer synchronization, peer maxLength is usable, and any already queued packets fit the peer's advertised payload bound. The transition is performed while handling the peer ACK after synchronization.
+- The engine becomes NORMAL/writable only after it has received peer synchronization, peer maxLength is usable, and any already queued packets fit the peer's advertised payload bound. Important source detail: `processFrame()` calls `handleAcknowledgement()` for every non-zero control frame, not only frames with the ACK bit. Therefore the peer synchronization frame itself also drives the readiness check after `handleSynchronization()` has recorded the peer limits. The ACK field value does not have to equal local SYN sequence 99.
 
 ## 4. Synchronization payload
 
@@ -162,7 +162,7 @@ The new exact wireless synchronization golden vector is asserted by `Iap2LinkFra
 
 Still required before a complete link-engine model is considered source-equivalent:
 1. Golden vectors for incoming synchronization and peer ACK sequence.
-2. State-transition tests for negotiation -> NORMAL/writable, including too-small peer maxLength and queued oversized packet failure.
+2. State-transition tests for negotiation -> NORMAL/writable, including the peer-SYN-triggered ACK processing, arbitrary ACK-field values, too-small peer maxLength, and queued oversized packet failure.
 3. Cumulative ACK window tests, including wrap-around and stale/future ACKs.
 4. Out-of-order buffering, duplicate suppression, missing-sequence extended ACK and ordered delivery tests.
 5. Extended ACK retransmit selection and retry-exhaustion tests.
