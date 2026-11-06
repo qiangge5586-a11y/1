@@ -243,3 +243,43 @@ Manifest 还声明了启动 Activity、CarPlay Host Activity、USB 附件处理�
 3. 可用 RAM 仅约 0.27 GB，需控制后台服务、反编译/诊断日志缓存和 CarPlay 音视频缓冲，避免在车机端运行大型诊断组件。
 4. 800×480 横屏是界面适配基准；正式车机 APK 应采用低内存、横屏优先布局。
 5. 设备型号为 MY16ADA，硬件平台为 Mitsubishi Electric Andromeda/vcm30t30；不能把“2019 款劲动版”车型信息直接等同于车机硬件代号，软件适配应以实机报告的系统和硬件标识为准。
+
+
+## 13. 原生库审计自动化复核与 JNI 加载点
+
+已新增 `DiPlay/tools/analyze-native-libs.sh` 和 GitHub Actions 工作流 `DiPlay Native Library Compatibility Audit`。工作流对原始 APK 进行 SHA-256 校验后，直接从 APK 提取 ELF 并读取 `.note.android.ident` 的前 4 字节小端 API 值。最终成功产物（Run #42141939470）确认：
+
+| 原生库 | NDK Android API note | JNI 加载位置（JADX 源码） | 适配关注点 |
+|---|---:|---|---|
+| `libconscrypt_jni.so` | 16 | `transport/LockdownTlsEngineFactory` | TLS 引擎有显式捕获加载异常及 Conscrypt Provider 回退逻辑，仍需实机验证 |
+| `liblegacy_ncm_claim.so` | 19 | `transport/LegacyNcmNative`、`transport/UsbfsIoNative` | 静态初始化加载；失败可能影响 Legacy NCM/USB 数据通路 |
+| `liblocal_hotspot_radio.so` | 19 | `network/LegacyHotspotNative` | 旧热点原生路径，需确认调用是否被能力检测隔离 |
+| `liblwip_ncm_relay.so` | 19 | `network/LwipNcmNative` | 类初始化和 native 调用对 `UnsatisfiedLinkError` 有捕获，需验证降级是否完整 |
+| `libopus_microphone.so` | 19 | `media/NativeOpusDecoder`、`media/NativeOpusEncoder` | 音频编解码路径，需检查是否可选加载 |
+| `libspeex_echo.so` | 19 | `media/SpeexEchoCanceller` | 回声消除可考虑禁用降级，避免阻断主会话 |
+| `libusb_host_compat.so` | 19 | `network/LegacyTunBlocking`、`transport/LegacyUsbHostNative` | 有静态初始化加载点，需确认目标 USB 路径及错误隔离 |
+| `libxcertplay_chacha.so` | 19 | `airplay/NativeChaCha` | 加密算法实现；不能简单禁用，需验证替代实现和 TLS/会话安全 |
+| `libxcertplay_i2c.so` | 19 | `transport/NativeLinuxI2cBridge` | I2C/仪表类功能，优先隔离为可选能力 |
+
+**审计结论：** 9 个库全部为 ARM ELF32，ABI 与目标车机 `armeabi-v7a` 匹配；其中 8 个的 Android NDK 平台 note 为 API 19，1 个为 API 16。API 19 note 表示库以 API 19 平台头文件/目标构建，不能单凭 note 断言一定无法在 API 17 加载；必须结合未定义符号和目标设备 linker 实测。尤其应优先检查静态初始化中直接调用 `System.loadLibrary` 的类，避免可选模块加载失败导致整个功能路径崩溃。
+
+### 对热点安全分析的补充
+
+源码中确实存在 `HotspotJoinTransaction`、`HotspotJoinJournal`、`HotspotNetworkSnapshot` 等事务/快照类，但它们属于热点加入/连接流程，不能据此认为 ROOT hostapd 配置已有备份保护。
+
+对 `network/HostapdHotspotManager` 的启动与 teardown 代码复核发现：
+- 启动脚本将生成配置复制到 `/data/misc/wifi/hostapd.conf`，未见先备份原文件的动作。
+- teardown 主要执行 stale hostapd/dnsmasq 清理、`ifconfig wlan0 down`，再通过 `WifiCtl ON` 恢复框架 Wi-Fi。
+- 该 teardown 未见把原始 `hostapd.conf` 还原的逻辑。
+- 部分逻辑会按热点状态复用并跳过 teardown；不能把“停止应用”理解为一定关闭热点或恢复系统配置。
+
+因此之前提出的 ROOT 事务保护仍然成立。后续改造必须把“连接事务日志”和“系统 hostapd 配置备份/回滚”明确区分。
+
+## 14. 当前阶段状态
+
+- [x] 通过独立 GitHub Actions 对 APK 内 9 个原生库完成 ELF/API note/DT_NEEDED 审计。
+- [x] 复核 JNI 加载位置并区分可选与关键路径的风险。
+- [x] 复核 HostapdHotspotManager 对系统配置的覆盖与 teardown 行为。
+- [ ] 在 API 17 实机加载各必要 JNI 库，记录 linker 输出。
+- [ ] 建立 Honda 专用 HotspotBackend，先只读探测，再实现备份/回滚。
+- [ ] 构建和签署适配 APK，并在 MY16ADA 车机进行安装与 CarPlay 实测。
