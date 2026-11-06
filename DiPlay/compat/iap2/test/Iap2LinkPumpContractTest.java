@@ -32,6 +32,9 @@ public final class Iap2LinkPumpContractTest {
         truth(closed.await(2, TimeUnit.SECONDS), "EOF closes pump");
         truth("iAP2 transport EOF".equals(reason[0]), "EOF reason preserved");
         truth(pump.isTerminated(), "pump reports terminated");
+        Iap2PumpMetrics.Snapshot metrics = pump.metricsSnapshot();
+        truth(metrics.readCalls == 1L, "metrics count EOF read");
+        truth(metrics.readBytes == 0L, "metrics exclude EOF from byte count");
     }
 
     private static void testRejectsOversizedPayload() throws Exception {
@@ -79,6 +82,8 @@ public final class Iap2LinkPumpContractTest {
             filled &= pump.sendControl(new byte[] { (byte) i });
         }
         truth(filled, "fill bounded command queue to configured limit");
+        truth(pump.metricsSnapshot().maxQueueCommands == Iap2LinkPump.MAX_COMMANDS,
+                "metrics capture maximum command queue depth");
         truth(!pump.sendControlAwaitCapacity(new byte[] { 99 }, 20L),
                 "capacity wait honors timeout while queue remains full");
         Thread producer = new Thread(new Runnable() {
@@ -93,6 +98,8 @@ public final class Iap2LinkPumpContractTest {
         truth(admitted[0], "capacity waiter admitted after dequeue");
         input.offer(1); // Wake the worker; subsequent reads emulate RFCOMM read timeouts.
         truth(delivered.await(5, TimeUnit.SECONDS), "all 65 commands delivered to driver across bounded turns");
+        truth(pump.metricsSnapshot().commandsDelivered == Iap2LinkPump.MAX_COMMANDS + 1L,
+                "metrics count delivered commands");
         input.finish();
         truth(closed.await(2, TimeUnit.SECONDS), "pump closes after test stream EOF");
     }
