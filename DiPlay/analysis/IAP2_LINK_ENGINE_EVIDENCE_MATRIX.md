@@ -237,3 +237,8 @@ Verified `sendExtendedAcknowledgement()` writes control `0x20`, current send seq
 ## Retransmission deadline preservation tests
 
 The outbound model regression suite now verifies that cumulative ACK removal leaves the original deadlines of later unacknowledged packets armed, and that an Extended ACK missing-sequence request increments and re-arms only the requested packet from the request timestamp. Advancing the deterministic clock then retransmits the earliest remaining packet while retaining the next packet's deadline. CI run [#160](https://github.com/qiangge5586-a11y/1/actions/runs/42174934442) passed 7,393 offline checks. These are deterministic Java model checks, not a live transport test.
+
+
+## CSM input boundary source correction
+
+The recovered source call path is `Iap2CsmChannel.recvControl()` -> `Iap2LinkChannel.recvControl()` -> `Iap2CsmFramer.offer()`. The 8,192-byte bound applies to raw reads in `Iap2LinkChannel.runPump()`, not to the CSM framer's input method. The original outbound `splitForLink()` caps link chunks at 65,525 bytes; the offline decoder now accepts up to this size per call and rejects 65,526. CI run [#161](https://github.com/qiangge5586-a11y/1/actions/runs/42175067632) passed 7,393 offline checks.
