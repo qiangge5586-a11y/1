@@ -191,3 +191,7 @@ The negotiation model now retains a read-only peer SYN snapshot: maxOutgoing, ma
 Actions run [#105](https://github.com/qiangge5586-a11y/1/actions/runs/42172333952) passed **7,174 offline checks**, including 121 negotiation checks and 32 composition checks. Runs #102 and #104 failed on a boxed numeric assertion and stale readiness expectations respectively; both were corrected before #105.
 
 Remaining: validate the exact source-side peer-limit and queued-payload readiness predicates against additional Smali excerpts, then add malformed/truncated SYN and peer boundary tests. This model still has no live packet writer, USB/Bluetooth/TCP transport, or MY16ADA hardware verification.
+
+## SYN boundary and malformed-input regression checkpoint
+
+Added tests for malformed version/fixed-prefix payloads, peer maxLength minimum 11 and maximum 65,535, u8 window/retry boundaries (0 and 255), u16 timeout boundaries (0 and 65,535), and the source decoder's treatment of trailing incomplete session-descriptor bytes (ignored after complete 3-byte descriptors). Actions run [#107](https://github.com/qiangge5586-a11y/1/actions/runs/42172506528) passed **7,199 offline checks** (146 negotiation, 32 composition). Run #106 exposed only a null-assertion helper defect in the new test and failed; the test was corrected before #107.
