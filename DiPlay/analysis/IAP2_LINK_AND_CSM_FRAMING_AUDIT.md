@@ -86,3 +86,10 @@ This gives the real handshake gate: link must become ready and publish a valid p
 - No cryptographic implementation was changed.
 - No original DiPlay transport code was modified or wired to these new offline decoders.
 - No live Bluetooth, Wi-Fi, AirPlay, iAP2 or vehicle session was attempted.
+
+
+## Reproducibility note (2026-11-06)
+
+The current repository tree does not preserve the APKTool Smali output or JADX source for `Iap2LinkEngine` / `Iap2LinkChannel`. The decompile workflow is configured to retain its artifact for 30 days, but no identifiable decompile run or artifact ID was found in the latest 100 workflow runs inspected for this continuation. The detailed link-layer values above are therefore prior audit findings, not raw source excerpts available for independent re-verification from the current checkout.
+
+Before implementing synchronization, sequence/ACK, extended ACK, reordering, retransmission, peer-limit, ready-gate, or EOF behavior, restore the original Smali evidence and derive exact golden byte fixtures. See [IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md](IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md) for the source-to-test checklist and acceptance criteria. No guessed marker or ACK behavior should be implemented.
