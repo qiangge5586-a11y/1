@@ -7,6 +7,7 @@ public final class Iap2CsmFrameDecoderTest {
     private static int checks;
     public static void main(String[] args) {
         fragmentedAndCoalescedFrames();
+        everySingleSplitBoundaryAndBytewiseFeed();
         resynchronizesAfterGarbageAndBadShortLength();
         reportsResynchronizationDiagnostics();
         retainsIncompleteFrame();
@@ -26,6 +27,32 @@ public final class Iap2CsmFrameDecoderTest {
         eq(0x5703,out.get(1).messageId); bytes(new byte[]{3},out.get(1).payload);
         eq(0,d.pendingBytes());
     }
+    private static void everySingleSplitBoundaryAndBytewiseFeed() {
+        byte[] payload = new byte[]{0, 1, 0x40, 0x40, (byte)0xff, 7, 9};
+        byte[] encoded = frame(0x4e0d, payload);
+        for (int split = 1; split < encoded.length; split++) {
+            Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
+            List<Iap2CsmFrameDecoder.Frame> first = d.feed(slice(encoded, 0, split));
+            eq(0, first.size());
+            List<Iap2CsmFrameDecoder.Frame> second = d.feed(slice(encoded, split, encoded.length));
+            eq(1, second.size());
+            eq(0x4e0d, second.get(0).messageId);
+            bytes(payload, second.get(0).payload);
+            eq(0, d.pendingBytes());
+        }
+        Iap2CsmFrameDecoder bytewise = new Iap2CsmFrameDecoder();
+        for (int i = 0; i < encoded.length; i++) {
+            List<Iap2CsmFrameDecoder.Frame> out = bytewise.feed(slice(encoded, i, i + 1));
+            if (i + 1 < encoded.length) eq(0, out.size());
+            else {
+                eq(1, out.size());
+                eq(0x4e0d, out.get(0).messageId);
+                bytes(payload, out.get(0).payload);
+            }
+        }
+        eq(0, bytewise.pendingBytes());
+    }
+
     private static void resynchronizesAfterGarbageAndBadShortLength() {
         Iap2CsmFrameDecoder d=new Iap2CsmFrameDecoder();
         byte[] valid=frame(7,new byte[]{9});
