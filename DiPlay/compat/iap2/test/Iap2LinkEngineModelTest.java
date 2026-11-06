@@ -422,6 +422,7 @@ public final class Iap2LinkEngineModelTest {
         final Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
         m.start(true, 0);
         becomeReady(m);
+        m.drainEvents();
         m.send(10, new byte[] {1, 2, 3}, 10);
         eq(1, m.drainWireFrames().size());
         m.feedNegotiation(Iap2LinkFrameCodec.encode(0x00, 78, 99, 10,
