@@ -23,61 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/iap2-test
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test DiPlay/compat/mfi/MfiOperationContext.java DiPlay/compat/mfi/test/MfiOperationContextTest.java
-            DiPlay/compat/bluetooth/test/BoundedByteRingBufferTest.java \
-            DiPlay/compat/bluetooth/test/RfcommConnectDeadlineTest.java \
-            DiPlay/compat/mfi/MfiOperationContext.java \
-            DiPlay/compat/mfi/test/MfiOperationContextTest.java \
-            DiPlay/compat/iap2/Iap2DuplexByteStream.java \
-            DiPlay/compat/iap2/Iap2StreamDuplexAdapter.java \
-            DiPlay/compat/iap2/Iap2LinkPump.java \
-            DiPlay/compat/iap2/Iap2CsmPumpSender.java \
-            DiPlay/compat/iap2/Iap2LinkModelPumpDriver.java \
-            DiPlay/compat/iap2/Iap2WirelessHandshake.java \
-            DiPlay/compat/iap2/Iap2WirelessDeadlineBudget.java \
-            DiPlay/compat/iap2/IapTunnelFrameDecoder.java \
-            DiPlay/compat/iap2/IapTunnelPackageDecoder.java \
-            DiPlay/compat/iap2/Iap2CsmFrameDecoder.java \
-            DiPlay/compat/iap2/Iap2CsmFrameCodec.java \
-            DiPlay/compat/iap2/Iap2CsmReceiveQueueModel.java \
-            DiPlay/compat/iap2/Iap2CsmReceiveCoordinator.java \
-            DiPlay/compat/iap2/Iap2CsmSendPlan.java \
-            DiPlay/compat/iap2/Iap2LinkCommandQueueModel.java \
-            DiPlay/compat/iap2/Iap2CsmSendDeadline.java \
-            DiPlay/compat/iap2/Iap2CsmSendAdmissionModel.java \
-            DiPlay/compat/iap2/Iap2CsmLinkGateModel.java \
-            DiPlay/compat/iap2/Iap2LinkFrameCodec.java \
-            DiPlay/compat/iap2/Iap2LinkFrameDecoder.java \
-            DiPlay/compat/iap2/Iap2LinkNegotiationModel.java \
-            DiPlay/compat/iap2/Iap2RetransmissionPolicy.java \
-            DiPlay/compat/iap2/Iap2ReceiveWindowModel.java \
-            DiPlay/compat/iap2/Iap2AckWindowPolicy.java \
-            DiPlay/compat/iap2/Iap2OutboundWindowModel.java \
-            DiPlay/compat/iap2/Iap2LinkEngineModel.java \
-            DiPlay/compat/iap2/test/Iap2DuplexByteStreamTest.java \
-            DiPlay/compat/iap2/test/Iap2LinkPumpContractTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmPumpSenderTest.java \
-            DiPlay/compat/iap2/test/Iap2LinkModelPumpDriverTest.java \
-            DiPlay/compat/iap2/test/Iap2WirelessHandshakeTest.java \
-            DiPlay/compat/iap2/test/Iap2WirelessDeadlineBudgetTest.java \
-            DiPlay/compat/iap2/test/IapTunnelFramingTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmFrameDecoderTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmFrameCodecTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmReceiveQueueModelTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmReceiveCoordinatorTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmSendPlanTest.java \
-            DiPlay/compat/iap2/test/Iap2LinkCommandQueueModelTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmSendDeadlineTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmSendAdmissionModelTest.java \
-            DiPlay/compat/iap2/test/Iap2CsmLinkGateModelTest.java \
-            DiPlay/compat/iap2/test/Iap2LinkFrameCodecTest.java \
-            DiPlay/compat/iap2/test/Iap2LinkFrameDecoderTest.java \
-            DiPlay/compat/iap2/test/Iap2LinkNegotiationModelTest.java \
-            DiPlay/compat/iap2/test/Iap2RetransmissionPolicyTest.java \
-            DiPlay/compat/iap2/test/Iap2ReceiveWindowModelTest.java \
-            DiPlay/compat/iap2/test/Iap2AckWindowPolicyTest.java \
-            DiPlay/compat/iap2/test/Iap2OutboundWindowModelTest.java \
-            DiPlay/compat/iap2/test/Iap2LinkEngineModelTest.java
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test $(find DiPlay/compat/iap2 -maxdepth 2 -name '*.java' -print) DiPlay/compat/bluetooth/BoundedByteRingBuffer.java DiPlay/compat/bluetooth/RfcommConnectDeadline.java DiPlay/compat/bluetooth/test/BoundedByteRingBufferTest.java DiPlay/compat/bluetooth/test/RfcommConnectDeadlineTest.java DiPlay/compat/mfi/MfiOperationContext.java DiPlay/compat/mfi/test/MfiOperationContextTest.java
           java -cp build/iap2-test com.shilapi.xcertplay.compat.bluetooth.BoundedByteRingBufferTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.bluetooth.RfcommConnectDeadlineTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiOperationContextTest
