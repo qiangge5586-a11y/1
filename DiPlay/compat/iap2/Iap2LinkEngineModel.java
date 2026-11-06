@@ -170,6 +170,21 @@ public final class Iap2LinkEngineModel {
         return negotiation.getTerminalReason();
     }
 
+    /** Earliest negotiation, retransmission, or delayed-ACK deadline. */
+    public synchronized long nextDeadlineMillis() {
+        if (closed) return Long.MAX_VALUE;
+        long next = negotiation.nextDeadlineMillis();
+        if (outbound != null) {
+            Long deadline = outbound.getNextDeadlineMillis();
+            if (deadline != null && deadline.longValue() < next) next = deadline.longValue();
+        }
+        if (inbound != null) {
+            Long deadline = inbound.getAcknowledgementDeadlineMillis();
+            if (deadline != null && deadline.longValue() < next) next = deadline.longValue();
+        }
+        return next;
+    }
+
     public synchronized Iap2LinkNegotiationModel.PeerConfiguration
             getNegotiatedPeerConfiguration() {
         return negotiation.getPeerConfiguration();
