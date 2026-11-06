@@ -25,14 +25,30 @@ public final class NcmInterfaceSelector {
     public static final class Endpoint {
         private final int direction;
         private final int type;
+        private final int address;
+        private final int maxPacketSize;
 
         public Endpoint(int direction, int type) {
+            this(direction, type, -1, -1);
+        }
+
+        public Endpoint(int direction, int type, int address, int maxPacketSize) {
+            if (address < -1 || address > 255) {
+                throw new IllegalArgumentException("endpoint address out of range");
+            }
+            if (maxPacketSize < -1 || maxPacketSize > 65535) {
+                throw new IllegalArgumentException("endpoint max packet size out of range");
+            }
             this.direction = direction;
             this.type = type;
+            this.address = address;
+            this.maxPacketSize = maxPacketSize;
         }
 
         public int getDirection() { return direction; }
         public int getType() { return type; }
+        public int getAddress() { return address; }
+        public int getMaxPacketSize() { return maxPacketSize; }
     }
 
     public static final class UsbInterface {
