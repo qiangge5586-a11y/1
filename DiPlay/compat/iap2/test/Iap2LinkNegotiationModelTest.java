@@ -211,7 +211,7 @@ public final class Iap2LinkNegotiationModelTest {
             eq(values[i][4], peer.maxRetransmissions);
             eq(values[i][5], peer.maxAcknowledgements);
             eq(0, peer.getSessionDescriptorCount());
-            eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+            eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
         }
 
         Iap2LinkNegotiationModel partialDescriptor = new Iap2LinkNegotiationModel();
