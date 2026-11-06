@@ -5,17 +5,26 @@ public final class CoordinatorSelfTest {
  static final class S implements Snapshot {}
  static final class B implements Backup {}
  static final class Fake implements RootOps {
-  boolean fail, backupMissing, restored, stopped;
-  int applyCalls, restoreCalls;
+  boolean fail, backupMissing, restored, stopped, failAfterLaunch, lockHeld, lockReleased;
+  int applyCalls, restoreCalls, stopCalls;
+  public LockHandle acquireExclusiveLock(String id) {
+   if(lockHeld)throw new IllegalStateException("concurrent transaction");
+   lockHeld=true;
+   return new LockHandle(){public void close(){lockHeld=false;lockReleased=true;}};
+  }
   public Snapshot preflight(){return new S();}
   public Backup createAndVerifyBackup(String i,Snapshot s){return backupMissing?null:new B();}
-  public ProcessIdentity apply(String i,Snapshot s,Backup b){
-   applyCalls++;return new ProcessIdentity(123,456L,"/data/local/tmp/owned-hostapd");
+  public ProcessIdentity apply(String i,Snapshot s,Backup b,ProcessStartedListener listener)throws Exception{
+   applyCalls++;
+   ProcessIdentity p=new ProcessIdentity(123,456L,"/data/local/tmp/owned-hostapd");
+   listener.onStarted(p);
+   if(failAfterLaunch)throw new Exception("simulated failure after process launch");
+   return p;
   }
   public void verifyActive(ProcessIdentity p)throws Exception{
    if(fail)throw new Exception("simulated verification failure");
   }
-  public void stopIfStillOwned(ProcessIdentity p){stopped=true;}
+  public void stopIfStillOwned(ProcessIdentity p){stopped=true;stopCalls++;}
   public void restore(Snapshot s,Backup b){restored=true;restoreCalls++;}
  }
  static final class J implements Journal {
@@ -26,6 +35,7 @@ public final class CoordinatorSelfTest {
   Fake ok=new Fake();J j1=new J();
   if(new HotspotTransactionCoordinator(ok,j1).start("test_txn_0001")!=State.ACTIVE)
    throw new AssertionError("success path");
+  if(ok.lockHeld||!ok.lockReleased)throw new AssertionError("lock released after success");
 
   Fake bad=new Fake();bad.fail=true;J j2=new J();
   try {new HotspotTransactionCoordinator(bad,j2).start("test_txn_0002");
@@ -33,6 +43,15 @@ public final class CoordinatorSelfTest {
   } catch(Exception expected) {
    if(!bad.stopped||!bad.restored||j2.last!=State.ROLLED_BACK)
     throw new AssertionError("verified rollback path");
+   if(bad.lockHeld||!bad.lockReleased)throw new AssertionError("lock released after rollback");
+  }
+
+  Fake partial=new Fake();partial.failAfterLaunch=true;J j4=new J();
+  try {new HotspotTransactionCoordinator(partial,j4).start("test_txn_0004");
+   throw new AssertionError("expected post-launch failure");
+  } catch(Exception expected) {
+   if(!partial.stopped||partial.stopCalls!=1||!partial.restored||j4.last!=State.ROLLED_BACK)
+    throw new AssertionError("process registered before post-launch failure");
   }
 
   Fake noBackup=new Fake();noBackup.backupMissing=true;J j3=new J();
@@ -46,7 +65,6 @@ public final class CoordinatorSelfTest {
   try {new HotspotTransactionCoordinator(ok,new J()).start("bad id");
    throw new AssertionError("invalid transaction id accepted");
   } catch(IllegalArgumentException expected) { }
-
-  System.out.println("PASS: success, rollback, backup gate and transaction ID validation");
+  System.out.println("PASS: lock, success, rollback, early process ownership, backup gate and ID validation");
  }
 }
