@@ -8,6 +8,7 @@ import android.hardware.usb.UsbManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.lang.reflect.Method;
 
 /**
  * Read-only USB Host enumeration for API 12+.
@@ -54,13 +55,31 @@ public final class UsbHostReadOnlyScanner {
             interfaces.add(new UsbConfigurationSnapshot.InterfaceSnapshot(
                     usbInterface.getId(), usbInterface.getInterfaceClass(),
                     usbInterface.getInterfaceSubclass(), usbInterface.getInterfaceProtocol(),
-                    usbInterface.getAlternateSetting(), endpoints));
+                    readAlternateSetting(usbInterface), endpoints));
         }
         List<UsbConfigurationSnapshot> groups = new ArrayList<UsbConfigurationSnapshot>();
         groups.add(new UsbConfigurationSnapshot(0,
                 "API 12+ device interface list (configuration metadata unavailable)",
                 0, 0, interfaces));
         return groups;
+    }
+
+    /**
+     * UsbInterface.getAlternateSetting() was added in API 21. Use reflection
+     * so the API-17 verifier never resolves that newer method; -1 means unknown.
+     */
+    private int readAlternateSetting(UsbInterface usbInterface) {
+        try {
+            Method method = UsbInterface.class.getMethod("getAlternateSetting");
+            Object value = method.invoke(usbInterface);
+            if (value instanceof Integer) {
+                int alternate = ((Integer) value).intValue();
+                if (alternate >= 0 && alternate <= 255) return alternate;
+            }
+        } catch (Exception unavailableOnOlderApi) {
+            // API 17 has no public alternate-setting getter.
+        }
+        return -1;
     }
 
     public ScanResult scan(Context context) {
