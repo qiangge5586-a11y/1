@@ -109,9 +109,11 @@ public final class Iap2LinkPump {
         IOException failure = null;
         byte[] input = new byte[READ_BUFFER_BYTES];
         try {
-            driver.start(System.currentTimeMillis());
+            driver.start(elapsedRealtimeMillis());
+            drainDriverOutput();
+            notifyReadyIfNeeded();
             while (!isClosing()) {
-                long now = System.currentTimeMillis();
+                long now = elapsedRealtimeMillis();
                 drainDriverOutput();
                 deliverCommands(now);
                 if (driver.isTerminal()) {
@@ -124,7 +126,7 @@ public final class Iap2LinkPump {
                     wait = Math.max(1L, Math.min((long) MAX_POLL_MILLIS, deadline - now));
                 }
                 int count = stream.read(input, 0, input.length, (int) wait);
-                now = System.currentTimeMillis();
+                now = elapsedRealtimeMillis();
                 if (count < 0) {
                     reason = "iAP2 transport EOF";
                     break;
@@ -132,10 +134,7 @@ public final class Iap2LinkPump {
                 if (count > 0) driver.onBytes(input, count, now);
                 driver.onTimer(now);
                 drainDriverOutput();
-                if (!readyNotified && driverIsReady()) {
-                    readyNotified = true;
-                    listener.onReady();
-                }
+                notifyReadyIfNeeded();
                 if (driver.isTerminal()) {
                     reason = driver.terminalReason();
                     break;
@@ -171,6 +170,18 @@ public final class Iap2LinkPump {
 
     private boolean driverIsReady() {
         return driver instanceof Readiness && ((Readiness) driver).isReady();
+    }
+
+    private void notifyReadyIfNeeded() {
+        if (!readyNotified && driverIsReady()) {
+            readyNotified = true;
+            listener.onReady();
+        }
+    }
+
+    /** Monotonic milliseconds; wall-clock adjustments must not shift protocol deadlines. */
+    private static long elapsedRealtimeMillis() {
+        return System.nanoTime() / 1000000L;
     }
 
     private boolean isClosing() {
