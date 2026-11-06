@@ -177,7 +177,6 @@ public final class Iap2LinkEngineModelTest {
                 4, 65535, 4000, 500, 4, 3,
                 new int[][] {{10, 0, 2}, {11, 2, 1}, {12, 1, 2}});
         m.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 20, 0, 0, sync), 1);
-        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 20, 100, 0, null), 2);
     }
 
     private static Iap2ReceiveWindowModel.Packet packet(int sequence) {
