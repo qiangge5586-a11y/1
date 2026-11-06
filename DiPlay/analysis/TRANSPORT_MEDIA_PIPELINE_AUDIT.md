@@ -66,7 +66,15 @@
 - ROOT 只读检查本来已在独立 Thread 执行；本次不改变任何 ROOT 命令或系统写入行为。
 - Presentation 的创建、show/dismiss 和 DisplayManager 查询继续留在 UI 线程；没有将窗口操作搬到后台线程。
 
-## 5. 建议的下一步（先测量，再调整）
+## 5.1 ScreenStream 指标辅助类进展（2026-11-07）
+
+- 新增/整理 `DiPlay/compat/airplay/ScreenStreamQueueMetrics.java`：累计排队字节、字节/深度 high-water、offer/dequeue/drop 数量、offer 等待总时长和最大值。
+- 指标只在显式 `snapshot()` 时复制为不可变快照；不逐帧写 logcat，不改变队列 admission、排序、超时或丢帧策略。
+- `ScreenStreamQueueMetricsTest` 已改为直接测试生产辅助类，而非在测试里复制一份独立记账实现；覆盖排队字节、high-water、drop、wait 统计、dequeue 和 underflow clamp。
+- CI 已执行该测试：Run `42250410045`，`ScreenStreamQueueMetricsTest PASS: 9 checks`，整组 iAP2/AirPlay 合同测试通过。
+- **重要集成边界：当前 merge patch 脚本尚未向原版 `ScreenStream.smali` 插入这些指标调用。** 因此这只是通过单测的观测辅助类，不代表 APK 运行时已经采集 ScreenStream 队列数据。接下来必须取得本次构建解包出的原版 Smali，核实准确方法/寄存器/队列元素大小，再补丁并反编译复核，不能仅因类被打进 classes5.dex 就宣称已生效。
+
+## 6. 建议的下一步（先测量，再调整）
 
 P0（只增加观测，不改变协议）：
 1. ScreenStream：累计排队字节 high-water、queue depth high-water、offer wait 总时长/最大值、drop count。
@@ -85,6 +93,6 @@ P1（有真实样本后再决定）：
 - 不改音频采样格式、RTP 时序、同步锚点或音频路由。
 - 不执行 ROOT 热点写入。
 
-## 6. 结论
+## 7. 结论
 
 原版媒体引擎已经有多层独立线程和有界队列，当前最有价值的优化方向不是再增加线程或盲目缩小队列，而是把 ScreenStream 的“按帧数但无累计字节上限”作为首要观测点，并把视频解码/音频输出的现有 high-water 与耗时指标收集齐全。只有拿到目标车机实测数据，才适合做参数调整。
