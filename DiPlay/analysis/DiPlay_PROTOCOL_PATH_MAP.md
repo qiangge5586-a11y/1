@@ -134,10 +134,7 @@ Controller 层最多做 4 次无线 RFCOMM 启动尝试，并有连接快照和�
 
 `CarHotspotTethering` 还会在配置要求时先尝试启用车机热点，并在特定失败状态下允许 manual fallback。热点准备完成后，控制器解析本机热点 IP、等待客户端连接，并监视首个 AirPlay TCP 活动。
 
-无线 RFCOMM bootstrap 收到 type-130 tunnel 数据流后，`startWirelessTunnelControl(stream)` 调用：
-`Iap2Session.openTunnel(stream, "wireless-tunnel", ...)`
-→ `Iap2WirelessControlClient.run(identification, wirelessEndpoint, ...)`
-→ MFi authentication、StartSession / Wi-Fi configuration 控制消息和 location/vehicle status 服务。
+无线链路的后半段不是“收到 type-130 就直接得到 iAP2 字节流”。`CarPlayMediaEngine.onDataStream()` 处理 AirPlay DataStream SETUP：当 `clientTypeUUID=E9459FD0-BCAD-4C45-820F-1E72447EF2F2` 且存在 AirPlay shared secret 与 seed 时，使用 HKDF-SHA512 派生 32 字节读取密钥，创建 `IapTunnel` TCP listener 和 `AirPlayIapTunnelStream`，然后返回 `type=130`、`streamID=1`、`dataPort`。iPhone 连接该 TCP 端口后，`IapTunnel` 解密/解析数据并把 `comm` 包体送入 `AirPlayIapTunnelStream`；注册的 handler 才调用 `startWirelessTunnelControl(stream)` → `Iap2Session.openTunnel(stream, "wireless-tunnel", ...)` → `Iap2WirelessControlClient.run(...)`。因此 type-130 是 AirPlay DataStream SETUP 的类型标识，TCP IAP carrier 和其上的 iAP2 tunnel session 是不同层次。详见 [AirPlay type-130 与加密 IAP tunnel 源码追踪](AIRPLAY_TYPE130_IAP_TUNNEL_SOURCE_TRACE.md)。
 
 此处应区分两条通道：
 - `wireless-rfcomm`：蓝牙上的 bootstrap/control；
