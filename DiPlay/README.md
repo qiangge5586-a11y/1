@@ -60,6 +60,7 @@ Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; 
 - [USB read-only scanner](compat/usb/README.md)
 - [Offline NCM/NTB16 codec](compat/ncm/README.md)
 - [Protocol path map](analysis/DiPlay_PROTOCOL_PATH_MAP.md)
+- [Original NCM/NTB16 codec comparison](analysis/NCM_NTB16_CODEC_COMPARISON.md)
 
 ## Safety and remaining gates
 
