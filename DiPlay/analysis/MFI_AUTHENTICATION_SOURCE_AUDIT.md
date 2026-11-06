@@ -192,3 +192,22 @@ This is a source/build compatibility checkpoint, not an API 17 runtime certifica
 - Artifact: `diplay-honda-compat-debug`, ID `13493602871`, SHA-256 `dbd3c12bc4adad87248de96bbe0d3ccf08dab37a11de6f25d922a123806693de`.
 
 These are offline Java/CI and APK archive checks only. They do not prove API 17 device runtime behavior, actual I2C/CH341 access, legitimate MFi authentication, iPhone pairing, or operation on the Civic head unit.
+
+
+## Provider-session boundary follow-up (2026-11-06)
+
+Added a Java 7/API-17-compatible `MfiProviderSession` adapter boundary around the certificate and challenge-signing phases:
+
+- The same `MfiOperationContext` instance is passed to both provider methods; remaining time is not reset between phases.
+- The session enforces NEW → CERTIFICATE_READY → CHALLENGE_SIGNED transitions and fails closed on provider errors, invalid certificate/signature results, malformed challenge lengths, cancellation, timeout, interruption, or generation mismatch.
+- Returned certificate/signature buffers and submitted challenge buffers are copied at the boundary to avoid provider-side mutation after return.
+- `cancel()` cancels the shared operation context; stale session generations are rejected before provider work and again after provider completion.
+- Important limitation: this wrapper cannot forcibly interrupt a provider implementation that ignores the context while blocked. Each real I2C/USB/remote provider must use the same context to bound every blocking operation and check it before/after work. This is an integration contract, not an implemented hardware provider.
+
+CI: [Java 7 iAP2/MFi test run 42201889265](https://github.com/qiangge5586-a11y/1/actions/runs/42201889265) passed. `MfiProviderSessionTest` passed 14 checks; operation context 16, I2C certificate reader 1,065, backend selection 12, plus the existing iAP2/RFCOMM offline suite passed. This is host-side offline testing only; no real MFi chip, iPhone, API 17 device, or vehicle session was exercised.
+
+The isolated Android app source set already includes `../../compat/mfi`, so the new provider-session class is part of Android compilation input. A separate APK build for this exact commit is still required before claiming packaged APK verification.
+
+## Next integration gate
+
+The next code step is to adapt the original iAP2 MFi message exchange (`0xAA00..0xAA05`) to this provider-session contract while preserving the exact wire transcript and success/failure semantics. The compatibility repository still has no production iAP2 MFi message client or hardware-backed provider; do not enable authentication or claim interoperability until that integration is source-parity tested and exercised with an authorized provider and iPhone.
