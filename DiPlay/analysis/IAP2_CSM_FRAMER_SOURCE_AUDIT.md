@@ -159,3 +159,10 @@ Expanded Iap2AckWindowPolicyTest with exhaustive finite-domain checks:
 - For all 65,536 sent/previous-ACK pairs and maxOutgoing values 0, 1, 4, 127 and 255, verify the source's strict `>` queue admission and strict `<` queued-drain boundaries.
 
 Actions run [#193](https://github.com/qiangge5586-a11y/1/actions/runs/42179259276) passed **1,188,083 Java 7 offline checks**, including 1,179,665 ACK/window policy checks. This is exhaustive validation of the model predicates over their 8-bit input domain; it does not prove live accessory interoperability.
+
+
+## Link-readiness and peer-limit send gate (2026-11-06)
+
+Added `Iap2CsmLinkGateModel` as an offline composition boundary around the existing CSM chunk-admission model. It refuses to create an admission plan while the link is negotiating, waits separately when the CSM peer control-payload limit is unknown, validates the known limit against 1..65,525, and reports a closed link without creating admission. This encodes the audited rule that CSM sending follows link readiness and uses the peer-advertised CSM chunk size. It does not perform CSM handshake, blocking waits, or transport writes.
+
+Actions run [#214](https://github.com/qiangge5586-a11y/1/actions/runs/42183487239) passed **2,323,780 Java 7 offline checks** across 17 suites, including 16 new gate checks. This is an offline composition test, not a live CSM session.
