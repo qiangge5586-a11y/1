@@ -41,7 +41,7 @@ mkdir -p "$DECODED" "$DEX_DIR" "$(dirname "$OUT")"
 # Keep the original app's internal Java/Kotlin package namespace, but give this
 # test build a distinct Android package so it can coexist with the installed APK.
 find "$DECODED" -type f \( -name '*.smali' -o -name '*.xml' \) -print0 \
-  | xargs -0 -r sed -i 's/com\\.shihab\\.diplay/com.shihab.diplay.honda/g'
+  | xargs -0 -r sed -i 's/com\.shihab\.diplay/com.shihab.diplay.honda/g'
 sed -i 's/^  versionCode: .*/  versionCode: 132/; s/^  versionName: .*/  versionName: 0.3.11-honda1/' \
   "$DECODED/apktool.yml"
 
