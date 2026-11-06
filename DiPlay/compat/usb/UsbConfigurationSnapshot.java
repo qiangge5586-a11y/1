@@ -4,7 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Immutable, passive copy of Android USB configuration/interface/endpoint descriptors. */
+/**
+ * Immutable passive descriptor group. On API 17 this is synthesized from
+ * UsbDevice's public interface list; configuration ID/name/power metadata are
+ * unavailable and the synthetic values must not be interpreted as real ones.
+ */
 public final class UsbConfigurationSnapshot {
     private final int id;
     private final String name;
