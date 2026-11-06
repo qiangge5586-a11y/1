@@ -107,7 +107,7 @@ public final class Ntb16Codec {
             }
             int ndpLength = readU16(source, absoluteNdp + 4);
             int nextNdp = readU16(source, absoluteNdp + 6);
-            if (ndpLength < 8 || ndpLength > blockLength - ndpOffset) {
+            if (ndpLength < 12 || ndpLength > blockLength - ndpOffset) {
                 break;
             }
 
