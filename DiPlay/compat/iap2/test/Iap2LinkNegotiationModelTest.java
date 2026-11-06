@@ -10,9 +10,9 @@ public final class Iap2LinkNegotiationModelTest {
         initiatorStartsSyncImmediately();
         markerResendsWhileDetecting();
         synchronizationRetriesAndTerminatesAtSourceBoundary();
-        rejectsStaleAndFutureAcknowledgements();
-        acceptsSynchronizationAckBeforePeerSync();
-        holdsReadyGateForTooSmallPeerLimit();
+        acknowledgementNumberDoesNotGateNegotiationReady();
+        acknowledgementBeforePeerSyncIsTerminal();
+        tooSmallPeerLimitIsTerminalOnAcknowledgement();
         rejectsWrongStartupMarker();
         eofTerminatesSession();
         System.out.println("Iap2LinkNegotiationModelTest: PASS (" + checks + " checks)");
@@ -97,38 +97,37 @@ public final class Iap2LinkNegotiationModelTest {
         truth(model.getTerminalReason().contains("after 21 attempts"));
     }
 
-    private static void rejectsStaleAndFutureAcknowledgements() {
-        Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
-        model.start(true, 0);
-        model.takeOutput();
-        model.feed(peerSyncFrame(77, 65535), 1);
-        model.takeOutput();
-        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 98, 0, null), 2);
-        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
-        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 100, 0, null), 3);
-        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
-        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 4);
-        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+    private static void acknowledgementNumberDoesNotGateNegotiationReady() {
+        int[] acknowledgements = new int[] { 98, 100 };
+        for (int i = 0; i < acknowledgements.length; i++) {
+            Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
+            model.start(true, 0);
+            model.takeOutput();
+            model.feed(peerSyncFrame(77, 65535), 1);
+            model.takeOutput();
+            model.feed(Iap2LinkFrameCodec.encode(0x40, 77, acknowledgements[i], 0, null), 2);
+            eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+            truth(model.isReady());
+        }
     }
 
-    private static void acceptsSynchronizationAckBeforePeerSync() {
+    private static void acknowledgementBeforePeerSyncIsTerminal() {
         Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
         model.start(true, 0);
         model.takeOutput();
         model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 1);
-        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
-        model.feed(peerSyncFrame(77, 65535), 2);
-        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+        eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
+        truth(model.getTerminalReason().contains("maxLength"));
     }
 
-    private static void holdsReadyGateForTooSmallPeerLimit() {
+    private static void tooSmallPeerLimitIsTerminalOnAcknowledgement() {
         Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
         model.start(true, 0);
         model.takeOutput();
         model.feed(peerSyncFrame(77, 10), 1);
         model.takeOutput();
         model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
-        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
         falsity(model.isReady());
     }
 
