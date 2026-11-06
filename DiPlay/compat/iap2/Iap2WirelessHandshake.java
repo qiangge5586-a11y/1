@@ -91,7 +91,7 @@ public final class Iap2WirelessHandshake {
         if (wifiConfigRequested) return Result.DUPLICATE;
         if (!bootstrapAuthenticated || phase == Phase.FAILED) return Result.INVALID_ORDER;
         wifiConfigRequested = true;
-        phase = Phase.HANDOFF_NEGOTIATING;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -100,7 +100,7 @@ public final class Iap2WirelessHandshake {
         if (wifiConfigSent) return Result.DUPLICATE;
         if (!wifiConfigRequested || phase == Phase.FAILED) return Result.INVALID_ORDER;
         wifiConfigSent = true;
-        phase = Phase.HANDOFF_NEGOTIATING;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -109,7 +109,7 @@ public final class Iap2WirelessHandshake {
         if (transportIdentifierNotified) return Result.DUPLICATE;
         if (!bootstrapAuthenticated || phase == Phase.FAILED) return Result.INVALID_ORDER;
         transportIdentifierNotified = true;
-        phase = Phase.HANDOFF_NEGOTIATING;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
