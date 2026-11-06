@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "_schema": 2,
+  "updated": "2026-10-27",
+  "_comment": "HyperCar 车机档案下发文件。新增车型改这里 + push 即可，App 端「从 GitHub 更新车型列表」后立即出现。字段含义见 docs/HEADUNIT-PROFILES.md；除 id/label 外都可省略（省略 = 用同 id 内置档案的值）。_schema 必须 >= App 端 SCHEMA 才会覆盖内置档案（旧缓存不能把内置修复顶回去）。",
+  "profiles": [
+    {
+      "id": "bmw_id85",
+      "label": "BMW iD8.5",
+      "model": "MGU-86 / MGU-55",
+      "notes": "真车实测：车机永不发 0x4301、不回报 0xEA03；0x4300/0xEA00/0x4E0E 必须发（0.27 图标出现、0.29 停发后图标消失的现场 A/B），且不能主动拆 iAP2、不能主动断它的 HFP/A2DP。",
+      "verified": true,
+      "validatesDeviceId": false,
+      "sendCarPlayAvailability": true,
+      "openEaSessions": true,
+      "sendTransportIdentifier": true,
+      "replyPowerUpdates": true,
+      "dropProfilesBeforeIap2": false,
+      "abortWhenCarPlayWindowClosed": false,
+      "preferMdnsAirplay": true,
+      "fallbackAirplayPorts": [
+        7000,
+        7001,
+        7100
+      ],
+      "keepIap2AliveOnly": false,
+      "pairingHint": "首次要在 iDrive 里把这个设备选成 CarPlay 手机（车机会弹确认）"
+    },
+    {
+      "id": "generic",
+      "label": "通用配置",
+      "model": "任意车机 / 未知车型",
+      "notes": "0.27 基线 + cardeck 通用序列：0x4300/0xEA00/0x4E0E 全发，发 iAP2 前先断 HFP/A2DP，不主动拆链；端点先查 mDNS `_airplay._tcp`，拿不到退 7000。与 0.27 只差两处：档案 A 不拆链（拆链会丢 CarPlay 图标）、mDNS 优先（0.27 写死 7000，遇 455 连不上）。",
+      "verified": true,
+      "validatesDeviceId": false,
+      "sendCarPlayAvailability": true,
+      "openEaSessions": true,
+      "sendTransportIdentifier": true,
+      "replyPowerUpdates": true,
+      "dropProfilesBeforeIap2": true,
+      "abortWhenCarPlayWindowClosed": false,
+      "preferMdnsAirplay": true,
+      "fallbackAirplayPorts": [
+        7000
+      ],
+      "keepIap2AliveOnly": false,
+      "pairingHint": "首次要在车机里把本机选成 CarPlay 手机（部分车机会弹确认）"
+    },
+    {
+      "id": "winplay",
+      "label": "WinPlay",
+      "model": "PC AirPlay 接收端",
+      "notes": "接收端会校验 deviceID（SETUP 必须带本机真实蓝牙 MAC）；控制面固定 7000，/info 只认 GET。",
+      "verified": true,
+      "validatesDeviceId": true,
+      "replyPowerUpdates": true,
+      "dropProfilesBeforeIap2": false,
+      "abortWhenCarPlayWindowClosed": false,
+      "preferMdnsAirplay": false,
+      "fallbackAirplayPorts": [
+        7000
+      ],
+      "touchDisplay": "2732x794",
+      "keepIap2AliveOnly": true,
+      "pairingHint": "先在 WinPlay 点「开始接收」，再让手机连（它不监听时连不上）"
+    },
+    {
+      "id": "audi_mib3",
+      "mfiPreferredChallengeBytes": 20,
+      "label": "Audi MIB3",
+      "model": "MIB3 / AUDI3260 (DELPHI)",
+      "notes": "CarDeck 成功日志：AUDI3260 首试 20B MFi；绑定热点后由 mDNS 发现 7000，不依赖 0x4301。Hypercar 待实车验证。",
+      "verified": false,
+      "replyPowerUpdates": true,
+      "dropProfilesBeforeIap2": true,
+      "abortWhenCarPlayWindowClosed": false,
+      "preferMdnsAirplay": true,
+      "fallbackAirplayPorts": [
+        7000,
+        7001,
+        7100
+      ],
+      "pairingHint": "首次要在 MMI 里选「Apple CarPlay」并确认这台手机（车机会弹提示）"
+    }
+  ]
+}
