@@ -89,3 +89,22 @@ Actions run [#169](https://github.com/qiangge5586-a11y/1/actions/runs/4217559747
 Added `Iap2CsmSendPlan` as an offline mirror of the source `splitForLink()` chunking contract. It partitions an already encoded CSM frame into independent chunks no larger than the peer-advertised control-payload maximum, constrained to 1..65,525 bytes. Tests cover a 1,000-byte frame with a 127-byte peer limit, exact and partial final chunks, one-byte and maximum peer limits, 65,535-byte aggregate input, invalid peer limits, empty input and defensive copies.
 
 Actions run [#176](https://github.com/qiangge5586-a11y/1/actions/runs/42176152126) passed **8,002 Java 7 offline checks**, including 297 send-plan checks. This model only validates chunk planning. It does not simulate `sendControlAwaitCapacity()` blocking, queue pressure, deadline expiration, channel close or live transport writes; those require a separate source-derived model before integration.
+
+
+## Link-layer command queue and shared CSM send deadline (2026-11-06)
+
+The recovered Iap2LinkChannel source confirms a second, separate outbound queue behind CSM chunking:
+
+- Pending link commands are capped at 64 entries and 1,048,576 aggregate payload bytes.
+- Each control payload is independently limited to 65,525 bytes.
+- sendControlAwaitCapacity waits until the channel is closing/terminated or both queue bounds allow the payload. A zero timeout still succeeds immediately if capacity is already available; otherwise it returns false.
+- The pump removes a command from the pending queue and decrements byte accounting before passing it to Iap2LinkEngine.sendSession(). Capacity therefore represents pending commands awaiting pump admission, not unacknowledged link frames.
+- Closing/termination wakes waiters. A terminal failure is thrown before the method returns false for a closed channel.
+- Iap2CsmChannel.send() computes one deadline for the whole CSM frame and passes the remaining rounded-up milliseconds to every chunk wait. It does not restart the timeout for each chunk. Timeout is constrained to 0..300,000 ms; default send timeout is 5,000 ms.
+- Remaining time is rounded up to milliseconds and capped at 300,000 ms. If a chunk cannot be queued before the shared deadline, CSM fails closed.
+
+Added two Java 7 offline parity models:
+- Iap2LinkCommandQueueModel: FIFO pending queue, 64-entry/1 MiB bounds, 65,525-byte per-command bound, byte-accounting release at pump removal, close/terminate rejection, and defensive copies.
+- Iap2CsmSendDeadline: deterministic shared-deadline arithmetic and ceil-to-millisecond remaining budget.
+
+Their tests cover exact capacity boundaries, queue-full behavior, release/re-admission, FIFO, close/termination, invalid payload lengths, zero timeout, deadline expiry, rounding and shared budget decay. These models do not perform blocking waits, link-engine admission, ACK/retransmission, or transport I/O; those remain distinct layers.
