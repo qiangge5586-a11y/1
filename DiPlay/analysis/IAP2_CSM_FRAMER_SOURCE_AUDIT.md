@@ -138,3 +138,14 @@ Refined Iap2LinkFrameDecoder to use a fixed 65,535-byte receive array and an app
 Added a boundary regression that feeds a maximum-size 65,535-byte link frame immediately followed by a header-only control frame, in 8,192-byte read chunks. Both frames must be emitted in order, the full payload must remain byte-identical, and pending bytes must return to zero.
 
 Actions run [#191](https://github.com/qiangge5586-a11y/1/actions/runs/42178901878) passed **8,415 Java 7 offline checks**, including 1,065 link-frame decoder checks. This verifies bounded offline parser behavior only; it does not establish a live iAP2 session.
+
+
+## Startup marker fragmentation and readiness-frame handoff (2026-11-06)
+
+Extended the link-negotiation regression suite without changing the source-derived handshake state machine:
+
+- The six-byte startup marker is now tested arriving one byte at a time. The responder remains in DETECTING until the final marker byte, then enters NEGOTIATING and emits its SYN.
+- The ACK-bearing frame that completes negotiation is verified to be retained for the normal link engine, rather than being consumed only as a readiness signal.
+- A combined ACK + Extended ACK frame is retained intact, including sequence, cumulative acknowledgement, control flags and payload, with its readiness-transition marker set.
+
+Actions run [#192](https://github.com/qiangge5586-a11y/1/actions/runs/42179152487) passed **8,435 Java 7 offline checks**; negotiation suite increased from 158 to 178 checks. This validates split-read and state-handoff behavior in the offline model only, not a physical accessory/iPhone session.
