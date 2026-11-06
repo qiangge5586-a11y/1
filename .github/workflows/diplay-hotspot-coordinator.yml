@@ -20,10 +20,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/hotspot-test
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/hotspot-test DiPlay/compat/hotspot/HotspotTransactionCoordinator.java DiPlay/compat/hotspot/HotspotSafetyPrimitives.java DiPlay/compat/hotspot/AppendOnlyHotspotJournal.java DiPlay/compat/hotspot/HotspotRecoveryPolicy.java DiPlay/compat/hotspot/HotspotReadOnlyOperation.java DiPlay/compat/hotspot/HotspotReadOnlyExecutor.java DiPlay/compat/hotspot/test/CoordinatorSelfTest.java DiPlay/compat/hotspot/test/HotspotSafetyPrimitivesTest.java DiPlay/compat/hotspot/test/AppendOnlyHotspotJournalTest.java DiPlay/compat/hotspot/test/HotspotRecoveryPolicyTest.java DiPlay/compat/hotspot/test/HotspotReadOnlyOperationTest.java DiPlay/compat/hotspot/test/HotspotReadOnlyExecutorTest.java
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/hotspot-test DiPlay/compat/hotspot/HotspotTransactionCoordinator.java DiPlay/compat/hotspot/HotspotSafetyPrimitives.java DiPlay/compat/hotspot/AppendOnlyHotspotJournal.java DiPlay/compat/hotspot/HotspotRecoveryPolicy.java DiPlay/compat/hotspot/HotspotReadOnlyOperation.java DiPlay/compat/hotspot/HotspotReadOnlyExecutor.java DiPlay/compat/hotspot/HotspotDiagnosticParsers.java DiPlay/compat/hotspot/test/CoordinatorSelfTest.java DiPlay/compat/hotspot/test/HotspotSafetyPrimitivesTest.java DiPlay/compat/hotspot/test/AppendOnlyHotspotJournalTest.java DiPlay/compat/hotspot/test/HotspotRecoveryPolicyTest.java DiPlay/compat/hotspot/test/HotspotReadOnlyOperationTest.java DiPlay/compat/hotspot/test/HotspotReadOnlyExecutorTest.java DiPlay/compat/hotspot/test/HotspotDiagnosticParsersTest.java
           java -cp build/hotspot-test CoordinatorSelfTest
           java -cp build/hotspot-test HotspotSafetyPrimitivesTest
           java -cp build/hotspot-test AppendOnlyHotspotJournalTest
           java -cp build/hotspot-test HotspotRecoveryPolicyTest
           java -cp build/hotspot-test HotspotReadOnlyOperationTest
           java -cp build/hotspot-test HotspotReadOnlyExecutorTest
+          java -cp build/hotspot-test HotspotDiagnosticParsersTest
