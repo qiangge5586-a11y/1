@@ -30,9 +30,7 @@ public final class Iap2LinkNegotiationModelTest {
 
         byte[] peerSync = peerSyncFrame(77, 65535);
         model.feed(concat(slice(Iap2LinkFrameCodec.IAP2_MARKER, 2, 6), peerSync), 120);
-        // The SYN's non-zero control value causes processFrame() to run
-        // handleAcknowledgement() after handleSynchronization().
-        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
         eq(65535, model.getPeerMaxLength());
 
         Iap2LinkFrameDecoder decoder = new Iap2LinkFrameDecoder();
@@ -47,6 +45,9 @@ public final class Iap2LinkNegotiationModelTest {
         eq(Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT, response.get(1).control);
         eq(77, response.get(1).acknowledgement);
 
+        model.feed(Iap2LinkFrameCodec.encode(Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT,
+                77, 98, 0, null), 140);
+        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
         truth(model.isReady());
         eq(0, model.getPendingFrameBytes());
     }
