@@ -115,7 +115,7 @@ public final class MainActivity extends Activity {
                         scan.getDevices();
                 for (int i = 0; i < devices.size(); i++) {
                     com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor d = devices.get(i);
-                    display.append("\\n设备 ").append(i + 1)
+                    display.append("\n设备 ").append(i + 1)
                             .append(": VID=").append(String.format("%04X", d.getVendorId()))
                             .append(" PID=").append(String.format("%04X", d.getProductId()))
                             .append(" 类别=").append(d.getDeviceClass())
