@@ -21,7 +21,7 @@ async fn keyframe_recovery_writes_pause_start_once_and_never_restarts_after_canc
     // Enter the encoder-start boundary with the phone's real protocol message ID.
     md.write_all(&[0,0,0,0,0,1,0,8]).await.unwrap();
     assert_eq!(command(&mut md).await.0,0x18009);assert_eq!(command(&mut md).await.0,0x1801d);
-    first.store(true,std::sync::atomic::Ordering::Relaxed);
+    first.store(true,std::sync::atomic::Ordering::Release);
     assert_eq!(crate::video_recovery::request(stop.id),Some(false));
     assert_eq!(crate::video_recovery::request(stop.id),None);
     let restart=tokio::time::timeout(Duration::from_secs(2),async {let a=command(&mut md).await;let b=command(&mut md).await;(a.0,b.0)}).await.unwrap();

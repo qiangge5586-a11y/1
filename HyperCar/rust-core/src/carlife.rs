@@ -759,7 +759,7 @@ async fn handle_cmd_client(
     let mut hs = Handshake::default();
     let mut start_retries: u32 = 0;
     // 本会话重新计"首帧"：上一轮的 true 不能让这一轮的补发逻辑失效
-    first_frame.store(false, std::sync::atomic::Ordering::Relaxed);
+    first_frame.store(false, std::sync::atomic::Ordering::Release);
 
     // Phase 1：HU 主动发协议版本
     if !send_cmd(&mut wr, CMD_HU_PROTOCOL_VERSION, &proto_version_payload()).await {
@@ -796,7 +796,7 @@ async fn handle_cmd_client(
                 }
                 if !hs.encoder_start_sent {
                     emit_log(&format!("CARLIFE: 握手进行中（{}）", hs.phase_name()));
-                } else if !first_frame.load(std::sync::atomic::Ordering::Relaxed)
+                } else if !first_frame.load(std::sync::atomic::Ordering::Acquire)
                     && start_retries < 12
                 {
                     // START 可能发在"CarLife 还在后台、Surface 未就绪"的时刻被吞掉，
@@ -1353,7 +1353,7 @@ async fn handle_media_client(
                 let frame = build_media_frame(VIDEO_HEARTBEAT, now_ms(), &[]);
                 if let Err(e) = wr.write_all(&frame).await {
                     emit_log(&format!("CARLIFE: {label} 心跳写失败 kind={:?} os={:?}: {e}", e.kind(), e.raw_os_error()));
-                    first_frame.store(false, std::sync::atomic::Ordering::Relaxed);
+                    first_frame.store(false, std::sync::atomic::Ordering::Release);
                     return;
                 }
                 hb_sent += 1;
@@ -1367,7 +1367,7 @@ async fn handle_media_client(
         match read {
             Ok(0) => {
                 emit_log(&format!("CARLIFE: {label} TCP EOF"));
-                if is_video { first_frame.store(false, std::sync::atomic::Ordering::Relaxed); }
+                if is_video { first_frame.store(false, std::sync::atomic::Ordering::Release); }
                 let _ = events.send(CarLifeEvent::ClientLeft { video: is_video });
                 return;
             }
@@ -1388,7 +1388,7 @@ async fn handle_media_client(
             Err(e) => {
                 emit_log(&format!("CARLIFE: {label} 读取失败 kind={:?} os={:?}: {e}", e.kind(), e.raw_os_error()));
                 if is_video {
-                    first_frame.store(false, std::sync::atomic::Ordering::Relaxed);
+                    first_frame.store(false, std::sync::atomic::Ordering::Release);
                     let _ = events.send(CarLifeEvent::ClientLeft { video: true });
                 }
                 return;
@@ -1406,7 +1406,7 @@ async fn handle_media_client(
                             // 首帧到达：CMD 侧的 START 补发逻辑据此停止
                             if crate::screen::annexb_nals(&payload).iter().any(|nal|
                                 matches!(crate::screen::nal_type(nal), 1 | 5)) {
-                                first_frame.store(true, std::sync::atomic::Ordering::Relaxed);
+                                first_frame.store(true, std::sync::atomic::Ordering::Release);
                             }
                             crate::video_recovery::observe(crate::session::current_id(), &payload, false);
                             let _ = events.send(CarLifeEvent::VideoFrame {
