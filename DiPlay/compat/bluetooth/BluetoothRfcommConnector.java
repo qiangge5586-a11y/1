@@ -52,19 +52,26 @@ public final class BluetoothRfcommConnector {
             throw new IOException("Invalid RFCOMM service UUID", invalidUuid);
         }
 
+        final long deadlineNanos = RfcommConnectDeadline.deadlineAfter(
+                System.nanoTime(), timeoutMillis);
         Throwable lastError = null;
-        BluetoothSocket socket = attempt(device, adapter, uuid, timeoutMillis, 0);
+        BluetoothSocket socket = attempt(device, adapter, uuid, deadlineNanos, 0);
         if (socket != null) return socket;
         lastError = lastFailure;
 
         if (cancelled) throw new IOException("RFCOMM connection cancelled", lastError);
-        sleepBeforeFallback();
-        socket = attempt(device, adapter, uuid, timeoutMillis, 1);
+        if (!sleepBeforeFallback(deadlineNanos)) {
+            throw new IOException("RFCOMM connection timed out", lastError);
+        }
+        socket = attempt(device, adapter, uuid, deadlineNanos, 1);
         if (socket != null) return socket;
         if (lastFailure != null) lastError = lastFailure;
 
         if (cancelled) throw new IOException("RFCOMM connection cancelled", lastError);
-        socket = attempt(device, adapter, uuid, timeoutMillis, 2);
+        if (RfcommConnectDeadline.remainingNanos(System.nanoTime(), deadlineNanos) <= 0L) {
+            throw new IOException("RFCOMM connection timed out", lastError);
+        }
+        socket = attempt(device, adapter, uuid, deadlineNanos, 2);
         if (socket != null) return socket;
         if (lastFailure != null) lastError = lastFailure;
         throw new IOException("Failed to connect Bluetooth RFCOMM to " + deviceAddress, lastError);
@@ -73,7 +80,7 @@ public final class BluetoothRfcommConnector {
     private volatile Throwable lastFailure;
 
     private BluetoothSocket attempt(final BluetoothDevice device, final BluetoothAdapter adapter,
-            UUID uuid, long timeoutMillis, int mode) {
+            UUID uuid, long deadlineNanos, int mode) {
         final BluetoothSocket socket;
         try {
             if (mode == 0) {
@@ -120,7 +127,10 @@ public final class BluetoothRfcommConnector {
         worker.start();
 
         try {
-            if (!finished.await(timeoutMillis, TimeUnit.MILLISECONDS)) {
+            long remainingNanos = RfcommConnectDeadline.remainingNanos(
+                    System.nanoTime(), deadlineNanos);
+            if (remainingNanos <= 0L
+                    || !finished.await(remainingNanos, TimeUnit.NANOSECONDS)) {
                 closeQuietly(socket);
                 lastFailure = new IOException("Timed out connecting AOSP RFCOMM");
                 return null;
@@ -148,9 +158,15 @@ public final class BluetoothRfcommConnector {
         return socket;
     }
 
-    private void sleepBeforeFallback() throws IOException {
+    private boolean sleepBeforeFallback(long deadlineNanos) throws IOException {
+        long remaining = RfcommConnectDeadline.remainingNanos(
+                System.nanoTime(), deadlineNanos);
+        long delay = TimeUnit.MILLISECONDS.toNanos(FALLBACK_DELAY_MILLIS);
+        if (remaining <= delay) return false;
         try {
-            Thread.sleep(FALLBACK_DELAY_MILLIS);
+            TimeUnit.NANOSECONDS.sleep(delay);
+            return RfcommConnectDeadline.remainingNanos(
+                    System.nanoTime(), deadlineNanos) > 0L;
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             cancelled = true;
