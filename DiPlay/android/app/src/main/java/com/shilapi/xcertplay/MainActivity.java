@@ -183,7 +183,7 @@ public final class MainActivity extends Activity {
                 usbStatus.setText("正在后台枚举 USB 元数据……");
                 diagnosticExecutor.execute(new Runnable() {
                     @Override public void run() {
-                        final String report;
+                        String reportValue;
                         try {
                             UsbHostReadOnlyScanner.ScanResult scan =
                                     new UsbHostReadOnlyScanner().scan(getApplicationContext());
@@ -221,11 +221,12 @@ public final class MainActivity extends Activity {
                                     }
                                 }
                             }
-                            report = display.toString();
+                            reportValue = display.toString();
                         } catch (Throwable failure) {
-                            report = "USB 扫描失败：" + failure.getClass().getSimpleName()
+                            reportValue = "USB 扫描失败：" + failure.getClass().getSimpleName()
                                     + (failure.getMessage() == null ? "" : " - " + failure.getMessage());
                         }
+                        final String report = reportValue;
                         mainHandler.post(new Runnable() {
                             @Override public void run() {
                                 if (activityDestroyed) return;
@@ -253,7 +254,7 @@ public final class MainActivity extends Activity {
                 bluetoothStatus.setText("正在后台读取蓝牙适配器状态……");
                 diagnosticExecutor.execute(new Runnable() {
                     @Override public void run() {
-                        final String detail;
+                        String detailValue;
                         try {
                             com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe.Result r =
                                     new com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe()
@@ -261,11 +262,12 @@ public final class MainActivity extends Activity {
                             String value = r.getStatus() + "\n适配器状态：" + r.getStateLabel();
                             if (r.getName() != null) value += "\n设备名称：" + r.getName();
                             value += "\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
-                            detail = value;
+                            detailValue = value;
                         } catch (Throwable failure) {
-                            detail = "蓝牙检测失败：" + failure.getClass().getSimpleName()
+                            detailValue = "蓝牙检测失败：" + failure.getClass().getSimpleName()
                                     + (failure.getMessage() == null ? "" : " - " + failure.getMessage());
                         }
+                        final String detail = detailValue;
                         mainHandler.post(new Runnable() {
                             @Override public void run() {
                                 if (activityDestroyed) return;
