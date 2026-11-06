@@ -419,7 +419,7 @@ public final class Iap2LinkEngineModelTest {
 
 
     private static void terminalClosureDiscardsPendingFramesAndEvents() {
-        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        final Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
         m.start(true, 0);
         becomeReady(m);
         m.send(10, new byte[] {1, 2, 3}, 10);
