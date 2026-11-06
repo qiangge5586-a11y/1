@@ -41,7 +41,7 @@ public final class MfiIap2MessageCodecTest {
                 MfiIap2MessageCodec.encodeBaaCertificateBody(body)).payload();
         check(Arrays.equals(body, passedThrough), "BAA body is passed through without wrapping");
 
-        byte[] challenge = new byte[] { 3, 4, 5, 6 };
+        final byte[] challenge = new byte[] { 3, 4, 5, 6 };
         byte[] challengeFrame = Iap2CsmFrameCodec.encode(0xAA02, Iap2ParameterCodec.encode(0, challenge));
         check(Arrays.equals(challenge, MfiIap2MessageCodec.decodeChallenge(challengeFrame)),
                 "challenge parameter zero");
