@@ -56,18 +56,19 @@ Negotiation tests now cover invalid version, too-short fixed synchronization pay
 
 The negotiation decoder now retains every complete frame that arrives after the peer SYN has moved the link to NORMAL, including frames later in the same input chunk. The composition drains those frames in wire order and applies the source-audited dispatch rules:
 
-- Every non-zero control frame advances the cumulative-ACK handler using its header acknowledgement field.
-- Extended ACK frames pass their raw payload byte list to the outbound retransmission model.
-- Data frames are recognized only when control is exactly ACK (0x40) and payload is present; they are passed to the receive-window model with sequence/session/payload.
+- Cumulative ACK processing runs only when `control & 0x40` is non-zero.
+- Extended ACK processing runs independently when `control & 0x20` is non-zero and payload is present; its payload is a raw sequence-byte list.
+- Data processing runs when `(control & ~0x40) == 0` and payload is present. Both `0x00` data-only and `0x40` data-plus-ACK frames enter the receive window.
 - Header-only ACK frames do not become empty data packets.
+- The ACK-bearing frame that completes readiness is retained and dispatched after the negotiation transition, matching the original method's continued processing of the same frame.
 
-Results are exposed as bounded, drainable `DispatchEvent` objects. This layer does not serialize ACK/Extended ACK responses or write bytes to a transport; callers receive model actions and must not mistake them for transmitted frames. The pending dispatch-event cap is 256.
+Results are exposed as bounded, drainable `DispatchEvent` objects. Encoded ACK/data responses are queued separately and can be inspected through `drainWireFrames()`; they are not written to a transport. The pending event and wire-frame caps are defensive offline-harness limits (256), not claims about original APK constants.
 
-Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. The integration test covers SYN and data arriving in the same read, ordered data delivery, raw Extended ACK retransmission selection, and ACK-only dispatch. Runs #109–#112 exposed implementation/test wiring defects while this dispatcher was being introduced; those were fixed before #113.
+Actions run [#133](https://github.com/qiangge5586-a11y/1/actions/runs/42173519353) passed **7,257 offline checks**, including 84 composition checks and 152 negotiation checks. Regression coverage includes SYN-only staying NEGOTIATING, a later ACK completing READY, ACK+data in the readiness-triggering frame, Extended ACK not mutating the cumulative ACK window, data-only delivery, combined ACK/data delivery, and immediate/delayed ACK timing. Intermediate runs #109–#132 exposed source-assumption and test-fixture errors; those were corrected before #133.
 
 
 ## Source-exact control-bit dispatch checkpoint (2026-11-06)
 
-Recovered Smali confirms the independent control-bit paths in `processFrame()`: reset `0x10`; SYN `0x80`; cumulative ACK/readiness `0x40`; Extended ACK `0x20`; data when all bits except `0x40` are clear and payload is present. This means `0x00` data-only and `0x40` data-plus-ACK both enter the receive window. The ACK-bearing frame that changes NEGOTIATING to NORMAL is also processed for its payload by the original method, so the offline model retains it for post-ready dispatch.
+Recovered Smali confirms the independent control-bit paths in `processFrame()`: reset `0x10`; SYN `0x80`; cumulative ACK/readiness `0x40`; Extended ACK `0x20`; data when all bits except `0x40` are clear and payload is present. A SYN-only frame records peer limits and sends the local ACK but remains NEGOTIATING. An ACK-bearing frame alone runs the readiness gate. The offline model now preserves that ACK-bearing frame for subsequent ACK, Extended ACK and data dispatch.
 
-Regression tests were added for SYN-only staying NEGOTIATING, a later ACK completing READY, Extended ACK not mutating the cumulative ACK window, data-only delivery, and combined ACK/data delivery. The next CI run is the acceptance gate for this correction.
+This is source-derived offline verification only. It does not exercise Bluetooth, USB, TCP, AirPlay encryption, MFi authentication, Android 4.2.2 runtime, or a real iPhone/Honda session.
