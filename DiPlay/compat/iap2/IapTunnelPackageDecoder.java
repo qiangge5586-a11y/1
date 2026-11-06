@@ -45,7 +45,7 @@ public final class IapTunnelPackageDecoder {
                 throw new IllegalArgumentException("invalid IAP package size: " + size);
             }
             if (joined.length - offset < size) break;
-            int type = readU32Be(joined, offset + MESSAGE_TYPE_OFFSET);
+            int type = (int) readU32Be(joined, offset + MESSAGE_TYPE_OFFSET);
             int bodyLength = (int) size - HEADER_BYTES;
             byte[] body = new byte[bodyLength];
             System.arraycopy(joined, offset + HEADER_BYTES, body, 0, bodyLength);
