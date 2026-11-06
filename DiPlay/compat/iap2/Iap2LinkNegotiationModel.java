@@ -122,11 +122,14 @@ public final class Iap2LinkNegotiationModel {
         }
         if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0
                 && state == State.NEGOTIATING) {
-            // Only a cumulative ACK of the local SYN (sequence 99) can satisfy this gate.
-            if (frame.acknowledgement == Iap2LinkFrameCodec.INITIAL_SEQUENCE) {
-                localSynchronizationAcknowledged = true;
+            // The original engine opens readiness on any ACK after a valid peer SYN.
+            // The ACK number belongs to the separate cumulative-window processing.
+            if (!peerSynchronizationReceived || peerMaxLength <= 10) {
+                die("peer iAP2 maxLength cannot carry pending control packets");
+                return;
             }
-            updateReadyState();
+            state = State.NORMAL;
+            synchronizationDeadline = null;
         }
     }
 
