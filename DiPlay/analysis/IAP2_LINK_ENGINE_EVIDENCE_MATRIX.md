@@ -185,7 +185,7 @@ The negotiation model now retains a read-only peer SYN snapshot: maxOutgoing, ma
 
 - Outbound values: peer maxOutgoing, maxAcknowledgements, retransmission timeout and max retransmissions; initial TX/ACK sequence 99; ACK slack 10; local defensive queue cap 64.
 - Inbound values: initial receive/ACK sequence from peer SYN sequence; peer maxOutgoing, maxAcknowledgements and ACK timeout; wireless local maxOutgoingDelta 0; out-of-order cap 64.
-- Original source readiness behavior is now represented: every non-zero control byte is passed through the acknowledgement/readiness path, so the peer SYN itself may complete READY after valid peer limits are recorded and the local ACK is queued.
+- Original source readiness behavior is now represented: only control bit `0x40` invokes cumulative ACK/readiness handling. A SYN-only `0x80` frame records peer limits and emits the local ACK but remains NEGOTIATING; a later ACK-bearing frame opens READY. The ACK number need not equal 99.
 - Explicit-injection construction remains for unit tests; automatic construction currently targets the audited wireless configuration only.
 
 Actions run [#105](https://github.com/qiangge5586-a11y/1/actions/runs/42172333952) passed **7,174 offline checks**, including 121 negotiation checks and 32 composition checks. Runs #102 and #104 failed on a boxed numeric assertion and stale readiness expectations respectively; both were corrected before #105.
