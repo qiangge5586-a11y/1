@@ -70,7 +70,11 @@ public final class Iap2ReceiveWindowModel {
         if (packet == null) throw new NullPointerException("packet");
         if (terminalReason != null) return result(false, null, new ArrayList<Packet>());
         int distance = distance(packet.sequence, lastReceivedInOrder);
-        if (distance == 0 || distance > peerMaxOutgoing + 10) return acknowledgeNow();
+        if (distance == 0 || distance > peerMaxOutgoing + 10) {
+            // Source sends an ACK here but does not advance lastAcknowledgedReceived
+            // or cancel an already scheduled delayed-ACK deadline.
+            return result(true, null, new ArrayList<Packet>());
+        }
         if (contains(packet.sequence)) return result(false, null, new ArrayList<Packet>());
         if (outOfOrder.size() >= maximumOutOfOrderPackets) {
             terminalReason = "iAP2 out-of-order packet limit exceeded";
