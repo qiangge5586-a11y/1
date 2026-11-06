@@ -19,18 +19,18 @@ public final class Iap2WirelessHandshake {
     private long generation;
     private Phase phase = Phase.IDLE;
     private boolean rfcommConnected, bootstrapIdentified, bootstrapAuthenticated;
-    private boolean carPlayAvailable, startSessionSent, wifiConfigRequested;
+    private boolean carPlayAvailabilityReceived, carPlayAvailable, startSessionSent, wifiConfigRequested;
     private boolean wifiConfigSent, transportIdentifierNotified;
-    private boolean tunnelStreamReceived, tunnelOpened, tunnelAuthenticated;
+    private boolean tunnelStreamReceived, tunnelOpened, tunnelAuthenticated, tunnelControlActive;
     private String failureReason;
 
     public synchronized long beginSession() {
         generation++;
         phase = Phase.IDLE;
         rfcommConnected = bootstrapIdentified = bootstrapAuthenticated = false;
-        carPlayAvailable = startSessionSent = wifiConfigRequested = false;
+        carPlayAvailabilityReceived = carPlayAvailable = startSessionSent = wifiConfigRequested = false;
         wifiConfigSent = transportIdentifierNotified = false;
-        tunnelStreamReceived = tunnelOpened = tunnelAuthenticated = false;
+        tunnelStreamReceived = tunnelOpened = tunnelAuthenticated = tunnelControlActive = false;
         failureReason = null;
         return generation;
     }
@@ -49,7 +49,7 @@ public final class Iap2WirelessHandshake {
         if (bootstrapIdentified) return Result.DUPLICATE;
         if (!rfcommConnected || phase == Phase.FAILED) return Result.INVALID_ORDER;
         bootstrapIdentified = true;
-        phase = Phase.BOOTSTRAP_IDENTIFIED;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -58,21 +58,22 @@ public final class Iap2WirelessHandshake {
         if (bootstrapAuthenticated) return Result.DUPLICATE;
         if (!bootstrapIdentified || phase == Phase.FAILED) return Result.INVALID_ORDER;
         bootstrapAuthenticated = true;
-        phase = Phase.BOOTSTRAP_AUTHENTICATED;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
     public synchronized Result onCarPlayAvailability(long token, boolean available) {
         if (stale(token)) return Result.STALE_SESSION;
         if (!bootstrapAuthenticated || phase == Phase.FAILED) return Result.INVALID_ORDER;
-        if (carPlayAvailable == available) return Result.DUPLICATE;
+        if (carPlayAvailabilityReceived && carPlayAvailable == available) return Result.DUPLICATE;
+        carPlayAvailabilityReceived = true;
         carPlayAvailable = available;
         if (!available) {
             startSessionSent = false;
             wifiConfigRequested = wifiConfigSent = false;
             transportIdentifierNotified = false;
         }
-        phase = Phase.HANDOFF_NEGOTIATING;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -117,7 +118,7 @@ public final class Iap2WirelessHandshake {
         if (tunnelStreamReceived) return Result.DUPLICATE;
         if (!bootstrapAuthenticated || phase == Phase.FAILED) return Result.INVALID_ORDER;
         tunnelStreamReceived = true;
-        phase = Phase.TUNNEL_STREAM_RECEIVED;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -126,7 +127,7 @@ public final class Iap2WirelessHandshake {
         if (tunnelOpened) return Result.DUPLICATE;
         if (!tunnelStreamReceived || phase == Phase.FAILED) return Result.INVALID_ORDER;
         tunnelOpened = true;
-        phase = Phase.TUNNEL_OPENED;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -135,7 +136,7 @@ public final class Iap2WirelessHandshake {
         if (tunnelAuthenticated) return Result.DUPLICATE;
         if (!tunnelOpened || phase == Phase.FAILED) return Result.INVALID_ORDER;
         tunnelAuthenticated = true;
-        phase = Phase.TUNNEL_AUTHENTICATED;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -143,7 +144,8 @@ public final class Iap2WirelessHandshake {
         if (stale(token)) return Result.STALE_SESSION;
         if (phase == Phase.ACTIVE) return Result.DUPLICATE;
         if (!tunnelAuthenticated || phase == Phase.FAILED) return Result.INVALID_ORDER;
-        phase = Phase.ACTIVE;
+        tunnelControlActive = true;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
@@ -158,6 +160,8 @@ public final class Iap2WirelessHandshake {
     public synchronized Phase getPhase() { return phase; }
     public synchronized long getGeneration() { return generation; }
     public synchronized String getFailureReason() { return failureReason; }
+    public synchronized boolean hasCarPlayAvailability() { return carPlayAvailabilityReceived; }
+    public synchronized boolean isCarPlayAvailable() { return carPlayAvailabilityReceived && carPlayAvailable; }
     public synchronized boolean isBootstrapReady() {
         return rfcommConnected && bootstrapIdentified && bootstrapAuthenticated;
     }
@@ -178,6 +182,19 @@ public final class Iap2WirelessHandshake {
         appendMissing(b, !wifiConfigSent, "WiFiConfigSent");
         appendMissing(b, !transportIdentifierNotified, "TransportIdentifierNotified");
         return b.toString();
+    }
+
+    private void refreshPhase() {
+        if (phase == Phase.FAILED) return;
+        if (tunnelControlActive) phase = Phase.ACTIVE;
+        else if (tunnelAuthenticated) phase = Phase.TUNNEL_AUTHENTICATED;
+        else if (tunnelOpened) phase = Phase.TUNNEL_OPENED;
+        else if (tunnelStreamReceived) phase = Phase.TUNNEL_STREAM_RECEIVED;
+        else if (carPlayAvailabilityReceived || startSessionSent || wifiConfigRequested || wifiConfigSent || transportIdentifierNotified) phase = Phase.HANDOFF_NEGOTIATING;
+        else if (bootstrapAuthenticated) phase = Phase.BOOTSTRAP_AUTHENTICATED;
+        else if (bootstrapIdentified) phase = Phase.BOOTSTRAP_IDENTIFIED;
+        else if (rfcommConnected) phase = Phase.RFCOMM_CONNECTED;
+        else phase = Phase.IDLE;
     }
 
     private boolean stale(long token) { return token != generation || token == 0; }
