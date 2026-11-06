@@ -31,8 +31,9 @@ jobs:
           java -cp build/hotspot-test HotspotReadOnlyExecutorTest
           java -cp build/hotspot-test HotspotDiagnosticParsersTest
           java -cp build/hotspot-test HotspotConfigBackupRecordTest
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/usb-test DiPlay/compat/usb/UsbDeviceDescriptor.java DiPlay/compat/usb/test/UsbDeviceDescriptorTest.java
-          java -cp build/usb-test UsbDeviceDescriptorTest
+          javac -source 1.7 -target 1.7 -Xlint:-options -cp build/ncm-test -d build/usb-test DiPlay/compat/usb/UsbDeviceDescriptor.java DiPlay/compat/usb/UsbConfigurationSnapshot.java DiPlay/compat/usb/UsbNcmReadOnlyMatcher.java DiPlay/compat/usb/test/UsbDeviceDescriptorTest.java DiPlay/compat/usb/test/UsbNcmReadOnlyMatcherTest.java
+          java -cp build/ncm-test:build/usb-test UsbDeviceDescriptorTest
+          java -cp build/ncm-test:build/usb-test UsbNcmReadOnlyMatcherTest
           mkdir -p build/ncm-test
           javac -source 1.7 -target 1.7 -Xlint:-options -d build/ncm-test DiPlay/compat/ncm/Ntb16Codec.java DiPlay/compat/ncm/Ntb16StreamDecoder.java DiPlay/compat/ncm/NcmInterfaceSelector.java DiPlay/compat/ncm/test/Ntb16CodecTest.java DiPlay/compat/ncm/test/Ntb16StreamDecoderTest.java DiPlay/compat/ncm/test/NcmInterfaceSelectorTest.java
           java -cp build/ncm-test com.shilapi.xcertplay.compat.ncm.Ntb16CodecTest
