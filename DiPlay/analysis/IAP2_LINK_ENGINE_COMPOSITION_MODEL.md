@@ -54,7 +54,7 @@ Negotiation tests now cover invalid version, too-short fixed synchronization pay
 
 ## Post-SYN frame dispatch
 
-The negotiation decoder now retains every complete frame that arrives after the peer SYN has moved the link to NORMAL, including frames later in the same input chunk. The composition drains those frames in wire order and applies the source-audited dispatch rules:
+The negotiation decoder retains the ACK-bearing frame that transitions the link from NEGOTIATING to NORMAL, plus subsequent complete frames in the same input chunk. A SYN-only frame does not enter the post-ready queue. The composition drains retained frames in wire order and applies the source-audited dispatch rules:
 
 - Cumulative ACK processing runs only when `control & 0x40` is non-zero.
 - Extended ACK processing runs independently when `control & 0x20` is non-zero and payload is present; its payload is a raw sequence-byte list.
