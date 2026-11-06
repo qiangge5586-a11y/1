@@ -166,3 +166,8 @@ Actions run [#193](https://github.com/qiangge5586-a11y/1/actions/runs/4217925927
 Added `Iap2CsmLinkGateModel` as an offline composition boundary around the existing CSM chunk-admission model. It refuses to create an admission plan while the link is negotiating, waits separately when the CSM peer control-payload limit is unknown, validates the known limit against 1..65,525, and reports a closed link without creating admission. This encodes the audited rule that CSM sending follows link readiness and uses the peer-advertised CSM chunk size. It does not perform CSM handshake, blocking waits, or transport writes.
 
 Actions run [#214](https://github.com/qiangge5586-a11y/1/actions/runs/42183487239) passed **2,323,780 Java 7 offline checks** across 17 suites, including 16 new gate checks. This is an offline composition test, not a live CSM session.
+
+
+## CSM frame encoder parity addition
+
+Added `Iap2CsmFrameCodec` as the inverse of the audited decoder: `0x4040` start marker, u16 big-endian total length including the six-byte header, u16 big-endian message ID, then payload. The encoder validates message ID and the 65,535-byte total frame limit. Round-trip tests use the existing incremental decoder and cover empty and maximum-size frames. This remains an offline codec; it is not yet a live CSM channel or a verified application message catalogue.
