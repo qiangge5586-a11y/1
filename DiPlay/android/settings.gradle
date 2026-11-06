@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = 'DiPlayHondaCompat'
-include ':app'
+include ':app', ':compat-overlay'
