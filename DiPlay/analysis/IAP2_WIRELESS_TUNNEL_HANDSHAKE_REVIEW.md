@@ -112,3 +112,8 @@ The additional `IapTunnelFrameDecoder` and `IapTunnelPackageDecoder` are bounded
 - No iPhone pairing, MFi authentication, Wi-Fi handoff or AirPlay session was performed.
 - No ROOT command or hotspot configuration write was executed.
 - The diagnostic APK has not been changed to include or activate this tracker.
+
+
+## Bounded whole-session deadline helper (2026-11-06)
+
+Added `Iap2WirelessDeadlineBudget` in the offline compatibility layer. The caller supplies the total and per-phase budgets; no new timeout values are assumed. A phase deadline is capped by the whole-session deadline, expiry is sticky, and phase transitions cannot restart or extend the overall budget. This addresses retry amplification at the lifecycle-design level only. It is not yet wired to the RFCOMM connector, bootstrap protocol, type-130 SETUP, or tunnel authentication. Existing protocol retransmission intervals remain separate and must not be shortened to fit a guessed global timeout.
