@@ -30,6 +30,7 @@ public final class Iap2OutboundWindowModelTest {
         eq(0, p.retryCount);
         eq(600L, p.deadlineMillis);
         eq(1, m.getUnacknowledgedCount());
+        eq(Long.valueOf(600), m.getNextDeadlineMillis());
     }
 
     private static void zeroRetryLimitDoesNotRetain() {
@@ -37,6 +38,7 @@ public final class Iap2OutboundWindowModelTest {
         Iap2OutboundWindowModel.Packet p = m.send(11, new byte[] {7}, 100).transmitted.get(0);
         eq(100, p.sequence);
         eq(0, m.getUnacknowledgedCount());
+        eq(null, m.getNextDeadlineMillis());
         eq(null, m.advanceTime(10000).terminalReason);
     }
 
@@ -87,6 +89,7 @@ public final class Iap2OutboundWindowModelTest {
         bytes(first.payload, retry.payload);
         eq(1, retry.retryCount);
         eq(1100L, retry.deadlineMillis);
+        eq(Long.valueOf(1100), m.getNextDeadlineMillis());
     }
 
     private static void retryLimitTerminatesAtExactCount() {
