@@ -150,7 +150,9 @@ public final class MfiI2cCertificateReaderTest {
                     Thread.currentThread().interrupt();
                     throw new MfiOperationContext.OperationCancelledException("test interrupted");
                 }
-                return new byte[] {0, 1};
+                if (register == MfiI2cCertificateReader.CERTIFICATE_LENGTH_REGISTER)
+                    return new byte[] {0, 1};
+                return new byte[count];
             }
         };
         final MfiOperationContext firstContext = realtimeContext(2000L, 1L);
