@@ -29,14 +29,14 @@ A dedicated project now exists at `DiPlay/android/`, separate from the root `and
 - Chinese landscape diagnostic dashboard with report baseline clearly distinguished from live measurements.
 - USB Host read-only descriptor enumeration.
 - Bluetooth adapter read-only status check.
-- Offline Java 7 NTB16 codec primitive and fixture self-test (no USB I/O).
+- Offline Java 7 NTB16 codec and incremental stream decoder, with 23 synthetic tests total (no USB I/O).
 - Hotspot safety transaction models and simulation tests are included; no real ROOT executor or system-write path is enabled.
 
-Latest successful APK build containing USB and Bluetooth read-only modules, the offline NTB16 codec, and the incremental NTB16 stream decoder: [GitHub Actions run #38](https://github.com/qiangge5586-a11y/1/actions/runs/42152490382).
+Latest successful APK build containing USB and Bluetooth read-only modules, the offline NTB16 codec, and the incremental NTB16 stream decoder: [GitHub Actions run #40](https://github.com/qiangge5586-a11y/1/actions/runs/42153609844).
 
-Artifact: `diplay-honda-compat-debug`, ID `13472921457`, archive size 30,289 bytes; archive digest `sha256:8db1ecbbdd3189a6ae277310b7c15e5b6e8facf848041141997e200ab16539e9` (expires 2026-11-20). Downloaded archive inspection confirmed it contains `app-debug.apk` (33,979 bytes); APK SHA-256: `11b5788590b7ea63a364c4f0ac17745bff711ae9860d20f78a81ec65bd66e5f0`.
+Artifact: `diplay-honda-compat-debug`, ID `13473827130`, archive size 30,286 bytes; archive digest `sha256:5edf4ce826df704c44a4f6106cac3cec6e98fbc8b1b7cd4189b7377bcb194d81` (expires 2026-11-20). Downloaded archive inspection confirmed it contains `app-debug.apk` (33,981 bytes); APK SHA-256: `d86d10b5340368a6b4c9cf6fb4ff76dce7bfa00deddea5a8565eaa0d5a59b6e3`.
 
-The matching NCM test workflow [run #57](https://github.com/qiangge5586-a11y/1/actions/runs/42152490383) passed both codec (13 cases) and stream decoder (7 cases), along with the hotspot, USB and diagnostic fixture suites.
+The matching NCM test workflow [run #59](https://github.com/qiangge5586-a11y/1/actions/runs/42153609651) passed the full fixture suite. The NTB16 codec has 13 cases and the stream decoder has 10 cases, including cross-chunk resynchronization and pad/header boundary regressions.
 
 The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
 
