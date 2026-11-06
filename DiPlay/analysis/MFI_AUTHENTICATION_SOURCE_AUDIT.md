@@ -213,3 +213,27 @@ The isolated Android app source set already includes `../../compat/mfi`, so the 
 The next code step is to adapt the original iAP2 MFi message exchange (`0xAA00..0xAA05`) to this provider-session contract while preserving the exact wire transcript and success/failure semantics. The compatibility repository still has no production iAP2 MFi message client or hardware-backed provider; do not enable authentication or claim interoperability until that integration is source-parity tested and exercised with an authorized provider and iPhone.
 
 Android package check for the provider-session code: [build run 42201889184](https://github.com/qiangge5586-a11y/1/actions/runs/42201889184) passed Gradle assemble, AAPT package/SDK metadata verification and MFi APK hygiene scanner. Artifact ID: 13495475371; SHA-256: 076ce8eacd48abbc30c252e9f88b8974c16f49c60032a84d90068dfcd11198c2. This packages the compatibility session boundary but does not connect it to a production authenticator or validate API 17 runtime behavior.
+
+
+## Source-parity follow-up: iAP2 exchange and cancellation (2026-11-06)
+
+A direct second inspection of the original decompiled Iap2MfiAuthenticationClient.smali and Iap2AuthenticationMessages.smali confirms:
+
+- The original client reads the certificate before entering its receive loop, but sends the certificate response only after receiving 0xAA00.
+- MfiCertificateType has two values: MFI and BAA.
+- For MFI, the certificate response uses the source accessoryCertificate() builder, which builds parameter 0 as bytes.
+- For BAA, the source calls accessoryCertificateBody() on a provider-supplied body after parsing it as an Iap2ParameterList; this is not equivalent to treating the body as a single certificate byte string.
+- The source also has a distinct baaCertificatePackage(leaf, intermediate) builder: parameter 0 is leaf bytes, parameter 1 is u8 value 1, parameter 2 is intermediate bytes.
+- Challenge extraction validates the incoming message ID and reads parameter 0. The caller then enforces challenge length 1..128.
+- The signature response builder places signature bytes in parameter 0.
+- The original flow accepts 0xAA05 as success only after the challenge/signature path, and throws on 0xAA04.
+
+The compatibility coordinator is intentionally still a state/provider boundary: it does not yet serialize Iap2Frame or reproduce the MFI/BAA certificate builders. The BAA provider contract is not represented by the current single-certificate MfiProviderSession; do not enable BAA through that adapter until the leaf/intermediate/body contract is added and fixture-tested.
+
+### Cancellation race fixed in compatibility coordinator
+
+The coordinator previously held its monitor while calling provider methods. A blocking certificate read or challenge signer could therefore prevent a reconnect thread from acquiring the coordinator monitor to cancel the operation. Provider work now runs outside the coordinator monitor with explicit in-progress states. Completion re-enters the monitor and verifies that the operation state has not been cancelled or superseded before returning a reply. MfiProviderSession.cancel() also now cancels the shared context after signature completion, allowing terminal cleanup to invalidate the context.
+
+Java 7 offline test run: run 42207282507 — compile/test step passed, including the new blocked-provider cancellation test. Android package run 42207282456 was still running at the time of this audit update.
+
+Evidence boundary: no iPhone, real coprocessor, I2C bus, CH341 adapter, remote provider, or API 17 device was exercised.
