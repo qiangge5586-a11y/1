@@ -12,6 +12,7 @@ public final class Iap2LinkEngineModelTest {
         bothTimersAdvanceOnSameClock();
         terminalWindowFailureClosesComposition();
         terminalClosureDiscardsPendingFramesAndEvents();
+        pendingOutputUsesOriginalOneMiBByteLimit();
         negotiatedPeerParametersBuildBothWindows();
         preReadyQueueUsesPeerPayloadLimit();
         readinessAckUpdatesOutboundWindow();
@@ -440,6 +441,33 @@ public final class Iap2LinkEngineModelTest {
         throwsState(new Runnable() { public void run() {
             m.send(10, new byte[] {8}, 50);
         }});
+    }
+
+
+    private static void pendingOutputUsesOriginalOneMiBByteLimit() {
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(
+                new Iap2LinkNegotiationModel(),
+                new Iap2OutboundWindowModel(99, Integer.valueOf(99), 255, 255,
+                        10, 500, 0, 0),
+                new Iap2ReceiveWindowModel(10, 10, 255, 255, 500, 0, 64));
+        m.start(true, 0);
+        becomeReady(m);
+        byte[] maximumPayload = new byte[Iap2LinkFrameCodec.MAX_PAYLOAD_BYTES];
+        for (int i = 0; i < 16; i++) {
+            Iap2OutboundWindowModel.Result sent = m.send(10, maximumPayload, 10 + i);
+            eq(1, sent.transmitted.size());
+        }
+        // 16 maximum wire frames consume 1,048,560 bytes, leaving 16 bytes.
+        eq(16, m.drainWireFrames().size());
+        for (int i = 0; i < 16; i++) {
+            m.send(10, maximumPayload, 100 + i);
+        }
+        // Keep the next batch pending; one more frame exceeds the remaining
+        // 16-byte budget and must transition DEAD, clearing the entire buffer.
+        m.send(10, new byte[20], 200);
+        eq(Iap2LinkEngineModel.State.CLOSED, m.state());
+        truth(m.getTerminalReason().contains("pending output limit"));
+        eq(0, m.drainWireFrames().size());
     }
 
     private static void eofClosesBeforeAndAfterReadiness() {
