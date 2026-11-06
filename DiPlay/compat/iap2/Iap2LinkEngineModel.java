@@ -191,23 +191,19 @@ public final class Iap2LinkEngineModel {
             Iap2ReceiveWindowModel.Result acknowledgementBatch = null;
             boolean carriesAck = (frame.control
                     & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0;
+            if (carriesAck) {
+                accumulatedAcknowledgements++;
+                // Negotiation handled the readiness gate, but the composed
+                // outbound window is separate and must apply this ACK once.
+                cumulativeAck = outbound.acknowledge(frame.acknowledgement, nowMillis);
+                enqueuePacketFrames(cumulativeAck.transmitted);
+            }
             if (!preReadyFlushed) {
-                // The original ACK handler opens the link and flushes queued
-                // packets before processFrame() evaluates its final ACK batch.
-                if (readyFrame.acknowledgementAlreadyProcessed && carriesAck) {
-                    accumulatedAcknowledgements++;
-                }
+                // Original handleAcknowledgement() applies the ACK and drains
+                // writable packets before processFrame() checks ACK batching.
                 flushPreReadyPackets(nowMillis);
                 preReadyFlushed = true;
                 if (localTerminalReason != null) return;
-            }
-            if (carriesAck && !readyFrame.acknowledgementAlreadyProcessed) {
-                accumulatedAcknowledgements++;
-            }
-
-            if (!readyFrame.acknowledgementAlreadyProcessed && carriesAck) {
-                cumulativeAck = outbound.acknowledge(frame.acknowledgement, nowMillis);
-                enqueuePacketFrames(cumulativeAck.transmitted);
             }
             if ((frame.control & Iap2LinkFrameCodec.CONTROL_EXTENDED_ACKNOWLEDGEMENT) != 0
                     && frame.payload != null) {
