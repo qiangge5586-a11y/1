@@ -12,9 +12,12 @@ public final class Ntb16StreamDecoderTest {
         consumesOptionalShortPacketPad();
         doesNotConsumeNextNtbAsPad();
         resynchronizesAfterGarbage();
+        resynchronizesAcrossInputChunks();
+        consumesPadArrivingInSeparateChunk();
+        preservesPartialNextHeaderAfterBoundaryBlock();
         enforcesBufferLimit();
         resetClearsPartialState();
-        System.out.println("Ntb16StreamDecoderTest: PASS (7 cases)");
+        System.out.println("Ntb16StreamDecoderTest: PASS (10 cases)");
     }
 
     private static void decodesFragmentedNtb() {
@@ -63,6 +66,44 @@ public final class Ntb16StreamDecoderTest {
         check(frames.size() == 1, "frame found after leading garbage");
         check(decoder.getResyncCount() == 1, "one resync recorded");
         check(decoder.getSkippedByteCount() == 3, "garbage byte count");
+    }
+
+    private static void resynchronizesAcrossInputChunks() {
+        byte[] ntb = Ntb16Codec.build(new byte[] {31, 32}, 8);
+        Ntb16StreamDecoder decoder = new Ntb16StreamDecoder();
+        check(decoder.append(new byte[] {99, 98, 97}).isEmpty(), "garbage prefix waits for more bytes");
+        check(decoder.append(ntb, 0, 5).isEmpty(), "partial header after garbage waits");
+        List<byte[]> frames = decoder.append(ntb, 5, ntb.length - 5);
+        check(frames.size() == 1, "resync finds NTB after chunk boundary");
+        arrayEquals(new byte[] {31, 32}, frames.get(0), "resynced fragmented frame");
+        check(decoder.getSkippedByteCount() == 3, "cross-chunk garbage count");
+    }
+
+    private static void consumesPadArrivingInSeparateChunk() {
+        byte[] boundary = Ntb16Codec.build(new byte[484], 9);
+        byte[] next = Ntb16Codec.build(new byte[] {88}, 10);
+        Ntb16StreamDecoder decoder = new Ntb16StreamDecoder();
+        List<byte[]> first = decoder.append(boundary, 0, 512);
+        check(first.size() == 1 && first.get(0).length == 484, "boundary NTB emitted before pad");
+        check(decoder.getBufferedByteCount() == 0, "no pad buffered yet");
+        byte[] remainder = concat(new byte[] {0}, next);
+        List<byte[]> second = decoder.append(remainder);
+        check(second.size() == 1, "separate pad consumed before next NTB");
+        arrayEquals(new byte[] {88}, second.get(0), "frame after separately delivered pad");
+    }
+
+    private static void preservesPartialNextHeaderAfterBoundaryBlock() {
+        byte[] boundaryWithPad = Ntb16Codec.build(new byte[484], 11);
+        byte[] boundaryBlock = new byte[512];
+        System.arraycopy(boundaryWithPad, 0, boundaryBlock, 0, 512);
+        byte[] next = Ntb16Codec.build(new byte[] {66, 67}, 12);
+        Ntb16StreamDecoder decoder = new Ntb16StreamDecoder();
+        List<byte[]> first = decoder.append(boundaryBlock);
+        check(first.size() == 1, "boundary block emitted");
+        check(decoder.append(next, 0, 4).isEmpty(), "partial next NTH16 retained rather than mistaken for pad");
+        List<byte[]> second = decoder.append(next, 4, next.length - 4);
+        check(second.size() == 1, "next NTB decoded after header completion");
+        arrayEquals(new byte[] {66, 67}, second.get(0), "partial next header payload");
     }
 
     private static void enforcesBufferLimit() {
