@@ -149,3 +149,13 @@ Extended the link-negotiation regression suite without changing the source-deriv
 - A combined ACK + Extended ACK frame is retained intact, including sequence, cumulative acknowledgement, control flags and payload, with its readiness-transition marker set.
 
 Actions run [#192](https://github.com/qiangge5586-a11y/1/actions/runs/42179152487) passed **8,435 Java 7 offline checks**; negotiation suite increased from 158 to 178 checks. This validates split-read and state-handoff behavior in the offline model only, not a physical accessory/iPhone session.
+
+
+## Exhaustive modulo-256 ACK and send-window verification (2026-11-06)
+
+Expanded Iap2AckWindowPolicyTest with exhaustive finite-domain checks:
+
+- For all 65,536 previous/candidate sequence pairs and peer ACK windows 0, 3, 245 and 255, compare cumulative ACK acceptance and outstanding-packet retention against the exact modulo-256 distance predicate, including the fixed +10 ACK slack and saturation at 255.
+- For all 65,536 sent/previous-ACK pairs and maxOutgoing values 0, 1, 4, 127 and 255, verify the source's strict `>` queue admission and strict `<` queued-drain boundaries.
+
+Actions run [#193](https://github.com/qiangge5586-a11y/1/actions/runs/42179259276) passed **1,188,083 Java 7 offline checks**, including 1,179,665 ACK/window policy checks. This is exhaustive validation of the model predicates over their 8-bit input domain; it does not prove live accessory interoperability.
