@@ -311,3 +311,30 @@ iAP2 MFi control-channel generation.
 Validation boundary: Java 7 source compatibility is covered by the iAP2
 workflow compile step. No physical MFi coprocessor, iPhone, Bluetooth vehicle
 head unit, or API-17 hardware validation is claimed.
+
+
+### Channel separation contract (2026-11-06)
+
+Added `MfiIap2Channel` with two explicit scopes:
+- `RFCOMM_CONTROL`: the bootstrap/control iAP2 link.
+- `AIRPLAY_TYPE130_TUNNEL`: the independent iAP2 link carried inside the AirPlay
+  type-130 TCP tunnel.
+
+`MfiIap2SessionOwner` now stores the channel scope as well as the generation.
+The compatibility constructor defaults to RFCOMM_CONTROL; tunnel construction
+must pass AIRPLAY_TYPE130_TUNNEL explicitly. Each scope must be given its own
+receive coordinator, adapter/provider context, CSM bridge, and pump. Never share
+a provider session, receive decoder, sequence window, or pump between the two
+links. This is a type-level wiring guard, not a claim that the type-130 socket
+lifecycle has already been implemented.
+
+Generation teardown tests now run in the iAP2 workflow:
+- `MfiIap2SessionOwnerTest`: positive generation, explicit type-130 scope,
+  idempotent close, packet admission rejection after close, provider cancellation.
+- Latest workflow: https://github.com/qiangge5586-a11y/1/actions/runs/42213190322
+- Android build for the same Java implementation commit:
+  https://github.com/qiangge5586-a11y/1/actions/runs/42213153390
+
+The next integration point remains the source-parity link engine. The current
+`Iap2LinkModelPumpDriver` is a model-backed driver, not yet the restored
+production `Iap2LinkEngine`; no production lifecycle wiring should be claimed.
