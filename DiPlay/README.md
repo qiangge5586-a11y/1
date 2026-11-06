@@ -221,3 +221,8 @@ The original `Iap2LinkChannel` worker pump and `Iap2CsmChannel` call edges have 
 - Added an offline CSM gate that requires link READY and a known peer CSM control-payload limit before constructing the chunk-admission model. Unknown peer limit, invalid limit and closed link are distinct outcomes.
 - GitHub Actions [Run #214](https://github.com/qiangge5586-a11y/1/actions/runs/42183487239) passed **2,323,780 checks across 17 Java 7 offline suites**.
 - This remains an offline precondition model; it does not implement the CSM handshake or live transport.
+
+
+## Instrument-cluster projection track
+
+The new [instrument-cluster projection plan](analysis/INSTRUMENT_CLUSTER_PROJECTION_PLAN.md) records the user's requirement to project navigation/driving information to the 2019 Civic instrument cluster. The current prototype uses Android API-17 `DisplayManager` / `Presentation` to render a clearly labelled navigation demo on a system-enumerated external presentation display. It is not yet connected to live navigation or the factory cluster; the exact Honda cluster input/interface must be identified and verified before claiming real projection. The implementation performs no CAN transmission, ROOT operation, or vehicle configuration write. CI build is pending.
