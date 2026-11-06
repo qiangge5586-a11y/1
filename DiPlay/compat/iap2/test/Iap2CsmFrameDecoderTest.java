@@ -1,6 +1,7 @@
 package com.shilapi.xcertplay.compat.iap2;
 
 import java.util.List;
+import java.util.Random;
 
 public final class Iap2CsmFrameDecoderTest {
     private static int checks;
@@ -8,6 +9,7 @@ public final class Iap2CsmFrameDecoderTest {
         fragmentedAndCoalescedFrames();
         resynchronizesAfterGarbageAndBadShortLength();
         retainsIncompleteFrame();
+        randomizedFragmentationAndCoalescing();
         System.out.println("Iap2CsmFrameDecoderTest: PASS (" + checks + " checks)");
     }
     private static void fragmentedAndCoalescedFrames() {
@@ -35,6 +37,31 @@ public final class Iap2CsmFrameDecoderTest {
         eq(0,out.size()); eq(7,d.pendingBytes());
         out=d.feed(slice(f,7,f.length));
         eq(1,out.size()); eq(99,out.get(0).messageId); bytes(new byte[]{1,2,3,4},out.get(0).payload);
+    }
+
+    private static void randomizedFragmentationAndCoalescing() {
+        Random random = new Random(40402026L);
+        Iap2CsmFrameDecoder decoder = new Iap2CsmFrameDecoder();
+        for (int n = 0; n < 100; n++) {
+            int payloadLength = random.nextInt(256);
+            byte[] payload = new byte[payloadLength];
+            random.nextBytes(payload);
+            int id = random.nextInt(65536);
+            byte[] encoded = frame(id, payload);
+            int offset = 0;
+            while (offset < encoded.length) {
+                int chunk = Math.min(encoded.length - offset, random.nextInt(13) + 1);
+                List<Iap2CsmFrameDecoder.Frame> out = decoder.feed(slice(encoded, offset, offset + chunk));
+                offset += chunk;
+                if (offset < encoded.length) eq(0, out.size());
+                else {
+                    eq(1, out.size());
+                    eq(id, out.get(0).messageId);
+                    bytes(payload, out.get(0).payload);
+                }
+            }
+            eq(0, decoder.pendingBytes());
+        }
     }
     private static byte[] frame(int id,byte[] payload) {
         int n=6+payload.length; byte[] b=new byte[n];
