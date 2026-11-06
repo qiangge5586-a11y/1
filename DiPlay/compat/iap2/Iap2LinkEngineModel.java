@@ -167,14 +167,18 @@ public final class Iap2LinkEngineModel {
             Iap2OutboundWindowModel.Result cumulativeAck = null;
             Iap2OutboundWindowModel.Result extendedAck = null;
             Iap2ReceiveWindowModel.Result received = null;
+            Iap2ReceiveWindowModel.Result acknowledgementBatch = null;
+            boolean carriesAck = (frame.control
+                    & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0;
+            if (carriesAck) accumulatedAcknowledgements++;
 
-            if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0) {
+            if (!readyFrame.acknowledgementAlreadyProcessed && carriesAck) {
                 cumulativeAck = outbound.acknowledge(frame.acknowledgement, nowMillis);
                 enqueuePacketFrames(cumulativeAck.transmitted);
             }
-            if ((frame.control & Iap2LinkFrameCodec.CONTROL_EXTENDED_ACKNOWLEDGEMENT) != 0) {
-                extendedAck = outbound.requestMissing(
-                        frame.payload == null ? new byte[0] : frame.payload, nowMillis);
+            if ((frame.control & Iap2LinkFrameCodec.CONTROL_EXTENDED_ACKNOWLEDGEMENT) != 0
+                    && frame.payload != null) {
+                extendedAck = outbound.requestMissing(frame.payload, nowMillis);
                 enqueuePacketFrames(extendedAck.retransmitted);
             }
             // Original processFrame(): (control & ~0x40) == 0 and payload != null.
