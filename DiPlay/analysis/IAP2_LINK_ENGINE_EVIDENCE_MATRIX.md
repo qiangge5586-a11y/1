@@ -8,11 +8,12 @@ Purpose: turn the existing link-layer audit into a reproducible source-to-test p
 
 - The repository contains the APK and the decompile workflow definition.
 - The decompile workflow is configured to upload `diplay-0.3.11-decompiled` for 30 days.
-- The current `main` tree does not contain APKTool Smali output or JADX source for `Iap2LinkEngine` / `Iap2LinkChannel`.
-- The decompile run was found on workflow-run history page 3: run `42142476134`, completed successfully at `2026-11-06T01:14:21Z`.
-- Artifact `diplay-0.3.11-decompiled`, ID `13468029869`, was downloaded; ZIP SHA-256: `fc047244952803306aa690e35c59fa31cbe3817eb5f10e5e6001e96bd8cfc8f5`.
-- The artifact contains original APKTool Smali for `Iap2LinkEngine`, `Iap2LinkChannel`, `Iap2LinkEngine$Companion`, `Header`, `Packet`, `ReceiveBuffer`, and `SynchronizationPayload` under `smali_classes4`.
-- The earlier statement that no decompile run was found was incomplete because only the first two pages (200 runs) had been checked. The artifact is now available and the core packet primitives have been source-audited.
+- The original Smali is not committed into the main source tree; it is available in the Actions artifact.
+- Latest decompile run #7: `42166504575`, completed successfully; artifact `diplay-0.3.11-decompiled`, ID `13478968581`, expires `2026-12-06T05:08:19Z`.
+- The immediately preceding successful artifact, run `42166126298`, artifact ID `13478149398`, was downloaded and inspected; ZIP SHA-256: `ff6a124c3e10458361a5f408dff37d97420dbbf05aabd29d1482e31746a7b27a`.
+- The artifact contains original APKTool Smali for `Iap2LinkEngine`, `Iap2LinkChannel`, `Iap2LinkEngine$Companion`, `Header`, `Packet`, `ReceiveBuffer`, `SessionDescriptor`, and `SynchronizationPayload` under `smali_classes4`.
+- A source-grounded summary and golden wireless synchronization vector are now preserved in `IAP2_LINK_ENGINE_SOURCE_FINDINGS.md`; the raw artifact remains temporary.
+- Correction: the earlier statement that no decompile run was found was incomplete because the initial inspection covered only the newest page of workflow runs.
 
 The artifact is temporary (expires `2026-12-06T01:15:20Z`). Preserve source excerpts or a reproducible source-audit note in the repository; do not rely on the temporary artifact as the only long-term evidence.
 
@@ -21,15 +22,15 @@ The artifact is temporary (expires `2026-12-06T01:15:20Z`). Preserve source exce
 | Area | Required source evidence | Required extraction | Status |
 |---|---|---|---|
 | Engine construction | `Iap2LinkChannel.runPump()` | constructor args, initial state, initiate flag | Prior Smali audit; raw excerpt not in repo |
-| Synchronization | `Iap2LinkEngine` sync methods | exact marker/header bytes, version, descriptor layout, checksum, endian rules | Prior audit notes; golden bytes absent |
-| Sequence numbers | packet encode/decode and engine state updates | initial TX/RX sequence, wrap behavior, increment conditions | Not independently reproducible from current tree |
-| Normal ACK | ACK encode/decode and receive path | ACK number semantics, cumulative/selective behavior, validation | Not independently reproducible from current tree |
-| Extended ACK | extended-ACK encode/decode | session ID, payload layout, bitmap/range semantics | Not independently reproducible from current tree |
-| Reordering | receive window / pending packet map | duplicate handling, out-of-window behavior, delivery order | Not independently reproducible from current tree |
-| Retransmission | deadline scheduler / retry path | timer start/reset, retry count, terminal transition | Prior audit notes; exact transition traces absent |
-| Peer limits | synchronization negotiation | advertised payload parsing, bounds, update timing | Prior audit notes; exact wire fixture absent |
-| Ready gate | engine state/event emission and CSM send | exact condition for link writable and peer max payload valid | Prior audit notes; raw excerpt absent |
-| EOF / close | `runPump()`, engine EOF and close paths | EOF before/after writable, queue drain, close idempotence | Prior Smali audit; raw excerpt not in repo |
+| Synchronization | `Iap2LinkEngine` and `SynchronizationPayload$Companion` Smali | marker, 9-byte frame header, additive checksums, payload schema, wireless default golden vector | Source-audited; offline golden-vector test added |
+| Sequence numbers | `Iap2LinkEngine` and `Companion` Smali | initial TX=99, modulo-256 increment/distance, ACK field | Source-audited; codec tests cover wrap |
+| Normal ACK | `handleAcknowledgement`, `sendAcknowledgement`, `writePacket` | piggyback cumulative ACK and outgoing window drain | Source-audited; full state tests remain |
+| Extended ACK | `handleExtendedAcknowledgement`, `sendExtendedAcknowledgement` | payload is explicit missing-sequence byte list | Source-audited; retransmit state tests remain |
+| Reordering | `handleData` and `ReceiveBuffer` | circular window, duplicate suppression, bounded out-of-order list, ordered delivery | Source-audited; full state tests remain |
+| Retransmission | `sendPacket`, `retransmitDuePacket`, `advanceTime` | earliest deadline, exact retry-count terminal boundary | Source-audited; full timer tests remain |
+| Peer limits | `peerLimitsAreUsable`, `peerPayloadIsAcceptable`, ACK path | maxLength > 10 and payload <= maxLength - 10 | Source-audited; negotiation tests remain |
+| Ready gate | `handleSynchronization`, `handleAcknowledgement`, `setWritable`, `drainEvents` | peer sync + usable peer limit + queued payload fit + peer ACK | Source-audited; full state tests remain |
+| EOF / close | `runPump`, `feedEof`, `die` | EOF is terminal; worker forwards EOF to engine | Source-audited; lifecycle tests remain |
 
 ## Required fixture set before implementing a link engine
 
@@ -65,11 +66,11 @@ Each fixture must record: APK SHA-256, class/method origin, direction, exact inp
 
 ## Next acceptance criteria
 
-The link-layer implementation may begin only when:
-- raw source evidence for synchronization, sequence/ACK, extended ACK, reordering, retransmission, peer limits, ready gate, and EOF is available;
-- every implemented wire field has at least one source-grounded fixture;
-- the test suite checks both expected positive transitions and malformed/timeout terminal cases;
-- CI compiles with the project's Java 7 compatibility target.
+The offline link wire-format codec may now be extended using the preserved source findings. A full state-machine port still requires:
+- source-grounded fixtures for peer sync/ACK, extended ACK and retransmission cases;
+- positive and negative transition tests for ready gate, sequence windows, out-of-order delivery, timeout and EOF;
+- Java 7 compatibility and passing CI;
+- explicit hardware-test authorization before any live vehicle session.
 
 
 ## First restored source findings (2026-11-06)
