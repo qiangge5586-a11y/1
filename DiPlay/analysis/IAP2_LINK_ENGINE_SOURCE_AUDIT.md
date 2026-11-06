@@ -252,3 +252,14 @@ A deeper comparison of `nextDeadlineMillis()`, `advanceTime()`, `handleAcknowled
 The offline `Iap2OutboundWindowModel` previously exposed the minimum packet deadline directly. That was an observable source-parity mismatch because the pump could wake and retransmit earlier than the original engine. The model now stores the source timer explicitly and its tests cover staggered sends, cumulative-ACK rearming, sequential due retries and multi-entry Extended ACK ordering. CI must pass on the resulting commit before this correction is considered verified.
 
 This is a source-derived model correction only. It does not establish production engine integration or device interoperability.
+
+### Verification for retransmission timer correction
+
+GitHub Actions iAP2 run [#275](https://github.com/qiangge5586-a11y/1/actions/runs/42193537235) completed successfully on commit `53d4f139`. The Java 7 offline suite passed, including:
+- `Iap2OutboundWindowModelTest: PASS (78 checks)`
+- `Iap2LinkEngineModelTest: PASS (264 checks)`
+- `Iap2ReceiveWindowModelTest: PASS (1,135,658 checks)`
+- `Iap2AckWindowPolicyTest: PASS (1,179,665 checks)`
+- `RfcommConnectDeadlineTest: PASS (8 checks)`
+
+The run verifies the deterministic offline model and its timer tests. It does not verify a production link engine, RFCOMM connection on API 17, or an iPhone/vehicle handshake.
