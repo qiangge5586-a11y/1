@@ -127,3 +127,8 @@ Corrections to the earlier audit:
 - Wireless ACK timeout resolves to 500 ms from the config default. The wireless local sync payload advertises maxOutgoing=4, maxLength=65535, retransmit=4000 ms, ACK timeout=500 ms, max retransmissions=4, max acknowledgements=3, and session descriptors (10,0,2), (11,2,1), (12,1,2).
 
 The compatibility implementation remains offline-only. The codec golden vectors are source-derived; full link state-machine parity and real device interoperability are not yet claimed.
+
+
+## CSM offer() input boundary correction (2026-11-06)
+
+Recovered Smali call-site verification: `Iap2CsmChannel` obtains control payloads from `Iap2LinkChannel.recvControl()` and passes them to `Iap2CsmFramer.offer()`. The 8,192-byte limit belongs to the lower-level `Iap2LinkChannel.runPump()` stream read, before link-layer packet reassembly. It must not be imposed on the CSM offer input. The original `splitForLink()` caps each outbound link chunk at 65,525 bytes; the offline CSM decoder now uses that source-derived value as its per-call defensive bound and tests 65,525 accepted / 65,526 rejected.
