@@ -111,3 +111,9 @@ Important limitation: these are parsers for controlled fixture shapes, not proof
 The originally-absent case is represented explicitly as `originalExisted=false`, no hash, zero size and no backup path. It is never silently represented as an empty existing file. Supplying bytes or a backup path for an absent original is rejected. The test also covers changed bytes, missing required context, path escape and oversize input.
 
 These are data-model and fixture tests only. The record does not read, write, copy, chmod, chown, label or restore any file. The production capture adapter must separately establish original-file existence and capture exact bytes and metadata consistently before a system change can be considered.
+
+## Manual dashboard probe boundary (2026-11-06)
+
+The isolated Android dashboard now exposes the fixed read-only command catalog through an explicit button. It can collect `id`, `dumpsys wifi`, `dumpsys connectivity`, `/proc/net/dev`, and `ls` metadata for the known hotspot config and daemon paths. It does not read the hostapd configuration contents or perform any mutation. This provides a way to discover whether the reported ROOT grant and expected paths exist on the actual firmware without enabling the write path.
+
+The coordinator and backup/recovery primitives remain unconnected to a concrete mutating `RootOps` implementation. A live device probe must be reviewed before any path, ownership, SELinux or restore assumption is made. No ROOT command has been run on the user's head unit by this change.
