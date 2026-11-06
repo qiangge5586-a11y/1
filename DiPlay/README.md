@@ -91,3 +91,12 @@ A successful CI build is not proof of runtime or vehicle compatibility. Do not t
 ### iAP2 link-frame offline codec
 
 The source-audited link packet primitive is implemented in `compat/iap2/Iap2LinkFrameCodec.java`. It encodes/validates the 9-byte `FF 5A` header, additive header/payload checksums, u8 sequence wrap, and modular sequence distance. Golden vectors are in `compat/iap2/test/Iap2LinkFrameCodecTest.java`. CI run `42164770173` passed 27 codec checks and 5,798 total offline checks. This is an offline codec test only; it does not establish a live iPhone or vehicle handshake.
+
+
+### iAP2 link-layer wire codec (source-audited)
+
+- Restored the original DiPlay 0.3.11 decompile artifact from Actions run [42166126298](https://github.com/qiangge5586-a11y/1/actions/runs/42166126298), artifact ID `13478149398`; original APK SHA-256 was verified by the workflow.
+- Added `compat/iap2/Iap2LinkFrameCodec.java` with the original link marker/header layout, additive checksums, synchronization-payload layout, and 8-bit sequence arithmetic. It is offline-only and does not open transports.
+- Added golden-vector tests for the synchronization payload, ACK-only frame, data frame, checksums, bounds, and sequence wrap.
+- Latest CI run [#46](https://github.com/qiangge5586-a11y/1/actions/runs/42167041306) passed: 61 handshake + 3,380 IAP framing/package + 2,330 CSM + 49 link codec checks = **5,820 offline checks**.
+- This does not yet implement the full link state machine or establish an actual iPhone/vehicle session. See `analysis/IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md` for the source map and remaining engine-state work.
