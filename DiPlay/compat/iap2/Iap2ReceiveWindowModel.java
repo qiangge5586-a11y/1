@@ -114,6 +114,12 @@ public final class Iap2ReceiveWindowModel {
         return result(false, null, delivered);
     }
 
+    /** Applies the original processFrame() ACK-batching threshold immediately. */
+    public synchronized Result forceAcknowledgement() {
+        if (terminalReason != null) return result(false, null, new ArrayList<Packet>());
+        return acknowledgeNow();
+    }
+
     public synchronized Result advanceTime(long nowMillis) {
         if (terminalReason != null || acknowledgementDeadlineMillis == null
                 || acknowledgementDeadlineMillis.longValue() > nowMillis) {
