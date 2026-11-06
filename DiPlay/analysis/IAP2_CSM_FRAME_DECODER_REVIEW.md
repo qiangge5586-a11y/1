@@ -13,6 +13,7 @@ Date: 2026-11-06
 - incomplete frames are retained between calls
 - garbage and candidate headers with lengths below 6 are skipped during resynchronization
 - maximum total frame length is 65,535 bytes
+- each feed chunk is capped at 8,192 bytes, matching the original `Iap2LinkChannel.runPump()` receive call; oversized input resets pending state and fails closed
 
 It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and the 32-byte AirPlay IAP package parser. These three layers must not be conflated.
 
@@ -20,7 +21,7 @@ It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and 
 
 1. **Incremental behavior:** the decoder handles split headers, split payloads and multiple coalesced frames. Deterministic randomized fragmentation coverage has been added.
 2. **Resynchronization:** invalid bytes and too-short candidate lengths are skipped one byte at a time. A plausible but incomplete 0x4040 candidate is retained until more bytes arrive; this is necessary for fragmented input but means false sync inside corrupted data can temporarily delay resynchronization.
-3. **Memory bound:** pending data is checked against 65,535 bytes after parsing. Callers should still bound each incoming chunk (the source tunnel reader uses 16 KiB reads) and should reset the decoder on stream-generation changes.
+3. **Memory bound:** each input chunk is limited to 8,192 bytes, matching the source `recv(8192, waitMillis)` call; pending data is limited to one maximum CSM frame. An oversized chunk clears pending state and fails closed. The decoder should be reset on stream-generation changes.
 4. **Protocol evidence:** the current decoder is an offline compatibility model. Before wiring it into the original session path, verify the exact framing implementation in Smali and confirm that this 0x4040 format is the framing used at the specific CSM call site. Do not infer that every iAP2 transport layer uses this same frame header.
 5. **Semantics:** the decoder returns message ID and payload only. It does not implement sequence numbers, ACKs, retransmission, checksums, channel negotiation, message fragmentation semantics, or MFi authentication.
 6. **Failure behavior:** the current parser silently discards garbage/short-length candidates instead of returning a structured resync diagnostic. A production adapter should expose discarded-byte counts and distinguish malformed stream from normal partial input.
@@ -29,6 +30,7 @@ It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and 
 
 - Existing deterministic tests cover fragmented/coalesced frames, garbage resynchronization, invalid short lengths and incomplete tail retention.
 - Randomized test covers 100 frames with varying payload sizes, IDs and chunk boundaries.
+- Boundary tests reject 8,193-byte input chunks and decode a maximum 65,535-byte CSM frame in bounded 8 KiB reads.
 - CI workflow: `.github/workflows/diplay-iap2-handshake.yml`.
 
 ## Next gate
