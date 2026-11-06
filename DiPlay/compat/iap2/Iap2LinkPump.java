@@ -51,6 +51,7 @@ public final class Iap2LinkPump {
     private boolean closing;
     private boolean terminated;
     private boolean readyNotified;
+    private final Iap2PumpMetrics metrics = new Iap2PumpMetrics();
 
     public Iap2LinkPump(Iap2DuplexByteStream stream, Driver driver, Listener listener) {
         if (stream == null || driver == null || listener == null) {
@@ -85,6 +86,7 @@ public final class Iap2LinkPump {
                     || payload.length > MAX_COMMAND_BYTES - commandBytes) return false;
             commands.addLast(Arrays.copyOf(payload, payload.length));
             commandBytes += payload.length;
+            metrics.recordQueueDepth(commands.size(), commandBytes);
             lock.notifyAll();
             return true;
         }
@@ -116,6 +118,7 @@ public final class Iap2LinkPump {
                         && payload.length <= MAX_COMMAND_BYTES - commandBytes) {
                     commands.addLast(Arrays.copyOf(payload, payload.length));
                     commandBytes += payload.length;
+                    metrics.recordQueueDepth(commands.size(), commandBytes);
                     lock.notifyAll();
                     return true;
                 }
@@ -153,6 +156,11 @@ public final class Iap2LinkPump {
         synchronized (lock) { return terminated; }
     }
 
+    /** Returns an immutable, low-overhead aggregate snapshot; no per-packet logging. */
+    public Iap2PumpMetrics.Snapshot metricsSnapshot() {
+        return metrics.snapshot();
+    }
+
     private void runPump() {
         String reason = "iAP2 link pump stopped";
         IOException failure = null;
@@ -174,14 +182,22 @@ public final class Iap2LinkPump {
                 if (deadline != Long.MAX_VALUE) {
                     wait = Math.max(1L, Math.min((long) MAX_POLL_MILLIS, deadline - now));
                 }
+                long readStartedNanos = System.nanoTime();
                 int count = stream.read(input, 0, input.length, (int) wait);
+                metrics.recordRead(System.nanoTime() - readStartedNanos, count);
                 now = elapsedRealtimeMillis();
                 if (count < 0) {
                     reason = "iAP2 transport EOF";
                     break;
                 }
-                if (count > 0) driver.onBytes(input, count, now);
+                if (count > 0) {
+                    long parseStartedNanos = System.nanoTime();
+                    driver.onBytes(input, count, now);
+                    metrics.recordDriverBytes(count, System.nanoTime() - parseStartedNanos);
+                }
+                long timerStartedNanos = System.nanoTime();
                 driver.onTimer(now);
+                metrics.recordTimer(System.nanoTime() - timerStartedNanos);
                 drainDriverOutput();
                 notifyReadyIfNeeded();
                 if (driver.isTerminal()) {
@@ -250,6 +266,7 @@ public final class Iap2LinkPump {
             }
             if (driver instanceof CommandSink) {
                 ((CommandSink) driver).sendControl(command, nowMillis);
+                metrics.recordCommandDelivered();
             } else {
                 throw new IOException("iAP2 Driver does not implement CommandSink");
             }
@@ -263,6 +280,10 @@ public final class Iap2LinkPump {
 
     private void drainDriverOutput() throws IOException {
         byte[] output = driver.drainOutput();
-        if (output != null && output.length > 0) stream.write(output, 0, output.length);
+        if (output != null && output.length > 0) {
+            long writeStartedNanos = System.nanoTime();
+            stream.write(output, 0, output.length);
+            metrics.recordWrite(output.length, System.nanoTime() - writeStartedNanos);
+        }
     }
 }
