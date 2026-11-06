@@ -33,10 +33,13 @@ The queue capacity parameter is a defensive bound of this offline harness, not a
 - Extended ACK retransmitting only listed outstanding sequences;
 - 8-bit sequence wrap;
 - local harness queue-capacity failure;
-- earliest deadline tracking.
+- earliest deadline tracking across multiple outstanding packets with staggered deadlines.
 
 ## Known limits
 
 This remains a deterministic compatibility model, not the production link engine. It does not encode or write frames to Bluetooth/TCP, schedule Android timers, handle concurrent sender/receiver threads, or validate a real iPhone session. Source behavior around retransmission deadline re-arming and multiple simultaneously due packets still needs golden-vector comparison against the original engine. The helper deliberately exposes state/events for deterministic tests rather than claiming a complete transport integration.
 
 No live iPhone, MY16ADA head unit, USB, AirPlay, Bluetooth or ROOT test was performed.
+
+
+Latest CI verification: [run #91](https://github.com/qiangge5586-a11y/1/actions/runs/42169773435), 7,129 total offline checks passed.
