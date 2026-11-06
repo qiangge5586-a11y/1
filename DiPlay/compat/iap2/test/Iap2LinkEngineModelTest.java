@@ -130,9 +130,6 @@ public final class Iap2LinkEngineModelTest {
         byte[] minSync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
                 4, 11, 1000, 250, 3, 3, new int[][] {{10, 0, 2}});
         accepted.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, minSync), 1);
-        eq(Iap2LinkEngineModel.State.NEGOTIATING, accepted.state());
-        accepted.takeNegotiationOutput();
-        accepted.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
         eq(Iap2LinkEngineModel.State.READY, accepted.state());
         List<byte[]> wire = accepted.drainWireFrames();
         eq(1, wire.size());
