@@ -64,7 +64,7 @@ The negotiation decoder retains the ACK-bearing frame that transitions the link 
 
 Results are exposed as bounded, drainable `DispatchEvent` objects. Encoded ACK/data responses are queued separately and can be inspected through `drainWireFrames()`; they are not written to a transport. The pending event and wire-frame caps are defensive offline-harness limits (256), not claims about original APK constants.
 
-Actions run [#133](https://github.com/qiangge5586-a11y/1/actions/runs/42173519353) passed **7,257 offline checks**, including 84 composition checks and 152 negotiation checks. Regression coverage includes SYN-only staying NEGOTIATING, a later ACK completing READY, ACK+data in the readiness-triggering frame, Extended ACK not mutating the cumulative ACK window, data-only delivery, combined ACK/data delivery, and immediate/delayed ACK timing. Intermediate runs #109–#132 exposed source-assumption and test-fixture errors; those were corrected before #133.
+Actions run [#137](https://github.com/qiangge5586-a11y/1/actions/runs/42173808122) passed **7,266 offline checks**, including 93 composition checks and 152 negotiation checks. Regression coverage includes SYN-only staying NEGOTIATING, a later ACK completing READY, same-frame ACK+data dispatch without duplicate cumulative ACK, Extended ACK targeted retransmission, data-only delivery, immediate/delayed ACKs, and ACK-batch threshold handling. Intermediate runs #109–#136 exposed source-assumption, implementation and fixture errors; these were corrected before #137.
 
 
 ## Source-exact control-bit dispatch checkpoint (2026-11-06)
