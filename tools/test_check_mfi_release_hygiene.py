@@ -26,9 +26,19 @@ class MfiReleaseHygieneTest(unittest.TestCase):
         path = self.make_apk({"assets/offline-mfi/certificate.bin": b"fixture"})
         self.assertTrue(any("offline-mfi" in item for item in scan_apk(path)))
 
-    def test_private_key_pem_is_rejected(self):
-        path = self.make_apk({"assets/provider.dat": b"-----BEGIN PRIVATE KEY-----"})
-        self.assertTrue(any("private-key" in item for item in scan_apk(path)))
+    def test_private_key_pem_payload_is_rejected(self):
+        payload = (b"-----BEGIN PRIVATE KEY-----\\n"
+                   + b"A" * 128
+                   + b"\\n-----END PRIVATE KEY-----")
+        path = self.make_apk({"assets/provider.dat": payload})
+        self.assertTrue(any("private-key PEM payload" in item for item in scan_apk(path)))
+
+    def test_pem_parser_delimiters_in_dex_are_allowed(self):
+        parser = (b"-----BEGIN PRIVATE KEY-----"
+                  + b" unrelated dex bytecode "
+                  + b"-----END PRIVATE KEY-----")
+        path = self.make_apk({"classes4.dex": parser})
+        self.assertEqual([], scan_apk(path))
 
 
 if __name__ == "__main__":
