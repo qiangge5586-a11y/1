@@ -246,3 +246,15 @@ The recovered source call path is `Iap2CsmChannel.recvControl()` -> `Iap2LinkCha
 ## Encoded link-frame response regression checkpoint
 
 The composition emits encoded link-frame bytes to a bounded drain-only queue: data sends/retransmits, newly released packets after cumulative ACK, immediate normal ACK, and Extended ACK. The queue is capped at 256; no transport write is implemented. Actions run [#207](https://github.com/qiangge5586-a11y/1/actions/runs/42181647104) passed **2,323,738 offline checks** (238 Link Engine checks). Run #206 failed on an incorrect readiness expectation in the test; the peer SYN-only expectation was reverted to the ACK-bit readiness behavior represented by the current source-audited model.
+
+
+## Follow-up evidence — 2026-11-06 / CI #210
+
+| Behavior | Evidence | Result | Scope |
+|---|---|---|---|
+| Outbound retransmission wire serialization | `retransmissionWireFramePreservesOriginalPacket()` | PASS | Offline model + frame decoder round-trip; sequence/session/payload preserved |
+| Extended ACK response serialization | `inboundGapEmitsExtendedAckWithSessionZero()` | PASS | Offline model + frame decoder round-trip at negotiated gap threshold |
+| Full iAP2 offline regression suite | GitHub Actions Run #210 | PASS | 16 Java 7-targeted suites; not a physical iPhone or MY16ADA handshake |
+
+Run: https://github.com/qiangge5586-a11y/1/actions/runs/42183299341
+Commit: `db67b97002bf5ad9797ead2397b08d80418d1b66`
