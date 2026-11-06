@@ -69,6 +69,12 @@ public final class Iap2LinkModelPumpDriver implements Iap2LinkPump.Driver,
         return csmReceiver.poll();
     }
 
+    /** Blocking CSM receive for application-side consumers; never call on the pump worker. */
+    public Iap2CsmReceiveQueueModel.Frame receiveCsmFrame(long timeoutMillis)
+            throws IOException {
+        return csmReceiver.receive(timeoutMillis);
+    }
+
     public Iap2CsmReceiveCoordinator csmReceiver() { return csmReceiver; }
 
     public void onTimer(long nowMillis) throws IOException {
