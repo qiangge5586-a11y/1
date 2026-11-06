@@ -15,6 +15,7 @@ public final class Iap2ReceiveWindowModelTest {
         outOfOrderCapacityIsTerminal();
         receiveWindowThresholdForcesAck();
         zeroPeerAckLimitDisablesAckTimer();
+        exhaustivelyChecksGapAndExtendedAckBoundariesAcrossWrap();
         System.out.println("Iap2ReceiveWindowModelTest: PASS (" + checks + " checks)");
     }
 
@@ -109,6 +110,43 @@ public final class Iap2ReceiveWindowModelTest {
         falsity(r.acknowledgementNow);
         eq(null, r.acknowledgementDeadlineMillis);
         falsity(m.advanceTime(10000).acknowledgementNow);
+    }
+
+
+    private static void exhaustivelyChecksGapAndExtendedAckBoundariesAcrossWrap() {
+        int[] windows = new int[] {1, 2, 4, 16, 255};
+        for (int w = 0; w < windows.length; w++) {
+            int peerWindow = windows[w];
+            for (int start = 0; start < 256; start++) {
+                for (int distance = 2; distance <= 255; distance++) {
+                    int target = (start + distance) & 0xff;
+                    Iap2ReceiveWindowModel m = model(start, start, peerWindow,
+                            3, 500, 0, 1);
+                    Iap2ReceiveWindowModel.Result r = m.receive(packet(target), 100);
+                    boolean inRange = distance <= peerWindow + 10;
+                    if (!inRange) {
+                        truth(r.acknowledgementNow);
+                        eq(0, m.getOutOfOrderCount());
+                        eq(null, r.extendedAcknowledgement);
+                        continue;
+                    }
+                    falsity(r.acknowledgementNow);
+                    eq(1, m.getOutOfOrderCount());
+                    eq(0, r.delivered.size());
+                    if (distance >= peerWindow) {
+                        byte[] expectedMissing = new byte[distance - 1];
+                        for (int i = 0; i < expectedMissing.length; i++) {
+                            expectedMissing[i] = (byte) ((start + i + 1) & 0xff);
+                        }
+                        bytes(expectedMissing, r.extendedAcknowledgement);
+                        eq(null, r.acknowledgementDeadlineMillis);
+                    } else {
+                        eq(null, r.extendedAcknowledgement);
+                        eq(Long.valueOf(600), r.acknowledgementDeadlineMillis);
+                    }
+                }
+            }
+        }
     }
 
     private static Iap2ReceiveWindowModel model(int received, int acknowledged,
