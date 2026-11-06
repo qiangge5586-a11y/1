@@ -2,8 +2,10 @@ import os
 import tempfile
 import unittest
 import zipfile
+import runpy
 
-from check_mfi_release_hygiene import scan_apk
+scan_apk = runpy.run_path(os.path.join(os.path.dirname(__file__),
+                                      'check-mfi-release-hygiene.py'))['scan_apk']
 
 
 class MfiReleaseHygieneTest(unittest.TestCase):
