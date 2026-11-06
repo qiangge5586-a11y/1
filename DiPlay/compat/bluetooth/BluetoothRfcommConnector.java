@@ -25,11 +25,11 @@ public final class BluetoothRfcommConnector {
     private volatile BluetoothSocket activeSocket;
     private volatile boolean cancelled;
 
-    public BluetoothSocket connect(String deviceAddress, String serviceUuid) throws IOException {
+    public synchronized BluetoothSocket connect(String deviceAddress, String serviceUuid) throws IOException {
         return connect(deviceAddress, serviceUuid, DEFAULT_CONNECT_TIMEOUT_MILLIS);
     }
 
-    public BluetoothSocket connect(String deviceAddress, String serviceUuid,
+    public synchronized BluetoothSocket connect(String deviceAddress, String serviceUuid,
             long timeoutMillis) throws IOException {
         if (deviceAddress == null || deviceAddress.length() == 0) {
             throw new IllegalArgumentException("deviceAddress is empty");
