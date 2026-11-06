@@ -94,6 +94,23 @@ public final class Iap2LinkFrameCodec {
         return previous == null ? 0 : (sequence - previous.intValue()) & 0xFF;
     }
 
+    /**
+     * Source-derived cumulative ACK window check. An ACK advances only when
+     * its modulo-256 distance is positive and no greater than the peer's
+     * advertised maxAcknowledgements plus the source's fixed slack.
+     */
+    public static boolean isAcceptableCumulativeAck(int lastAcknowledged,
+            int candidateAcknowledgement, int peerMaxAcknowledgements, int ackSlack) {
+        requireByte(lastAcknowledged);
+        requireByte(candidateAcknowledgement);
+        requireByte(peerMaxAcknowledgements);
+        requireByte(ackSlack);
+        int distance = sequenceDistance(candidateAcknowledgement,
+                Integer.valueOf(lastAcknowledged));
+        int window = Math.min(255, peerMaxAcknowledgements + ackSlack);
+        return distance > 0 && distance <= window;
+    }
+
     public static int checksum(byte[] bytes, int count) {
         if (bytes == null) throw new NullPointerException("bytes");
         if (count < 0 || count > bytes.length) throw new IllegalArgumentException("count");
