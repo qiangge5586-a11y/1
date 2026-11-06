@@ -3,8 +3,7 @@ package com.shilapi.xcertplay.compat.iap2;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -70,8 +69,7 @@ public final class Iap2LinkPumpContractTest {
         Iap2LinkPump.Listener listener = new ListenerStub() {
             public void onClosed(String reason) { closed.countDown(); }
         };
-        final PipedInputStream input = new PipedInputStream();
-        final PipedOutputStream inputWriter = new PipedOutputStream(input);
+        final WakeableTimeoutInputStream input = new WakeableTimeoutInputStream();
         final Iap2LinkPump pump = new Iap2LinkPump(
                 new Iap2StreamDuplexAdapter(input, new ByteArrayOutputStream()), driver, listener);
         pump.start();
@@ -93,14 +91,58 @@ public final class Iap2LinkPumpContractTest {
         producer.join(2000L);
         truth(!producer.isAlive(), "capacity waiter wakes after worker dequeue");
         truth(admitted[0], "capacity waiter admitted after dequeue");
-        inputWriter.write(1); // Wake the worker after the first 64 commands are drained.
+        input.offer(1); // Wake the worker; subsequent reads emulate RFCOMM read timeouts.
         truth(delivered.await(5, TimeUnit.SECONDS), "all 65 commands delivered to driver across bounded turns");
-        inputWriter.close();
+        input.finish();
         truth(closed.await(2, TimeUnit.SECONDS), "pump closes after test stream EOF");
     }
 
     private static void truth(boolean value, String label) {
         if (!value) throw new AssertionError(label);
+    }
+
+    /**
+     * Deterministic carrier test double: waits briefly for input, then reports the
+     * SocketTimeoutException that a timeout-configured RFCOMM socket would produce.
+     */
+    private static final class WakeableTimeoutInputStream extends java.io.InputStream {
+        private int pending = -1;
+        private boolean closed;
+
+        public synchronized void offer(int value) {
+            pending = value & 255;
+            notifyAll();
+        }
+
+        public synchronized void finish() {
+            closed = true;
+            notifyAll();
+        }
+
+        public synchronized int read() throws IOException {
+            byte[] one = new byte[1];
+            int count = read(one, 0, 1);
+            return count < 0 ? -1 : one[0] & 255;
+        }
+
+        public synchronized int read(byte[] buffer, int offset, int length) throws IOException {
+            if (length == 0) return 0;
+            if (pending < 0 && !closed) {
+                try {
+                    wait(25L);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("test carrier interrupted");
+                }
+            }
+            if (pending >= 0) {
+                buffer[offset] = (byte) pending;
+                pending = -1;
+                return 1;
+            }
+            if (closed) return -1;
+            throw new SocketTimeoutException("simulated RFCOMM read timeout");
+        }
     }
 
     private static class DriverStub implements Iap2LinkPump.Driver, Iap2LinkPump.CommandSink {
