@@ -52,3 +52,13 @@ No path is assumed from generic Android/Linux conventions. Any missing or unveri
 - The Java 7 compile and full self-test step completed successfully. The new runner test printed: `PASS: API17 su runner allowlist and argument safety`; the coordinator, backup metadata, journal, recovery, read-only executor, diagnostic parser, USB and NCM tests also passed.
 - The matching Android Build run [#42160365649](https://github.com/qiangge5586-a11y/1/actions/runs/42160365649) is still in progress at the Gradle setup stage at the time of this update; no APK artifact for this exact commit is confirmed yet.
 - A prior build on commit `8f1fa6a692906536d4b5892baa84a9165f9a0426` passed and included the runner source; the current `ae42884` change only exposes the validator for its self-test. The new build is still required for final artifact confirmation.
+
+
+## Final artifact for the read-only runner stage
+
+Android Build run [#42160365649](https://github.com/qiangge5586-a11y/1/actions/runs/42160365649) on source commit `ae42884a1b2d169aa156561c0daf7d600cce00d1` completed the assemble, package/SDK verification and artifact upload steps successfully.
+
+- Artifact ID: `13475789968`; artifact ZIP SHA-256: `b0678990bf47d2c7650368756a28dfa4e686970d9555cf6a35cc4a9458ef08ad`.
+- Extracted APK SHA-256: `632d17be608339b5363c708da83680208f4bbada8c06fa6367ae05cdb12ac2d2`.
+- The APK is a debug alpha compatibility shell, not a production DiPlay replacement. Its application ID remains `com.shilapi.xcertplay.compat`, minSdk 17 and targetSdk 28.
+- Artifact upload succeeded. This does not establish installation, ROOT grant, or runtime behavior on the Honda head unit.
