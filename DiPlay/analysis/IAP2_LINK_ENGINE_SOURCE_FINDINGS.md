@@ -67,7 +67,7 @@ A reset bit causes terminal failure. A synchronization bit decodes the synchroni
 - Outgoing packet headers carry `lastReceivedInOrder` in the acknowledgement field.
 - An ACK-only packet uses the current send sequence and the current in-order receive acknowledgement.
 - Normal ACK processing updates `lastSentAcknowledged`, removes acknowledged entries from the unacknowledged queue using the circular sequence-distance rule and peer ACK window plus slack 10, then drains queued packets while the negotiated outgoing window permits.
-- The engine becomes NORMAL/writable only after it has received peer synchronization, peer maxLength is usable, and any already queued packets fit the peer's advertised payload bound. Important source detail: `processFrame()` calls `handleAcknowledgement()` for every non-zero control frame, not only frames with the ACK bit. Therefore the peer synchronization frame itself also drives the readiness check after `handleSynchronization()` has recorded the peer limits. The ACK field value does not have to equal local SYN sequence 99.
+- The engine becomes NORMAL/writable only after peer synchronization is present, peer maxLength is usable, and an ACK-bearing frame (`control & 0x40`) invokes the readiness handler. A SYN-only `0x80` frame records peer limits and sends a local ACK but does not itself open READY. The ACK field value does not have to equal local SYN sequence 99.
 
 ## 4. Synchronization payload
 
