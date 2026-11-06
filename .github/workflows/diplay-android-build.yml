@@ -4,7 +4,8 @@ on:
   push:
     paths:
       - "DiPlay/android/**"
-      - "DiPlay/compat/hotspot/**"\n      - "DiPlay/compat/usb/**"
+      - "DiPlay/compat/hotspot/**"
+      - "DiPlay/compat/usb/**"
       - ".github/workflows/diplay-android-build.yml"
 permissions:
   contents: read
