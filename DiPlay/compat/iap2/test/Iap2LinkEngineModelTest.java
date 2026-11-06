@@ -152,6 +152,7 @@ public final class Iap2LinkEngineModelTest {
         events = m.drainEvents();
         eq(1, events.size());
         truth(events.get(0).extendedAcknowledgement != null);
+        truth(events.get(0).cumulativeAcknowledgement == null);
         eq(1, events.get(0).extendedAcknowledgement.retransmitted.size());
         eq(100, events.get(0).extendedAcknowledgement.retransmitted.get(0).sequence);
         wire = m.drainWireFrames();
@@ -169,9 +170,12 @@ public final class Iap2LinkEngineModelTest {
         truth(events.get(0).receivedData == null);
         truth(events.get(0).cumulativeAcknowledgement.acknowledgementAccepted);
         eq(0, m.drainWireFrames().size());
-        byte[] secondData = Iap2LinkFrameCodec.encode(0x40, 79, 100, 10, new byte[] {7});
+        // Data-only frames use control 0x00; they still enter handleData().
+        byte[] secondData = Iap2LinkFrameCodec.encode(0x00, 79, 100, 10, new byte[] {7});
         m.feedNegotiation(secondData, 50);
-        m.drainEvents();
+        events = m.drainEvents();
+        truth(events.get(0).receivedData != null);
+        eq(79, events.get(0).receivedData.delivered.get(0).sequence);
         byte[] thirdData = Iap2LinkFrameCodec.encode(0x40, 80, 100, 10, new byte[] {8});
         m.feedNegotiation(thirdData, 60);
         events = m.drainEvents();
@@ -210,6 +214,8 @@ public final class Iap2LinkEngineModelTest {
                 4, 65535, 4000, 500, 4, 3,
                 new int[][] {{10, 0, 2}, {11, 2, 1}, {12, 1, 2}});
         m.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 20, 0, 0, sync), 1);
+        eq(Iap2LinkEngineModel.State.NEGOTIATING, m.state());
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 20, 99, 0, null), 2);
     }
 
     private static Iap2ReceiveWindowModel.Packet packet(int sequence) {
