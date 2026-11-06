@@ -21,8 +21,14 @@ unzip -q "$APK" 'lib/*/*.so' -d "$TMP" || true
     cls="$(printf '%s\n' "$header" | awk -F: '/Class:/{gsub(/^[ \t]+/,"",$2);print $2}')"
     machine="$(printf '%s\n' "$header" | awk -F: '/Machine:/{gsub(/^[ \t]+/,"",$2);print $2}')"
     notes="$(readelf -n "$f" 2>/dev/null || true)"
-    api="$(printf '%s\n' "$notes" | sed -nE 's/.*Android[[:space:]]+([0-9]+).*/\1/p' | head -n1)"
-    [ -n "$api" ] || api="not-reported"
+    # First 4 bytes of .note.android.ident description are little-endian API level.
+    # Example: 13 00 00 00 means API 19; readelf does not print this as decimal text.
+    note_hex="$(printf '%s\n' "$notes" | sed -nE 's/.*description data: ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}).*/\1\2\3\4/p' | head -n1)"
+    if [ -n "$note_hex" ]; then
+      api=$((16#$note_hex))
+    else
+      api="not-reported"
+    fi
     needed="$(readelf -d "$f" 2>/dev/null | sed -nE 's/.*Shared library: \[([^]]+)\].*/\1/p' | paste -sd ',' -)"
     [ -n "$needed" ] || needed="none"
     printf '| %s | %s | %s | %s | %s | %s |\n' "$rel" "$abi" "${cls:-unknown}" "${machine:-unknown}" "$api" "$needed"
