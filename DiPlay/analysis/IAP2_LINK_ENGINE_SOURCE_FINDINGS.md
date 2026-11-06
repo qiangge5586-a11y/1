@@ -251,3 +251,8 @@ Actions run [#159](https://github.com/qiangge5586-a11y/1/actions/runs/4217467865
 ## Link Engine wire-frame output checkpoint
 
 Model actions are now serialized using the existing link-frame codec and exposed via `drainWireFrames()`: outgoing data, retransmissions, immediate ACK, and Extended ACK. The output queue is bounded at 256. This is serialization only; no live transport send is performed. Actions run [#207](https://github.com/qiangge5586-a11y/1/actions/runs/42181647104) passed **2,323,738 offline checks**, including 238 composition checks. Run #206 exposed a test expectation mismatch; it was corrected before the successful run.
+
+
+## 2026-11-06 regression follow-up
+
+The composed model's retransmission path is now checked end-to-end within the offline boundary: a packet is emitted, its retry deadline is advanced, and the re-emitted frame is decoded to assert unchanged sequence/session/payload. The Extended ACK response test is now included in the main test runner and uses a gap equal to the peer's negotiated `maxOutgoing` threshold, matching the audited receive-window rule. CI #210 passed. No live socket, Bluetooth, USB, AirPlay tunnel, or vehicle test was performed.
