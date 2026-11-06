@@ -306,6 +306,17 @@ public final class Iap2LinkNegotiationModel {
     }
     public synchronized String getTerminalReason() { return terminalReason; }
     public synchronized int getPendingFrameBytes() { return decoder.pendingBytes(); }
+    /** Earliest startup timer deadline, or Long.MAX_VALUE when no startup timer is pending. */
+    public synchronized long nextDeadlineMillis() {
+        long next = Long.MAX_VALUE;
+        if (markerDeadline != null && markerDeadline.longValue() < next) {
+            next = markerDeadline.longValue();
+        }
+        if (synchronizationDeadline != null && synchronizationDeadline.longValue() < next) {
+            next = synchronizationDeadline.longValue();
+        }
+        return next;
+    }
     /** Returns and clears frames parsed after the peer SYN completed readiness. */
     public synchronized List<ReadyFrame> drainPostReadyFrames() {
         ArrayList<ReadyFrame> frames = new ArrayList<ReadyFrame>();
