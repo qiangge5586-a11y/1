@@ -74,7 +74,11 @@ public final class Iap2ReceiveWindowModelTest {
 
     private static void staleAndOutOfWindowPacketsForceAck() {
         Iap2ReceiveWindowModel stale = model(10, 10, 4, 3, 500, 0, 64);
+        stale.receive(packet(11), 0);
+        Long pendingDeadline = stale.getAcknowledgementDeadlineMillis();
         truth(stale.receive(packet(10), 1).acknowledgementNow);
+        eq(10, stale.getLastAcknowledgedReceived());
+        eq(pendingDeadline, stale.getAcknowledgementDeadlineMillis());
         Iap2ReceiveWindowModel far = model(10, 10, 4, 3, 500, 0, 64);
         truth(far.receive(packet(25), 1).acknowledgementNow);
     }
