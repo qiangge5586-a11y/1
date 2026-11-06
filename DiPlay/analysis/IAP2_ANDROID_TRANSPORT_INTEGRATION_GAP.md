@@ -90,3 +90,10 @@ Important limitation: InputStream itself has no portable per-call timeout API. E
 Added Iap2LinkPump as a transport/engine boundary. It owns Driver callbacks and stream reads/writes on one worker, reads at most 8192 bytes per poll, polls no slower than 100 ms, drains engine output after each state change, and bounds queued application commands at 64 entries / 1 MiB / 65,525 bytes per payload. EOF, I/O failure, driver runtime failure and explicit close converge on one terminal cleanup path. The pump does not itself implement the iAP2 protocol engine; a concrete Driver must still be built from source-audited production behavior. A command-producing Driver must implement CommandSink. Optional readiness notification uses the Readiness interface.
 
 The isolated Android prototype compiles this pump scaffold because compat/iap2 is in its source set. CI now runs an EOF-shutdown contract test. This is not yet a live RFCOMM/TCP integration and is not a claim of successful iPhone pairing. Carrier-specific read timeouts and a production Driver remain the next integration gates.
+
+
+## Offline engine-to-pump adapter (2026-11-06)
+
+Added Iap2LinkModelPumpDriver, implementing the pump Driver/CommandSink/Readiness contracts around Iap2LinkEngineModel. It forwards inbound byte chunks into the model negotiation decoder, advances negotiation or post-ready window timers, maps control commands to the configured control session, and merges negotiation bytes with encoded post-ready link frames for pump output. The model does not currently expose exact timer deadlines, so this adapter deliberately requests the pump's bounded 100 ms polling cadence.
+
+This closes the test-harness composition gap only. The adapter explicitly wraps the offline Java model, not the original production Iap2LinkEngine; it does not establish source parity for all production behaviors, implement CSM queues, RFCOMM, TCP tunnel, or real device handshake. CI includes a startup-marker contract test. Do not ship this adapter as a production iAP2 engine until source-parity gaps and transport-specific tests are closed.
