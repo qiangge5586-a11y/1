@@ -51,3 +51,8 @@ Actions run [#163](https://github.com/qiangge5586-a11y/1/actions/runs/4217510524
 ## Offline parity follow-up
 
 The compatibility decoder's `feed()` now uses the same bounded append/drain pattern as the source `offer()`. A regression test supplies two complete 40,006-byte CSM frames in one 80,012-byte input array; both frames are emitted and pending storage returns to zero. This validates caller-array coalescing across the fixed receive-buffer capacity.
+
+
+## Latest implementation verification
+
+Actions run [#166](https://github.com/qiangge5586-a11y/1/actions/runs/42175369108) passed **7,397 offline checks**, including 2,334 CSM decoder checks. The coalesced-input test exercises the original append/drain behavior with an 80,012-byte caller array containing two complete CSM frames. This is source-informed offline parity testing, not hardware interoperability validation.
