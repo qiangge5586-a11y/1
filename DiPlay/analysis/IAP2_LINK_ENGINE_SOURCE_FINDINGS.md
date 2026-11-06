@@ -247,3 +247,7 @@ Actions run [#156](https://github.com/qiangge5586-a11y/1/actions/runs/4217456657
 Smali `sendExtendedAcknowledgement()` maps missing sequence numbers to raw bytes and calls `writePacket(payload, sentSequence, 0x20, 0)`. Thus the response uses the current send sequence, current receive ACK watermark (written by `writePacket()`), control `0x20`, and session ID **0**. Session descriptor 11 identifies the Extended ACK capability; it is not the session ID used on this Extended ACK control frame. The offline composition now matches and tests this distinction.
 
 Actions run [#159](https://github.com/qiangge5586-a11y/1/actions/runs/42174678655) passed **7,384 offline checks**.
+
+## Link Engine wire-frame output checkpoint
+
+Model actions are now serialized using the existing link-frame codec and exposed via `drainWireFrames()`: outgoing data, retransmissions, immediate ACK, and Extended ACK. The output queue is bounded at 256. This is serialization only; no live transport send is performed. Actions run [#207](https://github.com/qiangge5586-a11y/1/actions/runs/42181647104) passed **2,323,738 offline checks**, including 238 composition checks. Run #206 exposed a test expectation mismatch; it was corrected before the successful run.
