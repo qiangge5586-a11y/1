@@ -37,6 +37,15 @@ Artifact: `diplay-honda-compat-debug`, ID `13472055975`, 26,587 bytes; digest `s
 
 The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
 
+
+
+## Latest CI build (2026-11-06, run #25)
+
+The latest Android workflow completed successfully, including Gradle assembly, AAPT metadata verification and artifact upload:
+https://github.com/qiangge5586-a11y/1/actions/runs/42149522090
+
+Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; expires 2026-11-20). Archive digest: `sha256:035090779625eff20ee4cbc8e01eeda8d2cf0e568f71e4cbddf6e8b1464908bb`.
+
 ## GitHub Actions and project records
 
 - [DiPlay Android build workflow](../.github/workflows/diplay-android-build.yml)
