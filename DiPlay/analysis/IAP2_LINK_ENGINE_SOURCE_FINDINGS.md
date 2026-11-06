@@ -115,7 +115,7 @@ FF 5A 00 1D 80 63 00 00 A7
 01 04 FF FF 0F A0 00 00 04 03 0A 00 02 0B 02 01 0C 01 02 1E
 ```
 
-The offline test `Iap2LinkWireCodecTest` now asserts this source-derived vector.
+The offline test `Iap2LinkFrameCodecTest` now asserts this source-derived vector.
 
 ## 5. Out-of-order receive and extended ACK
 
@@ -158,7 +158,7 @@ The CSM send gate is later than TCP connect or IAP decrypt: the link must publis
 
 ## 8. Offline test status and remaining work
 
-The new exact wireless synchronization golden vector is asserted by `Iap2LinkWireCodecTest`. The existing `Iap2LinkFrameCodecTest` already covers ACK-only and data frame vectors, checksum rejection, frame bounds, and 8-bit sequence wrap.
+The new exact wireless synchronization golden vector is asserted by `Iap2LinkFrameCodecTest`. The existing `Iap2LinkFrameCodecTest` already covers ACK-only and data frame vectors, checksum rejection, frame bounds, and 8-bit sequence wrap.
 
 Still required before a complete link-engine model is considered source-equivalent:
 1. Golden vectors for incoming synchronization and peer ACK sequence.
