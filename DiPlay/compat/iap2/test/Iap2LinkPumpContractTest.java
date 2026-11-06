@@ -3,6 +3,8 @@ package com.shilapi.xcertplay.compat.iap2;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +51,7 @@ public final class Iap2LinkPumpContractTest {
         final CountDownLatch driverEntered = new CountDownLatch(1);
         final CountDownLatch releaseDriver = new CountDownLatch(1);
         final CountDownLatch closed = new CountDownLatch(1);
+        final CountDownLatch delivered = new CountDownLatch(Iap2LinkPump.MAX_COMMANDS + 1);
         final boolean[] admitted = new boolean[1];
         Iap2LinkPump.Driver driver = new DriverStub() {
             public void start(long now) throws IOException {
@@ -62,13 +65,15 @@ public final class Iap2LinkPumpContractTest {
                     throw new IOException("test driver interrupted");
                 }
             }
+            public void sendControl(byte[] payload, long now) { delivered.countDown(); }
         };
         Iap2LinkPump.Listener listener = new ListenerStub() {
             public void onClosed(String reason) { closed.countDown(); }
         };
+        final PipedInputStream input = new PipedInputStream();
+        final PipedOutputStream inputWriter = new PipedOutputStream(input);
         final Iap2LinkPump pump = new Iap2LinkPump(
-                new Iap2StreamDuplexAdapter(new ByteArrayInputStream(new byte[0]),
-                        new ByteArrayOutputStream()), driver, listener);
+                new Iap2StreamDuplexAdapter(input, new ByteArrayOutputStream()), driver, listener);
         pump.start();
         truth(driverEntered.await(2, TimeUnit.SECONDS), "pump driver entered blocking start");
         boolean filled = true;
@@ -88,6 +93,9 @@ public final class Iap2LinkPumpContractTest {
         producer.join(2000L);
         truth(!producer.isAlive(), "capacity waiter wakes after worker dequeue");
         truth(admitted[0], "capacity waiter admitted after dequeue");
+        inputWriter.write(1); // Wake the worker after the first 64 commands are drained.
+        truth(delivered.await(2, TimeUnit.SECONDS), "all 65 commands delivered to driver");
+        inputWriter.close();
         truth(closed.await(2, TimeUnit.SECONDS), "pump closes after test stream EOF");
     }
 
