@@ -62,7 +62,7 @@ public final class MfiIap2CsmPumpBridgeTest {
         MfiProviderSession provider = new MfiProviderSession(new MfiProviderSession.Provider() {
             public byte[] readCertificate(MfiOperationContext c) { return new byte[] { 0x31, 0x32 }; }
             public byte[] signChallenge(byte[] challenge, MfiOperationContext c) {
-                check(Arrays.equals(new byte[] { 0x41, 0x42 }, challenge), "challenge reaches provider");
+                truth(Arrays.equals(new byte[] { 0x41, 0x42 }, challenge), "challenge reaches provider");
                 return new byte[] { 0x51, 0x52, 0x53 };
             }
         }, context, generation);
@@ -79,11 +79,11 @@ public final class MfiIap2CsmPumpBridgeTest {
         List<Iap2ReceiveWindowModel.Packet> delivered =
                 new ArrayList<Iap2ReceiveWindowModel.Packet>();
         delivered.add(new Iap2ReceiveWindowModel.Packet(1, 10, inboundBytes));
-        check(receive.acceptDeliveredPackets(delivered) == 3, "receive coordinator admits three CSM frames");
+        truth(receive.acceptDeliveredPackets(delivered) == 3, "receive coordinator admits three CSM frames");
 
         MfiIap2CsmPumpBridge bridge = new MfiIap2CsmPumpBridge(receive, adapter, pump, 64, 1000L);
-        check(bridge.processAvailable(8) == 3, "bridge processes certificate, challenge and success");
-        check(bridge.state() == MfiIap2ExchangeCoordinator.State.SUCCEEDED,
+        truth(bridge.processAvailable(8) == 3, "bridge processes certificate, challenge and success");
+        truth(bridge.state() == MfiIap2ExchangeCoordinator.State.SUCCEEDED,
                 "peer success is terminal");
         releaseDriver.countDown();
         truth(pumpClosed.await(2, TimeUnit.SECONDS), "pump closes after queued replies and EOF");
@@ -91,7 +91,7 @@ public final class MfiIap2CsmPumpBridgeTest {
         byte[] expected = concat(
                 MfiIap2CsmFrameCodecForTest.certificate(new byte[] { 0x31, 0x32 }),
                 MfiIap2CsmFrameCodecForTest.signature(new byte[] { 0x51, 0x52, 0x53 }));
-        check(Arrays.equals(expected, outbound.toByteArray()), "AA01 and AA03 sent in order through pump");
+        truth(Arrays.equals(expected, outbound.toByteArray()), "AA01 and AA03 sent in order through pump");
 
         System.out.println("MfiIap2CsmPumpBridgeTest: " + checks + " checks passed");
     }
