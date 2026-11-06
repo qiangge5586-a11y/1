@@ -86,3 +86,18 @@ Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/4217412928
 Additional tests now cover defensive copying of queued payloads, the 64-packet pre-ready queue cap, whole-queue maxLength validation before flush, and the source behavior that post-ready `sendPacket()` does not repeat the pre-ready `peerPayloadIsAcceptable()` check. The same integration suite covers the peer ACK-batch counter: ACK-bit frames accumulate up to peer maxAcknowledgements; any outgoing `writePacket()` resets that counter; reaching the threshold advances the receive ACK watermark and queues an ACK-only frame.
 
 Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 200 composition checks and 158 negotiation checks. This remains deterministic Java 7 model verification, not a live transport or vehicle test.
+
+
+## Pre-ready queue, peer payload limit and ACK-batch ordering (2026-11-06)
+
+The composition exposes `queueBeforeReady(sessionId, payload)` for packets queued before the link becomes writable. On the ACK-bearing readiness frame, the offline harness mirrors the source order:
+
+1. Count the incoming ACK bit and apply its cumulative ACK to the outbound window.
+2. Validate the complete pre-ready queue using `payload.length <= peer.maxLength - 10`.
+3. If any queued payload is unacceptable, close without emitting any queued data.
+4. Otherwise flush queued packets through the negotiated outbound window. Each emitted frame resets the ACK batch counter, matching original `writePacket()`.
+5. Continue processing Extended ACK/data payload from the readiness-triggering frame, then evaluate the peer `maxAcknowledgements` batch threshold.
+
+The 64-packet pre-ready queue limit is a defensive offline-harness cap, not a claimed original APK constant. The payload-size predicate is only applied to the pre-ready queue: original NORMAL `sendPacket()` does not repeat this check for post-ready calls.
+
+Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 158 negotiation and 200 composition checks. Tests cover payload cloning, accepted and rejected pre-ready sizes, no partial flush on an invalid queue, queue-cap termination, readiness-frame flush ordering, ACK-batch threshold and counter reset. No live transport or head-unit session is claimed.
