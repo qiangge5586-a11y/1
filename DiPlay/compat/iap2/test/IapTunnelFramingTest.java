@@ -53,7 +53,7 @@ public final class IapTunnelFramingTest {
         final IapTunnelPackageDecoder d=new IapTunnelPackageDecoder(64);
         expectFailure(new Runnable(){public void run(){d.feed(new byte[]{0,0,0,31,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});}});
         eq(0,d.pendingBytes());
-        expectFailure(new Runnable(){public void run(){d.feed(new byte[]{0,0,0,65});}});
+        expectFailure(new Runnable(){public void run(){d.feed(header(65));}});
         eq(0,d.pendingBytes());
     }
 
@@ -63,6 +63,7 @@ public final class IapTunnelFramingTest {
         eq(1,out.size()); eq(7,out.get(0).messageType); check(!out.get(0).isComm());
     }
 
+    private static byte[] header(int size) { byte[] b=new byte[32]; b[0]=(byte)(size>>>24); b[1]=(byte)(size>>>16); b[2]=(byte)(size>>>8); b[3]=(byte)size; return b; }
     private static byte[] frame(byte[] cipher) {
         byte[] out=new byte[2+cipher.length+16];
         out[0]=(byte)cipher.length; out[1]=(byte)(cipher.length>>>8);
