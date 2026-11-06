@@ -100,3 +100,14 @@ The GitHub workflow now compiles and runs this sixth suite. This is an executor 
 The test suite includes root/non-root, missing and duplicate identity fields, multiple interface rows, truncated/negative counters, valid numeric metadata and malformed/missing-file diagnostics. The GitHub workflow compiles this as Java 7 source/bytecode and executes the parser fixtures.
 
 Important limitation: these are parsers for controlled fixture shapes, not proof that the target Honda firmware emits identical text. In particular, ls output varies by Android toolbox/toybox implementation and locale. Before any real read-only probe, capture actual output and validate it against the parser without changing system state. No command was executed on the head unit.
+
+
+## Typed diagnostics and config backup record (2026-11-06)
+
+`HotspotDiagnosticParsers.java` parses captured fixture text only: numeric UID/GID, Linux interface rows with 16 non-negative counters, and numeric-owner long-list metadata. It rejects missing/duplicate identity fields, malformed counters, duplicate interfaces and non-numeric ownership. These fixtures are not evidence of the exact output format on the Honda firmware; actual read-only output must be checked before using these parsers against the device.
+
+`HotspotConfigBackupRecord.java` is an immutable, no-I/O backup description. For an existing file it computes SHA-256 from the supplied original bytes, enforces a 1 MiB cap, requires numeric UID/GID and valid mode, requires SELinux context when the caller says it is mandatory, and validates the backup path beneath an approved app-private root. Its verification method compares both byte length and SHA-256.
+
+The originally-absent case is represented explicitly as `originalExisted=false`, no hash, zero size and no backup path. It is never silently represented as an empty existing file. Supplying bytes or a backup path for an absent original is rejected. The test also covers changed bytes, missing required context, path escape and oversize input.
+
+These are data-model and fixture tests only. The record does not read, write, copy, chmod, chown, label or restore any file. The production capture adapter must separately establish original-file existence and capture exact bytes and metadata consistently before a system change can be considered.
