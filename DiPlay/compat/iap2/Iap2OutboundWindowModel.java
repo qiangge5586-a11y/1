@@ -159,8 +159,10 @@ public final class Iap2OutboundWindowModel {
             }
             int nextRetry = p.retryCount + 1;
             if (nextRetry > 255) nextRetry = 255;
+            // Extended ACK retransmission preserves the packet's original deadline.
+            // The source engine rearms its receive-ACK timer from that same deadline.
             Packet updated = new Packet(p.sequence, p.sessionId, p.payload,
-                    nextRetry, nowMillis + retransmissionTimeoutMillis);
+                    nextRetry, p.deadlineMillis);
             unacknowledged.set(i, updated);
             if (nextRetry == peerMaxRetransmissions) {
                 terminalReason = "iAP2 packet retransmission limit reached";
