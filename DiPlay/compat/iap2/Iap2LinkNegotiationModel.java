@@ -46,7 +46,6 @@ public final class Iap2LinkNegotiationModel {
     private int syncAttempts;
     private int peerMaxLength = -1;
     private boolean peerSynchronizationReceived;
-    private boolean localSynchronizationAcknowledged;
     private Long markerDeadline;
     private Long synchronizationDeadline;
     private String terminalReason;
