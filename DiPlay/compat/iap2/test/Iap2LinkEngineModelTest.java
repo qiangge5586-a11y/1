@@ -1,5 +1,7 @@
 package com.shilapi.xcertplay.compat.iap2;
 
+import java.util.List;
+
 public final class Iap2LinkEngineModelTest {
     private static int checks;
 
