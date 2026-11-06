@@ -139,7 +139,7 @@ public final class MfiI2cCertificateReaderTest {
         final CountDownLatch entered = new CountDownLatch(1);
         final CountDownLatch release = new CountDownLatch(1);
         final AtomicReference<Throwable> firstFailure = new AtomicReference<Throwable>();
-        MfiI2cCertificateReader.RegisterTransport blocking =
+        final MfiI2cCertificateReader.RegisterTransport blocking =
                 new MfiI2cCertificateReader.RegisterTransport() {
             public byte[] readRegister(int register, int count, MfiOperationContext context) {
                 entered.countDown();
@@ -169,7 +169,7 @@ public final class MfiI2cCertificateReaderTest {
         holder.start();
         truth(entered.await(1L, TimeUnit.SECONDS));
 
-        FakeTransport shouldNotRun = new FakeTransport(1);
+        final FakeTransport shouldNotRun = new FakeTransport(1);
         expectTimeout(new Runnable() { public void run() {
             new MfiI2cCertificateReader(shouldNotRun, 1L)
                     .readCertificate(65525, realtimeContext(40L, 1L));
