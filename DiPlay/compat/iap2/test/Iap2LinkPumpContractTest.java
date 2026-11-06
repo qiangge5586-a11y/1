@@ -11,7 +11,7 @@ public final class Iap2LinkPumpContractTest {
         testCommandBoundsAndEofShutdown();
         testRejectsOversizedPayload();
         testProducerWaitsForCapacityAndHonorsTimeout();
-        System.out.println("Iap2LinkPumpContractTest: 7 checks passed");
+        System.out.println("Iap2LinkPumpContractTest: 11 checks passed");
     }
 
     private static void testCommandBoundsAndEofShutdown() throws Exception {
@@ -71,9 +71,11 @@ public final class Iap2LinkPumpContractTest {
                         new ByteArrayOutputStream()), driver, listener);
         pump.start();
         truth(driverEntered.await(2, TimeUnit.SECONDS), "pump driver entered blocking start");
+        boolean filled = true;
         for (int i = 0; i < Iap2LinkPump.MAX_COMMANDS; i++) {
-            truth(pump.sendControl(new byte[] { (byte) i }), "fill bounded command queue " + i);
+            filled &= pump.sendControl(new byte[] { (byte) i });
         }
+        truth(filled, "fill bounded command queue to configured limit");
         truth(!pump.sendControlAwaitCapacity(new byte[] { 99 }, 20L),
                 "capacity wait honors timeout while queue remains full");
         Thread producer = new Thread(new Runnable() {
@@ -94,7 +96,7 @@ public final class Iap2LinkPumpContractTest {
     }
 
     private static class DriverStub implements Iap2LinkPump.Driver, Iap2LinkPump.CommandSink {
-        public void start(long now) {}
+        public void start(long now) throws IOException {}
         public void onBytes(byte[] bytes, int length, long now) {}
         public void onTimer(long now) {}
         public byte[] drainOutput() { return null; }
