@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "DiPlay/original/diplay0.3.11.apk"
+      - "diplay0.3.11.apk"
       - ".github/workflows/diplay-decompile.yml"
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
       - name: Verify APK
         run: |
           set -euo pipefail
-          APK="DiPlay/original/diplay0.3.11.apk"
+          APK="diplay0.3.11.apk"
           test -s "$APK"
           mkdir -p DiPlay/decompiled
           sha256sum "$APK" | tee DiPlay/SHA256SUMS.txt
@@ -48,7 +48,7 @@ jobs:
       - name: Decompile Java sources
         run: |
           set -euo pipefail
-          tools/jadx/bin/jadx --show-bad-code --deobf -d DiPlay/decompiled/jadx DiPlay/original/diplay0.3.11.apk
+          tools/jadx/bin/jadx --show-bad-code --deobf -d DiPlay/decompiled/jadx diplay0.3.11.apk
       - name: Decode manifest resources and Smali
         run: |
           set -euo pipefail
