@@ -8,6 +8,7 @@ public final class MfiIap2ExchangeCoordinatorTest {
         invalidChallengeFailsClosed();
         peerFailureIsTerminal();
         staleGenerationCannotReply();
+        cancellationCanInvalidateBlockedCertificateRead();
         System.out.println("MfiIap2ExchangeCoordinatorTest: PASS (" + checks + " checks)");
     }
     private static MfiProviderSession session(final long generation) {
@@ -53,6 +54,52 @@ public final class MfiIap2ExchangeCoordinatorTest {
         expectCancelled(new Runnable() { public void run() { c.requestCertificate(); }});
         eq(MfiIap2ExchangeCoordinator.State.FAILED, c.state());
     }
+
+    private static void cancellationCanInvalidateBlockedCertificateRead() {
+        final java.util.concurrent.CountDownLatch entered = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        final MfiOperationContext context = MfiOperationContext.start(5000L, 10L,
+                new MfiOperationContext.Cancellation());
+        MfiProviderSession p = new MfiProviderSession(new MfiProviderSession.Provider() {
+            public byte[] readCertificate(MfiOperationContext c) {
+                entered.countDown();
+                try { release.await(); }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new MfiOperationContext.OperationCancelledException("interrupted");
+                }
+                c.checkActive(10L);
+                return new byte[] {1};
+            }
+            public byte[] signChallenge(byte[] challenge, MfiOperationContext c) {
+                return new byte[] {2};
+            }
+        }, context, 10L);
+        final MfiIap2ExchangeCoordinator coordinator = new MfiIap2ExchangeCoordinator(p, 10L);
+        final java.util.concurrent.atomic.AtomicReference<Throwable> failure =
+                new java.util.concurrent.atomic.AtomicReference<Throwable>();
+        Thread worker = new Thread(new Runnable() {
+            public void run() {
+                try { coordinator.requestCertificate(); }
+                catch (Throwable t) { failure.set(t); }
+            }
+        });
+        worker.start();
+        try {
+            truth(entered.await(1L, java.util.concurrent.TimeUnit.SECONDS));
+            coordinator.cancel();
+            eq(MfiIap2ExchangeCoordinator.State.CLOSED, coordinator.state());
+            release.countDown();
+            worker.join(1000L);
+            truth(!worker.isAlive());
+            truth(failure.get() instanceof MfiOperationContext.OperationCancelledException);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(e);
+        } finally { release.countDown(); }
+    }
+    private static void truth(boolean value) { checks++; if (!value) throw new AssertionError("expected true"); }
+
     private static void bytes(byte[] a, byte[] b) {
         checks++; if (a.length != b.length) throw new AssertionError("length");
         for(int i=0;i<a.length;i++) if(a[i]!=b[i]) throw new AssertionError("byte");
