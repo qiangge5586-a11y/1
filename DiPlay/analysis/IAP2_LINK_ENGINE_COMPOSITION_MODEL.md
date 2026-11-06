@@ -119,3 +119,11 @@ Actions run [#159](https://github.com/qiangge5586-a11y/1/actions/runs/4217467865
 The composition now turns model decisions into encoded iAP2 link-frame byte arrays in a bounded drain queue (maximum 256 frames). Data transmissions and targeted retransmissions are encoded as ACK-control data frames carrying the packet sequence/session/payload and the current in-order receive acknowledgement. Receive-window immediate ACKs and Extended ACK responses are encoded as header-only ACK or Extended ACK frames. Cumulative-ACK queue releases are encoded as newly transmitted data frames. These bytes are available through `drainWireFrames()`; they are **not written to a socket, Bluetooth stream, USB endpoint, or AirPlay tunnel**.
 
 Actions run [#207](https://github.com/qiangge5586-a11y/1/actions/runs/42181647104) passed **2,323,738 offline checks**. Link Engine composition tests: 238 checks. This run follows #206 (failed because the test incorrectly expected peer SYN alone to complete readiness); the existing model/source rule remains that readiness is entered on the ACK control bit, and the test fixture was restored to that rule. No live device handshake was performed.
+
+
+## 2026-11-06 follow-up — retransmission wire-frame fidelity
+
+- Added a regression that sends a packet through the composed link model, advances the shared clock to the retransmission deadline, drains the generated wire frame, and decodes it with `Iap2LinkFrameDecoder`.
+- The regression verifies retransmission preserves the original sequence number, session ID, and payload, while the ACK field reflects the current in-order receive watermark.
+- Activated the Extended ACK wire-response regression in the test entry point. Its fixture now uses a peer sequence gap at the negotiated `maxOutgoing` threshold; the previous fixture gap was below the source-derived threshold and therefore correctly did not request an Extended ACK.
+- CI Run #210 passed on commit `db67b97002bf5ad9797ead2397b08d80418d1b66`: `Iap2LinkEngineModelTest` 264 checks; all 16 offline suites passed. This is codec/model round-trip evidence only, not a live transport test.
