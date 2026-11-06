@@ -71,7 +71,7 @@ public final class Iap2CsmSendPlanTest {
         input[0] = 99;
         eq(1, chunks.get(0)[0] & 255);
         chunks.get(0)[0] = 88;
-        eq(1, input[0] & 255);
+        eq(99, input[0] & 255);
         expectUnsupported(new Runnable() { public void run() {
             chunks.add(new byte[1]);
         }});
