@@ -87,6 +87,7 @@ public final class MfiIap2ExchangeCoordinator {
         if (messageId == AUTHENTICATION_SUCCEEDED) {
             require(State.SIGNATURE_SENT);
             state = State.SUCCEEDED;
+            provider.cancel();
             return;
         }
         throw protocolFailure("message is not an MFi terminal result");
