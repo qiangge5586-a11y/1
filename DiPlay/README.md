@@ -86,3 +86,8 @@ An offline Java 7 handshake lifecycle tracker and test workflow have been added.
 - Remaining work: API 17 runtime test, native library loading checks, Bluetooth/USB hardware verification, original DiPlay protocol path porting, CarPlay/NCM integration and vehicle testing.
 
 A successful CI build is not proof of runtime or vehicle compatibility. Do not treat this prototype as a vehicle-ready replacement for the original app.
+
+
+### iAP2 link-frame offline codec
+
+The source-audited link packet primitive is implemented in `compat/iap2/Iap2LinkFrameCodec.java`. It encodes/validates the 9-byte `FF 5A` header, additive header/payload checksums, u8 sequence wrap, and modular sequence distance. Golden vectors are in `compat/iap2/test/Iap2LinkFrameCodecTest.java`. This is an offline codec test only; it does not establish a live iPhone or vehicle handshake.
