@@ -1,4 +1,5 @@
 name: DiPlay iAP2 Wireless Handshake Tests
+# CI includes source-grounded link frame and synchronization payload golden vectors.
 on:
   workflow_dispatch:
   push:
