@@ -58,3 +58,9 @@ The coordinator self-test was expanded in commit `57b626cc943930f95d6d3e01ff6181
 `AppendOnlyHotspotJournalTest.java` verifies empty state, multiple persisted transitions, UTF-8 round-trip, tamper detection, and refusal to append to a corrupted journal. GitHub Actions run #12 passed all three test suites, including `PASS: durable journal append, UTF-8 recovery and tamper fail-closed`: https://github.com/qiangge5586-a11y/1/actions/runs/42145390895.
 
 This is a durable journal primitive, not the complete recovery system. It does not yet implement boot-time recovery decisions, backup file byte storage/restoration, network-state restoration, Android process lifecycle integration, or production RootOps. The journal must be placed in DiPlay's app-private internal storage; do not place it on removable/shared storage. No car head-unit ROOT commands or system writes were run.
+
+## Startup recovery classification (2026-11-06)
+
+`HotspotRecoveryPolicy.java` classifies the latest verified journal state without performing any action: `NEW`/`PREFLIGHTED`/`BACKED_UP` are classified as no system change recorded; `ACTIVE` requires process identity verification; `ROLLED_BACK` is clean; `APPLYING`/`ROLLING_BACK`/`RECOVERY_REQUIRED` require manual recovery. This deliberately does not auto-stop daemons or restore files during app startup. `HotspotRecoveryPolicyTest.java` covers every state and the empty-journal case. CI coverage is wired into the current workflow; see [latest hotspot workflow runs](https://github.com/qiangge5586-a11y/1/actions).
+
+The policy is only a decision primitive. A production startup recovery coordinator still needs to validate journal ownership and backup integrity, verify the recorded process PID/start-time/cmdline against live `/proc`, and require a verified backup before any restore. Ambiguous or corrupt state must remain blocked for operator review.
