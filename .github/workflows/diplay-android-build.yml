@@ -34,6 +34,15 @@ jobs:
       - name: Assemble isolated DiPlay debug APK
         working-directory: DiPlay/android
         run: gradle --no-daemon :app:assembleDebug
+      - name: Verify APK package and SDK metadata
+        working-directory: DiPlay/android
+        run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          "$AAPT" dump badging "$APK" | tee app/build/apk-badging.txt
+          grep -F "name='com.shilapi.xcertplay.compat'" app/build/apk-badging.txt
+          grep -F "sdkVersion:'17'" app/build/apk-badging.txt
+          grep -F "targetSdkVersion:'28'" app/build/apk-badging.txt
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
