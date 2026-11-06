@@ -2,6 +2,9 @@ package com.shilapi.xcertplay.compat.mfi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class MfiI2cCertificateReaderTest {
     private static int checks;
@@ -41,12 +44,13 @@ public final class MfiI2cCertificateReaderTest {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         readsSourceDefinedWindows();
         rejectsInvalidLengthsAndShortReads();
         oneDeadlineCoversEveryWindow();
         cancellationStopsBeforeNextWindow();
         failedReadReleasesSharedLock();
+        lockWaitConsumesTheOperationDeadline();
         System.out.println("MfiI2cCertificateReaderTest: PASS (" + checks + " checks)");
     }
 
@@ -131,6 +135,57 @@ public final class MfiI2cCertificateReaderTest {
         eq(1, result.length);
     }
 
+    private static void lockWaitConsumesTheOperationDeadline() throws Exception {
+        final CountDownLatch entered = new CountDownLatch(1);
+        final CountDownLatch release = new CountDownLatch(1);
+        final AtomicReference<Throwable> firstFailure = new AtomicReference<Throwable>();
+        MfiI2cCertificateReader.RegisterTransport blocking =
+                new MfiI2cCertificateReader.RegisterTransport() {
+            public byte[] readRegister(int register, int count, MfiOperationContext context) {
+                entered.countDown();
+                try {
+                    if (!release.await(2L, TimeUnit.SECONDS))
+                        throw new AssertionError("test transport release timed out");
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new MfiOperationContext.OperationCancelledException("test interrupted");
+                }
+                return new byte[] {0, 1};
+            }
+        };
+        final MfiOperationContext firstContext = realtimeContext(2000L, 1L);
+        Thread holder = new Thread(new Runnable() {
+            public void run() {
+                try { new MfiI2cCertificateReader(blockingTransport(), 1L)
+                        .readCertificate(65525, firstContext); }
+                catch (Throwable failure) { firstFailure.set(failure); }
+            }
+            private MfiI2cCertificateReader.RegisterTransport blockingTransport() {
+                return blocking;
+            }
+        }, "mfi-i2c-lock-holder");
+        holder.start();
+        truth(entered.await(1L, TimeUnit.SECONDS));
+
+        FakeTransport shouldNotRun = new FakeTransport(1);
+        expectTimeout(new Runnable() { public void run() {
+            new MfiI2cCertificateReader(shouldNotRun, 1L)
+                    .readCertificate(65525, realtimeContext(40L, 1L));
+        }});
+        eq(0, shouldNotRun.registers.size());
+        release.countDown();
+        holder.join(1500L);
+        truth(!holder.isAlive());
+        truth(firstFailure.get() == null);
+    }
+
+    private static MfiOperationContext realtimeContext(long timeoutMillis, long generation) {
+        final long start = System.nanoTime();
+        return new MfiOperationContext(new MfiOperationContext.NanoClock() {
+            public long nanoTime() { return System.nanoTime(); }
+        }, start, timeoutMillis, generation, new MfiOperationContext.Cancellation());
+    }
+
     private static MfiOperationContext operation(FakeClock clock, long timeoutMillis) {
         return new MfiOperationContext(clock, clock.now, timeoutMillis, 1L,
                 new MfiOperationContext.Cancellation());
@@ -145,6 +200,7 @@ public final class MfiI2cCertificateReaderTest {
         if (expected == null ? actual != null : !expected.equals(actual))
             throw new AssertionError(expected + " != " + actual);
     }
+    private static void truth(boolean value) { checks++; if (!value) throw new AssertionError("expected true"); }
     private static void expectIllegal(Runnable action) {
         checks++;
         try { action.run(); } catch (IllegalArgumentException expected) { return; }
