@@ -164,10 +164,10 @@ Still required before a complete link-engine model is considered source-equivale
 1. Golden vectors for incoming synchronization and peer ACK sequence.
 2. State-transition tests for negotiation -> NORMAL/writable, including the peer-SYN-triggered ACK processing, arbitrary ACK-field values, too-small peer maxLength, and queued oversized packet failure.
 3. Cumulative ACK window tests, including wrap-around and stale/future ACKs.
-4. Out-of-order buffering, duplicate suppression, missing-sequence extended ACK and ordered delivery tests.
-5. Extended ACK retransmit selection and retry-exhaustion tests.
-6. Timer tests for sync retry boundary, delayed ACK, retransmit deadline ordering, and EOF.
-7. End-to-end original engine comparison, if a harness can instantiate the original implementation without Android dependencies.
+4. DONE AS AN ISOLATED MODEL: receive-side out-of-order buffering, duplicate suppression, missing-sequence extended ACK generation, ordered delivery, delayed ACK and forced ACK threshold. See `IAP2_RECEIVE_WINDOW_SOURCE_VERIFICATION.md`.
+5. PARTIAL: extended-ACK retransmit selection and retry-exhaustion policy are tested in `Iap2RetransmissionPolicyTest`, but are not yet integrated with a live unacknowledged-packet queue.
+6. OPEN: outbound cumulative ACK window and queue release, full packet retransmission deadline ordering, and exact ACK removal boundary.
+7. OPEN: end-to-end original engine comparison, if a harness can instantiate the original implementation without Android dependencies.
 
 This codec/test layer is offline only. It is not a Bluetooth session, real iPhone handshake, or MY16ADA vehicle test. No ROOT, hotspot, USB, Bluetooth, or live AirPlay action is performed.
 
@@ -184,3 +184,8 @@ The wireless synthetic constructor mask 494 includes the default-argument bit fo
 - Confirmed exact Smali method offsets are indexed in [IAP2_NEGOTIATION_MODEL_SOURCE_VERIFICATION.md](IAP2_NEGOTIATION_MODEL_SOURCE_VERIFICATION.md).
 - Checksum correction: the complete 29-byte wireless SYN frame ends in payload checksum `29`; any earlier `BA` transcription is incorrect.
 - Readiness correction: original `handleAcknowledgement` does not require ACK number 99. While NEGOTIATING, any ACK triggers the peer-sync / peer maxLength / queued-payload readiness checks. ACK before peer sync or with unusable peer maxLength is terminal. The offline model and tests were corrected in commits `74d9d017` and `75b329da` respectively.
+
+
+## Receive-window model milestone (CI run #80)
+
+`Iap2ReceiveWindowModel.java` now mirrors the source `handleData()` receive path for out-of-order packets, duplicate suppression, extended-ACK missing-sequence lists, in-order event delivery, delayed ACKs and forced ACK threshold. It intentionally remains separate from the incomplete outbound queue/retransmission engine. The 42 new receive-window checks passed in [CI run #80](https://github.com/qiangge5586-a11y/1/actions/runs/42169125240); total offline checks: 7,055.
