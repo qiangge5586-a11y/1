@@ -11,6 +11,14 @@ public final class RfcommConnectDeadlineTest {
         eq(1L, RfcommConnectDeadline.remainingMillisCeil(10000999999L, deadline));
         eq(0L, RfcommConnectDeadline.remainingMillisCeil(deadline, deadline));
         eq(0L, RfcommConnectDeadline.remainingNanos(deadline + 5L, deadline));
+
+        // System.nanoTime() is an arbitrary signed counter and may wrap.
+        long nearWrap = Long.MAX_VALUE - 4L;
+        long wrappedDeadline = RfcommConnectDeadline.deadlineAfter(nearWrap, 10L);
+        eq(Long.MIN_VALUE + 5L, wrappedDeadline);
+        eq(10000000L, RfcommConnectDeadline.remainingNanos(nearWrap, wrappedDeadline));
+        eq(5000000L, RfcommConnectDeadline.remainingNanos(Long.MIN_VALUE, wrappedDeadline));
+
         fails(0L);
         fails(300001L);
         System.out.println("RfcommConnectDeadlineTest: PASS (" + checks + " checks)");
