@@ -6,7 +6,7 @@ import java.util.List;
 public final class Iap2CsmReceiveCoordinatorTest {
     private static int checks;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         splitFrameAcrossOrderedPackets();
         ignoreNonControlSessions();
         preserveFrameOrderForCoalescedPayloads();
@@ -77,7 +77,7 @@ public final class Iap2CsmReceiveCoordinatorTest {
         truth(closedFailure);
     }
 
-    private static void blockingReceiveTimeoutAndWakeup() {
+    private static void blockingReceiveTimeoutAndWakeup() throws Exception {
         final Iap2CsmReceiveCoordinator receiver = new Iap2CsmReceiveCoordinator();
         try {
             equal(null, receiver.receive(2));
