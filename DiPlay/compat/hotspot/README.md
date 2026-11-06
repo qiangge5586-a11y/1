@@ -48,3 +48,5 @@ GitHub Actions run #6 compiled all helper/test sources with Temurin JDK 8 using 
 Run: https://github.com/qiangge5586-a11y/1/actions/runs/42144865377
 
 This is unit-test evidence for pure Java primitives only. No actual backup bytes, filesystem metadata, SELinux context, /proc files, su process, Wi-Fi service, hostapd or dnsmasq were accessed. The production `RootOps` adapter, durable journal/reboot recovery, original APK integration and real-device verification remain unimplemented.
+
+The coordinator self-test was expanded in commit `57b626cc943930f95d6d3e01ff61819b530d2f42` to verify that a missing/unverified backup blocks `apply()` and does not attempt restore, and that malformed transaction IDs are rejected. GitHub Actions run #8 passed; its log records `PASS: success, rollback, backup gate and transaction ID validation` plus the safety-primitives test pass: https://github.com/qiangge5586-a11y/1/actions/runs/42144965197.
