@@ -267,3 +267,12 @@ Added `MfiIap2CsmAdapter` to connect complete inbound CSM frames to the existing
 Offline Java 7 CI: [run 42208373713](https://github.com/qiangge5586-a11y/1/actions/runs/42208373713) passed. The new adapter test passed 9 checks; the MFi message codec passed 16 checks; the coordinator passed 16 checks; provider-session passed 21 checks; I2C certificate reader passed 1,070 checks; the existing iAP2/RFCOMM offline suite also passed.
 
 Integration boundary remains explicit: the adapter consumes/returns complete CSM frames but does not read from `Iap2CsmReceiveCoordinator`, enqueue into `Iap2CsmPumpSender`, or write to RFCOMM/type-130 TCP itself. The transport owner must call it from the single-threaded CSM pump and submit returned frames through the existing bounded sender. This is the next integration task. BAA encoding helpers are present, but provider-side BAA identity/material selection remains disabled/unimplemented. No MFi chip, iPhone, API 17 device, or Civic head unit was exercised.
+
+
+## Follow-up: CSM queue and pump bridge (2026-11-06)
+
+Added `MfiIap2CsmPumpBridge` as a single-consumer compatibility layer. It drains complete messages from `Iap2CsmReceiveCoordinator`, reconstructs complete CSM frames, passes them to `MfiIap2CsmAdapter`, and submits generated responses through `Iap2CsmPumpSender`. This preserves the existing bounded pump command queue, peer maximum control-payload splitting, and shared capacity deadline.
+
+The bridge must run on a dedicated application/CSM consumer worker, not on the link-pump worker or its callbacks. AA04/AA05 remain terminal peer outcomes with no response frame. Explicit teardown cancels the provider session and closes the old pump. The new offline test exercises concatenated AA00, AA02 and AA05 messages through the receive queue and verifies AA01/AA03 are emitted in order.
+
+The Java 7 CI workflow now runs this integration test. The compatibility-layer receive/adapter/send path is connected; a production iAP2 Driver, concrete provider implementation, worker lifecycle integration, and API 17 hardware validation are still outstanding.
