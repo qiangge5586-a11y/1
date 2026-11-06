@@ -112,7 +112,10 @@ public final class Iap2CsmFrameDecoderTest {
     private static void enforcesOriginalLinkControlChunkBound() {
         final Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
         byte[] accepted = new byte[Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES];
-        // A maximum-sized link-control chunk may contain arbitrary partial frame bytes.
+        // Keep a plausible maximum-size CSM frame incomplete across this full link chunk.
+        accepted[0] = 0x40; accepted[1] = 0x40;
+        accepted[2] = (byte) 0xff; accepted[3] = (byte) 0xff;
+        accepted[4] = 0x12; accepted[5] = 0x34;
         d.feed(accepted);
         eq(Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES, d.pendingBytes());
         byte[] tooLarge = new byte[Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES + 1];
