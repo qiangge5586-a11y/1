@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "DiPlay/compat/iap2/**"
+      - "DiPlay/compat/bluetooth/**"
       - ".github/workflows/diplay-iap2-handshake.yml"
 permissions:
   contents: read
