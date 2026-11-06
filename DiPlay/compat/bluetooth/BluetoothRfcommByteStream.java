@@ -23,6 +23,7 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
     private final Object readLock = new Object();
     private final Object writeLock = new Object();
     private final BoundedByteRingBuffer ring = new BoundedByteRingBuffer(MAX_BUFFERED_BYTES);
+    private final BluetoothRfcommMetrics metrics = new BluetoothRfcommMetrics();
     private boolean eof;
     private boolean closed;
     private IOException readFailure;
@@ -46,7 +47,9 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
         byte[] chunk = new byte[READ_CHUNK_BYTES];
         try {
             while (true) {
+                long readStartedNanos = System.nanoTime();
                 int count = input.read(chunk);
+                metrics.recordSocketRead(System.nanoTime() - readStartedNanos, count);
                 if (count < 0) {
                     synchronized (readLock) { eof = true; readLock.notifyAll(); }
                     return;
@@ -60,6 +63,7 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
                         int copy = Math.min(count - offset, ring.remainingCapacity());
                         if (!ring.offer(chunk, offset, copy)) throw new IOException("RFCOMM receive ring rejected writable bytes");
                         offset += copy;
+                        metrics.recordBufferedHighWater(ring.size());
                         readLock.notifyAll();
                     }
                 }
@@ -110,8 +114,9 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
             synchronized (readLock) {
                 if (closed) throw new IOException("RFCOMM stream is closed");
             }
+            long writeStartedNanos = System.nanoTime();
             output.write(buffer, offset, length);
-            output.flush();
+            metrics.recordSocketWrite(length, System.nanoTime() - writeStartedNanos);
         }
     }
 
@@ -128,7 +133,17 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
         }
         // BluetoothSocket.close() is the cancellation mechanism for a blocked read/write.
         // It must be invoked outside writeLock so it can unblock an in-flight writer.
-        socket.close();
+        long closeStartedNanos = System.nanoTime();
+        try {
+            socket.close();
+        } finally {
+            metrics.recordClose(System.nanoTime() - closeStartedNanos);
+        }
+    }
+
+    /** Aggregate RFCOMM worker and queue metrics; snapshot only allocates on demand. */
+    public BluetoothRfcommMetrics.Snapshot metricsSnapshot() {
+        return metrics.snapshot();
     }
 
     public int bufferedBytes() {
