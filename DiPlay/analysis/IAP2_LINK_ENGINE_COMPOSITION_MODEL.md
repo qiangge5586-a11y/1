@@ -2,9 +2,9 @@
 
 ## Purpose and boundary
 
-`Iap2LinkEngineModel` is an offline orchestration harness that composes the already audited negotiation, outbound-window, and receive-window models behind a single readiness gate. It is not a replacement for the original `Iap2LinkEngine`, does not open Bluetooth/USB/TCP streams, and does not encode/decode live data-plane packets.
+`Iap2LinkEngineModel` is an offline composition harness that joins the audited negotiation, outbound-window, receive-window, and link-frame codec models behind one readiness gate. It parses post-SYN frames, applies source-derived ACK / Extended ACK / data control-bit dispatch, and queues encoded link frames as deterministic outputs. It is not the original `Iap2LinkEngine` and never writes to a live Bluetooth/USB/TCP stream.
 
-The caller supplies the peer-window parameters when constructing the outbound and receive models. This deliberate boundary avoids pretending that the current negotiation model exposes every negotiated peer field: it currently records peer maximum frame length and readiness, but not the complete peer window configuration.
+The automatic constructor consumes the immutable peer SYN configuration snapshot and creates the wireless outbound and inbound window models. A second constructor supports focused test injection.
 
 ## Lifecycle
 
@@ -17,10 +17,10 @@ Data-window methods reject calls before `READY`. Once ready, outbound send/ACK/E
 
 ## Important limits
 
-- Negotiation frame handling is delegated to `Iap2LinkNegotiationModel`; the harness does not add new wire-format assumptions.
-- Outbound and inbound windows are composed, not merged into one packet parser or transport pump.
-- Peer window settings are explicit constructor inputs, not automatically extracted from the SYN payload yet.
-- Timer results are model events; the caller must decide how a real transport would serialize and write them.
+- Peer SYN fields are decoded by the negotiation model and exposed through an immutable snapshot.
+- Post-SYN frame dispatch follows the recovered `processFrame()` masks: ACK `0x40`, Extended ACK `0x20`, data when `(control & ~0x40) == 0` with payload.
+- Outbound and inbound windows remain deterministic offline models; encoded output is returned by `drainWireFrames()` and is not sent to a socket.
+- Wireless local constants and defensive queue caps are not generalized to wired mode.
 - No hardware, iPhone, AirPlay, MFi authentication, Android 4.2.2, or ROOT operation is exercised.
 
 ## Verification
@@ -40,7 +40,7 @@ The explicit-injection constructor remains available for focused unit tests. The
 
 ## Readiness transition correction
 
-The source findings state that the original `processFrame()` invokes `handleAcknowledgement()` for every non-zero control byte, including the peer SYN frame. The negotiation model now follows that behavior: after recording a valid peer SYN and queuing the local ACK, the non-zero SYN control frame can complete the READY transition if peer maxLength is usable (>10). A separate ACK-only frame is not required by this source path. Tests were updated to assert this behavior.
+The original `processFrame()` handles SYN (`0x80`) and cumulative ACK (`0x40`) independently. A SYN-only frame records peer limits and emits the local ACK but does not make the link READY. The readiness gate runs only when the ACK bit is present. When an ACK-bearing frame completes readiness, the same frame continues through Extended ACK and data handling in the original method; the offline negotiation model therefore preserves that frame for composition dispatch.
 
 ## Verification
 
@@ -64,3 +64,10 @@ The negotiation decoder now retains every complete frame that arrives after the 
 Results are exposed as bounded, drainable `DispatchEvent` objects. This layer does not serialize ACK/Extended ACK responses or write bytes to a transport; callers receive model actions and must not mistake them for transmitted frames. The pending dispatch-event cap is 256.
 
 Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. The integration test covers SYN and data arriving in the same read, ordered data delivery, raw Extended ACK retransmission selection, and ACK-only dispatch. Runs #109–#112 exposed implementation/test wiring defects while this dispatcher was being introduced; those were fixed before #113.
+
+
+## Source-exact control-bit dispatch checkpoint (2026-11-06)
+
+Recovered Smali confirms the independent control-bit paths in `processFrame()`: reset `0x10`; SYN `0x80`; cumulative ACK/readiness `0x40`; Extended ACK `0x20`; data when all bits except `0x40` are clear and payload is present. This means `0x00` data-only and `0x40` data-plus-ACK both enter the receive window. The ACK-bearing frame that changes NEGOTIATING to NORMAL is also processed for its payload by the original method, so the offline model retains it for post-ready dispatch.
+
+Regression tests were added for SYN-only staying NEGOTIATING, a later ACK completing READY, Extended ACK not mutating the cumulative ACK window, data-only delivery, and combined ACK/data delivery. The next CI run is the acceptance gate for this correction.
