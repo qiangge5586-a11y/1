@@ -263,12 +263,22 @@ public final class Iap2LinkNegotiationModel {
                 sentSequence, lastReceivedInOrder, 0, null));
     }
 
+    /** External terminal transition used by the composed link model. */
+    public synchronized void terminate(String reason) {
+        if (reason == null) throw new NullPointerException("reason");
+        die(reason);
+    }
+
     private void die(String reason) {
         if (state == State.DEAD) return;
         state = State.DEAD;
         terminalReason = reason;
         markerDeadline = null;
         synchronizationDeadline = null;
+        output.clear();
+        postReadyFrames.clear();
+        detectingBytes = new byte[0];
+        decoder.reset();
     }
 
     private void appendOutput(byte[] bytes) {
