@@ -155,13 +155,14 @@ public final class Iap2LinkEngineModel {
     private void dispatchPostReadyFrames(long nowMillis) {
         if (!negotiation.isReady()) return;
         ensureWindowModels();
-        List<Iap2LinkFrameDecoder.Frame> frames = negotiation.drainPostReadyFrames();
+        List<Iap2LinkNegotiationModel.ReadyFrame> frames = negotiation.drainPostReadyFrames();
         for (int i = 0; i < frames.size(); i++) {
             if (pendingEvents.size() >= 256) {
                 localTerminalReason = "iAP2 pending dispatch event limit exceeded";
                 return;
             }
-            Iap2LinkFrameDecoder.Frame frame = frames.get(i);
+            Iap2LinkNegotiationModel.ReadyFrame readyFrame = frames.get(i);
+            Iap2LinkFrameDecoder.Frame frame = readyFrame.frame;
             Iap2OutboundWindowModel.Result cumulativeAck = null;
             Iap2OutboundWindowModel.Result extendedAck = null;
             Iap2ReceiveWindowModel.Result received = null;
