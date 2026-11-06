@@ -165,3 +165,5 @@ The latest source-aligned integration adds pre-ready application packet queuing 
 Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 200 link-engine composition checks. This remains offline Java 7 verification only; no live Bluetooth, USB, TCP, AirPlay, MFi, iPhone, or Honda MY16ADA session has been performed.
 
 Readiness queue handling now follows the original Smali order: validate pending payload sizes first, apply the readiness ACK field to the outbound ACK window, then flush queued packets; the same frame is then processed for Extended ACK/data. CI [run #156](https://github.com/qiangge5586-a11y/1/actions/runs/42174566575) passed **7,379 offline checks** (200 composition checks).
+
+The incoming-gap response now matches original Smali: Extended ACK frames use control `0x20`, current send sequence, current receive ACK watermark, session ID `0`, and raw missing-sequence bytes. The session descriptor `11` is not the frame session ID. CI [run #159](https://github.com/qiangge5586-a11y/1/actions/runs/42174678655) passed **7,384 offline checks** (205 composition).
