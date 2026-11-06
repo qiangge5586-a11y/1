@@ -266,6 +266,7 @@ async fn fixture(
         identity_path: String::new(),
         enable_audio,
         wait_for_control: false,
+        diplay_0311: false,
         media_readiness: crate::media_start::MediaReadiness::new(),
         keep_alive_stats: false,
         width: 800,
