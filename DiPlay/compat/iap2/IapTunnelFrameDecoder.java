@@ -13,7 +13,7 @@ import java.util.List;
 public final class IapTunnelFrameDecoder {
     public static final int HEADER_BYTES = 2;
     public static final int TAG_BYTES = 16;
-    public static final int DEFAULT_MAX_CIPHERTEXT_BYTES = 4 * 1024 * 1024;
+    public static final int DEFAULT_MAX_CIPHERTEXT_BYTES = 0xffff;
     private final int maxCiphertextBytes;
     private byte[] pending = new byte[0];
 
