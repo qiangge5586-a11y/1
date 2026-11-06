@@ -4,53 +4,59 @@
 
 - Repository path: `diplay0.3.11.apk` (repository root)
 - SHA-256: `22f61878e0e7e78a3fb9c2e2051881d3cc2e4b0232f4c3f13090ace04a966fb1`
-- The decompile and native-audit workflows verify this hash before processing.
+- JADX produced Java-like output with 104 reported decompilation errors; APKTool decoded resources, Manifest and Smali. Do not treat JADX output as lossless source.
 
 ## Verified Honda head-unit baseline
 
 Source: Library document `思域报告(1).pdf`.
 
 - ROOT: obtained; report records `su -c id` returning UID 0.
-- Android 4.2.2 / API 17.
-- Build: `1.F1A4.65`; fingerprint `Honda/Andromeda/vcm30t30:4.2.2/1.F1A4.65/138:user/release-keys`.
+- Android 4.2.2 / API 17; build `1.F1A4.65`.
+- Fingerprint: `Honda/Andromeda/vcm30t30:4.2.2/1.F1A4.65/138:user/release-keys`.
 - Device: `MY16ADA`; manufacturer Honda / MITSUBISHI ELECTRIC.
 - Board/platform: Andromeda / `vcm30t30`.
 - CPU: ARMv7, 4 cores, 900 MHz; ABI `armeabi-v7a, armeabi`.
 - Display: 800 × 480, 160 dpi, landscape.
 - RAM: 0.94 GB total; 0.27 GB available at report time.
-- Wi-Fi: reported available. AP mode and hostapd availability remain unverified.
+- Wi-Fi: reported available. AP mode, interface, driver and hostapd availability remain unverified.
 
-## GitHub Actions
+## Current isolated compatibility app
 
-1. **DiPlay APK Decompile** — verifies APK, generates JADX Java-like source and APKTool resources/Manifest/Smali, and uploads `diplay-0.3.11-decompiled`.
-2. **DiPlay Native Library Compatibility Audit** — inspects every packaged `.so` ELF header, Android NDK platform note and DT_NEEDED dependencies; uploads `diplay-native-api17-audit`.
+A dedicated project now exists at `DiPlay/android/`, separate from the root `android/` HondaHackRebuild project.
 
-Run either from **Actions → workflow → Run workflow**. The original APK is already at the repository root; do not upload it to `DiPlay/original/`.
+- Application ID: `com.shilapi.xcertplay.compat` (does not replace the original DiPlay package).
+- minSdk 17, targetSdk 28, Java 7 source compatibility.
+- Chinese landscape diagnostic dashboard with report baseline clearly distinguished from live measurements.
+- USB Host read-only descriptor enumeration.
+- Bluetooth adapter read-only status check.
+- Hotspot safety transaction models and simulation tests are included; no real ROOT executor or system-write path is enabled.
 
-## Project decisions
+Latest successful APK build containing USB and Bluetooth read-only modules: [GitHub Actions run #42149355016](https://github.com/qiangge5586-a11y/1/actions/runs/42149355016).
 
-- Keep the ROOT hotspot backend. Do not remove it.
-- Make ROOT changes transactional: read current state, timestamped backup, validate, apply only after explicit user action, and rollback on failure.
-- First perform read-only capability detection. The current probe is `tools/honda-readonly-probe.sh`.
-- Do not assume `wlan0`, `nl80211`, `hostapd`, or `dnsmasq` exist until the actual Honda firmware is probed.
-- Isolate BYD-specific bridges behind optional interfaces.
-- Optimize for API 17, ARMv7, 800×480 landscape and limited RAM.
-- Never treat an APK's `minSdkVersion=17` as proof that all code paths or native libraries work on Android 4.2.2.
+Artifact: `diplay-honda-compat-debug`, ID `13472055975`, 26,587 bytes; digest `sha256:7756ecc3b823f4b3edaf64b058360daf3ec2bf726ba1d6f16fc4688be2e25e65`.
 
-## Reports and tools
+The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
 
+## GitHub Actions and project records
+
+- [DiPlay Android build workflow](../.github/workflows/diplay-android-build.yml)
 - [Chinese static analysis report](analysis/DiPlay-0.3.11-静态分析报告.md)
+- [API 17 compatibility audit](analysis/API17_COMPATIBILITY_AUDIT.md)
 - [Read-only Honda probe](tools/honda-readonly-probe.sh)
 - [Native ELF audit script](tools/analyze-native-libs.sh)
-- [Native audit workflow run #42141939470](https://github.com/qiangge5586-a11y/1/actions/runs/42141939470)
 - [ROOT hotspot safety redesign](analysis/ROOT_HOTSPOT_SAFETY_REDESIGN.md)
 - [Automated hotspot safety scanner](tools/audit-hotspot-safety.py)
-- [Decompilation workflow run #42140451737](https://github.com/qiangge5586-a11y/1/actions/runs/42142476134)
+- [Bluetooth passive status probe](compat/bluetooth/README.md)
+- [USB read-only scanner](compat/usb/README.md)
 
-No modified APK has been built or tested on the Honda head unit yet. Static findings are not a substitute for an on-device test.
+## Safety and remaining gates
 
-## Build-project separation check (2026-11-06)
+- Keep the ROOT hotspot backend as a project goal; do not remove it.
+- The current app does not call `su`, start/stop hostapd or dnsmasq, or modify Wi-Fi/system configuration.
+- ROOT hotspot changes must remain transactional: read state, create and verify backup, apply only after explicit user authorization, and rollback on failure.
+- Do not assume `wlan0`, `nl80211`, `hostapd`, or `dnsmasq` exist until the actual Honda firmware is probed.
+- USB and Bluetooth checks are passive only; neither has been verified on the MY16ADA hardware.
+- Eight of nine original native libraries carry an Android NDK API 19 platform note. API 17 loading must be tested; do not alter ELF notes to disguise incompatibility.
+- Remaining work: API 17 runtime test, native library loading checks, Bluetooth/USB hardware verification, original DiPlay protocol path porting, CarPlay/NCM integration and vehicle testing.
 
-The repository's root `android/` Gradle project is **HondaHackRebuild**, with application ID `cn.autohack.rebuild`; `.github/workflows/android-build.yml` builds that project and asserts that package/minSdk/targetSdk. It is not the DiPlay 0.3.11 adaptation and must not be used as evidence that a DiPlay APK has been built. The DiPlay directory currently contains analysis, tools and standalone compatibility helpers, but no dedicated DiPlay Gradle application project or APK build workflow. A separate DiPlay build project must be established from the original package (`com.shihab.diplay`) and validated against the decompiled manifest/resources/Smali before claiming an APK build.
-
-Latest hotspot helper CI: [run #8 — success](https://github.com/qiangge5586-a11y/1/actions/runs/42144965197). The job log confirms both Java 7-targeted self-tests passed. This CI does not package or modify the original DiPlay APK.
+A successful CI build is not proof of runtime or vehicle compatibility. Do not treat this prototype as a vehicle-ready replacement for the original app.

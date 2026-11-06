@@ -6,6 +6,7 @@ on:
       - "DiPlay/android/**"
       - "DiPlay/compat/hotspot/**"
       - "DiPlay/compat/usb/**"
+      - "DiPlay/compat/bluetooth/**"
       - ".github/workflows/diplay-android-build.yml"
 permissions:
   contents: read

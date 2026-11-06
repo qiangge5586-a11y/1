@@ -64,3 +64,19 @@ The successful metadata check confirms the package identity and declared SDK lev
 ## API 17 static review
 
 A source-level review of the current manifest and dashboard Activity is recorded in [API 17 compatibility audit](../analysis/API17_COMPATIBILITY_AUDIT.md). The current screen uses basic framework UI APIs and has no ROOT, Wi-Fi, USB or Bluetooth side effects. Runtime compatibility is still unverified; an API 17 emulator/device and the actual head unit are required for that gate.
+
+
+## USB and Bluetooth read-only probes (2026-11-06)
+
+The dashboard now includes:
+- USB Host descriptor enumeration via `UsbManager.getDeviceList()`. It does not request device permission, open devices, claim interfaces, access endpoints, or transfer data.
+- Bluetooth adapter status via `BluetoothAdapter.getDefaultAdapter()`, `getState()`, and `isEnabled()`; it reads the adapter name only when enabled. It does not enable/disable Bluetooth, start discovery, pair, or connect.
+- Manifest declares only the legacy normal `BLUETOOTH` permission for adapter-name access; no `BLUETOOTH_ADMIN` permission is declared.
+
+The Bluetooth implementation is in `../compat/bluetooth/BluetoothReadOnlyProbe.java`. The Android build workflow now watches `DiPlay/compat/bluetooth/**` so future changes to that module trigger compilation.
+
+Latest successful build containing the Bluetooth probe and corrected dashboard: [run #42149355016](https://github.com/qiangge5586-a11y/1/actions/runs/42149355016).
+
+Artifact: `diplay-honda-compat-debug` (artifact ID `13472055975`, 26,587 bytes; archive digest `sha256:7756ecc3b823f4b3edaf64b058360daf3ec2bf726ba1d6f16fc4688be2e25e65`).
+
+This proves compilation, APK packaging, AAPT package identity and SDK metadata checks. It does not prove the Bluetooth adapter behaves correctly on API 17 or on the MY16ADA head unit. Real-device installation and testing remain pending.
