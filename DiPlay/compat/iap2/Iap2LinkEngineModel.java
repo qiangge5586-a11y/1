@@ -176,9 +176,8 @@ public final class Iap2LinkEngineModel {
     private void dispatchPostReadyFrames(long nowMillis) {
         if (!negotiation.isReady()) return;
         ensureWindowModels();
-        flushPreReadyPackets(nowMillis);
-        if (localTerminalReason != null) return;
         List<Iap2LinkNegotiationModel.ReadyFrame> frames = negotiation.drainPostReadyFrames();
+        boolean preReadyFlushed = false;
         for (int i = 0; i < frames.size(); i++) {
             if (pendingEvents.size() >= 256) {
                 localTerminalReason = "iAP2 pending dispatch event limit exceeded";
@@ -192,7 +191,19 @@ public final class Iap2LinkEngineModel {
             Iap2ReceiveWindowModel.Result acknowledgementBatch = null;
             boolean carriesAck = (frame.control
                     & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0;
-            if (carriesAck) accumulatedAcknowledgements++;
+            if (!preReadyFlushed) {
+                // The original ACK handler opens the link and flushes queued
+                // packets before processFrame() evaluates its final ACK batch.
+                if (readyFrame.acknowledgementAlreadyProcessed && carriesAck) {
+                    accumulatedAcknowledgements++;
+                }
+                flushPreReadyPackets(nowMillis);
+                preReadyFlushed = true;
+                if (localTerminalReason != null) return;
+            }
+            if (carriesAck && !readyFrame.acknowledgementAlreadyProcessed) {
+                accumulatedAcknowledgements++;
+            }
 
             if (!readyFrame.acknowledgementAlreadyProcessed && carriesAck) {
                 cumulativeAck = outbound.acknowledge(frame.acknowledgement, nowMillis);
