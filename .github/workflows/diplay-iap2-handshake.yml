@@ -1,0 +1,26 @@
+name: DiPlay iAP2 Wireless Handshake Tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "DiPlay/compat/iap2/**"
+      - ".github/workflows/diplay-iap2-handshake.yml"
+permissions:
+  contents: read
+jobs:
+  compile-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
+      - name: Compile Java 7 and run offline handshake tests
+        run: |
+          set -euo pipefail
+          mkdir -p build/iap2-test
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test \
+            DiPlay/compat/iap2/Iap2WirelessHandshake.java \
+            DiPlay/compat/iap2/test/Iap2WirelessHandshakeTest.java
+          java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2WirelessHandshakeTest
