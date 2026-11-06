@@ -6,12 +6,35 @@ public final class Iap2LinkFrameCodecTest {
     private static int checks;
 
     public static void main(String[] args) {
+        sourceDerivedSynchronizationPayloadGoldenVector();
         sourceDerivedAckOnlyGoldenVector();
         sourceDerivedDataFrameGoldenVector();
         rejectsInvalidHeaderAndPayloadChecksums();
         validatesHeaderFieldsAndFrameBounds();
         wrapsEightBitSequences();
         System.out.println("Iap2LinkFrameCodecTest: PASS (" + checks + " checks)");
+    }
+
+
+    private static void sourceDerivedSynchronizationPayloadGoldenVector() {
+        byte[] expected = hex("01 04 FF FF 0F A0 00 64 04 03 0A 00 02 0B 02 01 0C 01 02");
+        byte[] actual = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                4, 65535, 4000, 100, 4, 3,
+                new int[][] {{10, 0, 2}, {11, 2, 1}, {12, 1, 2}});
+        bytes(expected, actual);
+        int[] decoded = Iap2LinkFrameCodec.decodeSynchronizationPayload(actual);
+        notNull(decoded);
+        eq(15, decoded.length);
+        eq(4, decoded[0]); eq(65535, decoded[1]); eq(4000, decoded[2]);
+        eq(100, decoded[3]); eq(4, decoded[4]); eq(3, decoded[5]);
+        eq(10, decoded[6]); eq(0, decoded[7]); eq(2, decoded[8]);
+        eq(11, decoded[9]); eq(2, decoded[10]); eq(1, decoded[11]);
+        eq(12, decoded[12]); eq(1, decoded[13]); eq(2, decoded[14]);
+        isNull(Iap2LinkFrameCodec.decodeSynchronizationPayload(new byte[9]));
+        isNull(Iap2LinkFrameCodec.decodeSynchronizationPayload(
+                new byte[] {2,0,0,0,0,0,0,0,0,0}));
+        bytes(hex("FF 55 02 00 EE 10"), Iap2LinkFrameCodec.IAP2_MARKER);
+        eq(99, Iap2LinkFrameCodec.INITIAL_SEQUENCE);
     }
 
     private static void sourceDerivedAckOnlyGoldenVector() {
@@ -89,6 +112,7 @@ public final class Iap2LinkFrameCodecTest {
     private static void eq(int a, int b) { checks++; if (a != b) throw new AssertionError(a + " != " + b); }
     private static void truth(boolean b) { checks++; if (!b) throw new AssertionError("expected true"); }
     private static void falsity(boolean b) { checks++; if (b) throw new AssertionError("expected false"); }
+    private static void isNull(Object o) { checks++; if (o != null) throw new AssertionError("expected null"); }
     private static void notNull(Object o) { checks++; if (o == null) throw new AssertionError("expected non-null"); }
     private static void isNull(Object o) { checks++; if (o != null) throw new AssertionError("expected null"); }
     private static void expectIllegalArgument(Runnable r) {
