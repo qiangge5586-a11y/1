@@ -18,7 +18,8 @@ public final class UsbNcmReadOnlyMatcher {
                     new ArrayList<NcmInterfaceSelector.Endpoint>();
             for (UsbConfigurationSnapshot.EndpointSnapshot endpoint : descriptor.getEndpoints()) {
                 endpoints.add(new NcmInterfaceSelector.Endpoint(
-                        endpoint.getDirection(), endpoint.getType()));
+                        endpoint.getDirection(), endpoint.getType(),
+                        endpoint.getAddress(), endpoint.getMaxPacketSize()));
             }
             interfaces.add(new NcmInterfaceSelector.UsbInterface(
                     descriptor.getId(), descriptor.getInterfaceClass(),
