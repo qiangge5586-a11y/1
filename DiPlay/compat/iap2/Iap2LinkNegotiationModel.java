@@ -148,11 +148,11 @@ public final class Iap2LinkNegotiationModel {
 
     public static final class ReadyFrame {
         public final Iap2LinkFrameDecoder.Frame frame;
-        /** True when this same frame already advanced the negotiation ACK handler. */
-        public final boolean acknowledgementAlreadyProcessed;
-        private ReadyFrame(Iap2LinkFrameDecoder.Frame frame, boolean processed) {
+        /** True when this frame changed the link from NEGOTIATING to NORMAL. */
+        public final boolean readinessTransitioned;
+        private ReadyFrame(Iap2LinkFrameDecoder.Frame frame, boolean transitioned) {
             this.frame = frame;
-            this.acknowledgementAlreadyProcessed = processed;
+            this.readinessTransitioned = transitioned;
         }
     }
 
