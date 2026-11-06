@@ -22,7 +22,7 @@ public final class Iap2CsmReceiveCoordinatorTest {
         packets.add(packet(2, Iap2LinkFrameCodec.CONTROL_SESSION_ID,
                 slice(encoded, 4, encoded.length)));
         equal(0, receiver.acceptDeliveredPackets(packets.subList(0, 1)));
-        equal(encoded.length - 4, receiver.decoderPendingBytes());
+        equal(4, receiver.decoderPendingBytes());
         equal(1, receiver.acceptDeliveredPackets(packets.subList(1, 2)));
         Iap2CsmReceiveQueueModel.Frame frame = receiver.poll();
         equal(0x1234, frame.messageId);
