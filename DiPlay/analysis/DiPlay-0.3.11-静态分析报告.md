@@ -187,3 +187,31 @@ Manifest 还声明了启动 Activity、CarPlay Host Activity、USB 附件处理�
 - Manifest 声明了 `BLUETOOTH_CONNECT`、`BLUETOOTH_SCAN`、`NEARBY_WIFI_DEVICES`、通知和前台服务类型等新权限/属性。API 17 不认识的 Manifest 属性通常会被旧系统忽略，但代码中的运行时权限请求和新 API 调用仍必须有版本分支。
 
 因此当前的 API 17 风险重点不是单纯的 minSdk 数值，而是**类验证/类加载、未加版本保护的新 API 调用、AndroidX 依赖最低版本、旧固件 Binder/隐藏 API 差异**。下一轮应以目标车机启动日志和类加载错误为依据，按调用点逐项修复，而不是整体降低 targetSdk 后盲目重打包。
+
+
+## 11. 原生库 ELF / NDK 最低 API 复核（第三轮）
+
+已从反编译产物提取 9 个 `.so`，使用 ELF Header、`.note.android.ident` 和动态依赖表检查：
+
+| 原生库 | ELF 目标平台标记 | 主要动态依赖 |
+|---|---:|---|
+| `libconscrypt_jni.so` | Android API 16 / NDK r21d | libc、libm、libdl、liblog |
+| `liblegacy_ncm_claim.so` | Android API 19 / NDK r25c | libc、libm、libdl |
+| `liblocal_hotspot_radio.so` | Android API 19 / NDK r25c | libc、libm、libdl |
+| `liblwip_ncm_relay.so` | Android API 19 / NDK r25c | libc、libm、libdl、liblog |
+| `libopus_microphone.so` | Android API 19 / NDK r25c | libc、libm、libdl |
+| `libspeex_echo.so` | Android API 19 / NDK r25c | libc、libm、libdl |
+| `libusb_host_compat.so` | Android API 19 / NDK r25c | libc、libm、libdl |
+| `libxcertplay_chacha.so` | Android API 19 / NDK r25c | libc、libm、libdl |
+| `libxcertplay_i2c.so` | Android API 19 / NDK r25c | libc、libm、libdl |
+
+**对 Android 4.2.2 / API 17 的影响：** 除 Conscrypt JNI 外，其余 8 个库的 ELF Android 平台标记为 API 19。它们在 API 17 上存在动态链接器找不到系统符号、`UnsatisfiedLinkError` 或功能初始化失败的高风险。这个标记不单独证明每个库必然无法加载，但已经足以把原生库兼容性列为 P0 实测项。
+
+适配动作：
+1. 逐个确认 Java/Kotlin 中的 `System.loadLibrary` 调用点和对应功能是否在目标车机必需。
+2. 在 API 17 环境实际加载并调用最小 JNI 方法，保存 linker 日志；不能只看 APK 安装成功。
+3. 对确实需要的库，取得对应 C/C++ 源码后用 NDK 重新以 `android-17` 为目标构建；重新检查未定义符号和 ELF 平台标记。
+4. 对非核心库（如 I2C/HUD、音频增强或备用 NCM 路径），先做可选加载与降级，不要因单个可选库加载失败导致主界面崩溃。
+5. 如果拿不到原生库源代码，需评估用 Java/Kotlin 或系统已有接口替代；不能直接修改 ELF 标记伪装成 API 17。
+
+本田目标设备为 ARMv7，与这些库的 CPU ABI 匹配；但 **ABI 匹配不等于 Android API/动态链接兼容**。
