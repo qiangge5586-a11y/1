@@ -118,7 +118,7 @@ public final class Iap2CsmFrameDecoderTest {
         byte[] first = frame(0x1234, firstPayload);
         byte[] second = frame(0x5678, secondPayload);
         byte[] coalesced = concat(first, second);
-        truth(coalesced.length > Iap2CsmFrameDecoder.MAX_FRAME_BYTES);
+        eq(1, coalesced.length > Iap2CsmFrameDecoder.MAX_FRAME_BYTES ? 1 : 0);
         List<Iap2CsmFrameDecoder.Frame> out = d.feed(coalesced);
         eq(2, out.size());
         eq(0x1234, out.get(0).messageId);
@@ -137,7 +137,7 @@ public final class Iap2CsmFrameDecoderTest {
         int offset = 0;
         List<Iap2CsmFrameDecoder.Frame> out = null;
         while (offset < encoded.length) {
-            int end = Math.min(encoded.length, offset + Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES);
+            int end = Math.min(encoded.length, offset + 8192);
             out = d.feed(slice(encoded, offset, end));
             offset = end;
         }
