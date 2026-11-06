@@ -89,6 +89,7 @@ public final class Iap2OutboundWindowModel {
                 lastSentAcknowledged, peerMaxOutgoing)) {
             if (queued.size() >= maxQueuedPackets) {
                 terminalReason = "iAP2 outbound packet queue limit exceeded";
+                receiveAcknowledgementDeadlineMillis = null;
                 return empty(false);
             }
             queued.add(new Packet(Iap2LinkFrameCodec.nextSequence(sentSequence),
@@ -159,6 +160,7 @@ public final class Iap2OutboundWindowModel {
         replace(earliest, updated);
         if (nextRetry == peerMaxRetransmissions) {
             terminalReason = "iAP2 packet retransmission limit reached";
+            receiveAcknowledgementDeadlineMillis = null;
             return result(new ArrayList<Packet>(), new ArrayList<Packet>(),
                     new ArrayList<Integer>(), false);
         }
@@ -191,6 +193,7 @@ public final class Iap2OutboundWindowModel {
             receiveAcknowledgementDeadlineMillis = Long.valueOf(p.deadlineMillis);
             if (nextRetry == peerMaxRetransmissions) {
                 terminalReason = "iAP2 packet retransmission limit reached";
+                receiveAcknowledgementDeadlineMillis = null;
                 break;
             }
             retried.add(updated);
@@ -241,7 +244,7 @@ public final class Iap2OutboundWindowModel {
         return Collections.unmodifiableList(new ArrayList<Packet>(packets));
     }
 
-    /** Earliest outstanding retransmission deadline, or null when none remain. */
+    /** Source engine's single receive-ACK/retransmission timer deadline. */
     public synchronized Long getNextDeadlineMillis() {
         return receiveAcknowledgementDeadlineMillis;
     }
