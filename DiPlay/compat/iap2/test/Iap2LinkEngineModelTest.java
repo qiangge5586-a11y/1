@@ -127,10 +127,11 @@ public final class Iap2LinkEngineModelTest {
         m.feedNegotiation(concat(peerSyn, firstData), 10);
         eq(Iap2LinkEngineModel.State.READY, m.state());
         List<Iap2LinkEngineModel.DispatchEvent> events = m.drainEvents();
-        eq(1, events.size());
-        truth(events.get(0).receivedData != null);
-        eq(1, events.get(0).receivedData.delivered.size());
-        eq(78, events.get(0).receivedData.delivered.get(0).sequence);
+        eq(2, events.size());
+        truth(events.get(0).receivedData == null); // SYN control frame is retained after readiness
+        truth(events.get(1).receivedData != null);
+        eq(1, events.get(1).receivedData.delivered.size());
+        eq(78, events.get(1).receivedData.delivered.get(0).sequence);
         eq(0, m.drainWireFrames().size());
 
         Iap2OutboundWindowModel.Result sent = m.send(10, new byte[] {9}, 20);
