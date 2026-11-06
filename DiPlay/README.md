@@ -144,4 +144,11 @@ The peer SYN parser/snapshot now has malformed and boundary regression coverage:
 
 ### Unified post-SYN frame dispatch
 
-The offline Link Engine composition now retains frames arriving after peer-SYN readiness, including subsequent frames in the same read, and dispatches cumulative ACK fields, raw Extended ACK sequence lists, and data frames (exact ACK control predicate with non-null payload) to their respective models. Header-only ACK frames are not mistaken for data. Results are exposed as bounded drainable events (256 pending); the model does not serialize or transmit resulting ACK responses. Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. Runs #109–#112 failed during initial dispatcher/test wiring and were corrected before #113.
+The offline Link Engine composition dispatches frames using the original Smali control masks:
+
+- Cumulative ACK processing requires bit `0x40`; Extended ACK uses bit `0x20` and its raw sequence-byte payload.
+- Data is dispatched when `(control & ~0x40) == 0` and payload is present, covering both `0x00` data-only and `0x40` data-plus-ACK frames.
+- A SYN-only `0x80` frame does not complete readiness. The later ACK-bearing frame that opens READY is preserved for the same post-frame ACK/Extended-ACK/data dispatch performed by the original source.
+- Header-only ACK frames do not become empty data packets.
+
+The composition returns deterministic events and encoded response frames for inspection; it does not write to a live transport. Actions run [#133](https://github.com/qiangge5586-a11y/1/actions/runs/42173519353) passed **7,257 offline checks**, including 152 negotiation and 84 composition checks.
