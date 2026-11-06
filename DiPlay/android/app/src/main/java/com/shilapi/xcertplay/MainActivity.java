@@ -139,7 +139,7 @@ public final class MainActivity extends Activity {
                 com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe.Result r =
                         new com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe()
                                 .inspect(MainActivity.this);
-                String detail = r.getStatus();
+                String detail = r.getStatus() + "\\n适配器状态：" + r.getStateLabel();
                 if (r.getName() != null) detail += "\n设备名称：" + r.getName();
                 detail += "\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
                 bluetoothStatus.setText(detail);
