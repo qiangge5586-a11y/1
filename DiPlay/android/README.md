@@ -88,3 +88,9 @@ The latest Android workflow completed successfully, including Gradle assembly, A
 https://github.com/qiangge5586-a11y/1/actions/runs/42149522090
 
 Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; expires 2026-11-20). Archive digest: `sha256:035090779625eff20ee4cbc8e01eeda8d2cf0e568f71e4cbddf6e8b1464908bb`.
+
+## Manual ROOT / hotspot read-only diagnostic entry (2026-11-06)
+
+The dashboard now exposes an explicit user-tap action that runs the fixed `HotspotReadOnlyOperation` catalog through `Api17SuReadOnlyRunner` on a worker thread. It reports ROOT identity, Wi-Fi/connectivity service snapshots, `/proc/net/dev`, and metadata for the known hotspot config/binary paths. Output is bounded and displayed locally.
+
+This action does not read hotspot configuration file contents, write or restore files, start/stop hostapd or dnsmasq, signal processes, toggle Wi-Fi, or change routes. Commands that are unavailable or denied are reported individually. It is a manual, read-only capability probe; it is not a production ROOT write adapter and does not prove the target firmware paths exist. No live vehicle probe has been run from this repository.
