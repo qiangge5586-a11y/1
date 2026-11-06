@@ -60,8 +60,12 @@ public final class AppendOnlyHotspotJournal implements HotspotTransactionCoordin
             long timestamp = System.currentTimeMillis();
             String body = id + "|" + state.name() + "|" + timestamp + "|" + detailHex + "|" + previous;
             String hash = sha256(body);
-            raf.seek(raf.length());
-            raf.write((body + "|" + hash + "\n").getBytes("US-ASCII"));
+            byte[] record = (body + "|" + hash + "\n").getBytes("US-ASCII");
+            long currentLength = raf.length();
+            if (currentLength + record.length > MAX_BYTES)
+                throw new java.io.IOException("journal capacity would be exceeded; compact only after verified archival");
+            raf.seek(currentLength);
+            raf.write(record);
             raf.getFD().sync();
         } finally {
             if (lock != null) lock.release();
