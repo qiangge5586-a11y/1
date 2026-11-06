@@ -1,5 +1,9 @@
 package com.shilapi.xcertplay.compat.iap2;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Offline composition boundary for the audited iAP2 link sub-models.
  *
@@ -18,6 +22,8 @@ public final class Iap2LinkEngineModel {
     private final Iap2LinkNegotiationModel negotiation;
     private Iap2OutboundWindowModel outbound;
     private Iap2ReceiveWindowModel inbound;
+    private final ArrayList<DispatchEvent> pendingEvents = new ArrayList<DispatchEvent>();
+    private String localTerminalReason;
     private boolean started;
     private boolean closed;
 
@@ -49,6 +55,7 @@ public final class Iap2LinkEngineModel {
         requireStarted();
         if (closed) return;
         negotiation.feed(bytes, nowMillis);
+        dispatchPostReadyFrames(nowMillis);
     }
 
     public synchronized boolean initiateSynchronizationIfDetecting(long nowMillis) {
@@ -105,7 +112,8 @@ public final class Iap2LinkEngineModel {
     }
 
     public synchronized State state() {
-        if (closed || negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD
+        if (closed || localTerminalReason != null
+                || negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD
                 || (outbound != null && outbound.getTerminalReason() != null)
                 || (inbound != null && inbound.getTerminalReason() != null)) {
             return State.CLOSED;
@@ -120,6 +128,7 @@ public final class Iap2LinkEngineModel {
     }
 
     public synchronized String getTerminalReason() {
+        if (localTerminalReason != null) return localTerminalReason;
         if (outbound != null && outbound.getTerminalReason() != null) return outbound.getTerminalReason();
         if (inbound != null && inbound.getTerminalReason() != null) return inbound.getTerminalReason();
         return negotiation.getTerminalReason();
@@ -128,6 +137,59 @@ public final class Iap2LinkEngineModel {
     public synchronized Iap2LinkNegotiationModel.PeerConfiguration
             getNegotiatedPeerConfiguration() {
         return negotiation.getPeerConfiguration();
+    }
+
+    private void dispatchPostReadyFrames(long nowMillis) {
+        if (!negotiation.isReady()) return;
+        ensureWindowModels();
+        List<Iap2LinkFrameDecoder.Frame> frames = negotiation.drainPostReadyFrames();
+        for (int i = 0; i < frames.size(); i++) {
+            if (pendingEvents.size() >= 256) {
+                localTerminalReason = "iAP2 pending dispatch event limit exceeded";
+                return;
+            }
+            Iap2LinkFrameDecoder.Frame frame = frames.get(i);
+            Iap2OutboundWindowModel.Result cumulativeAck = null;
+            Iap2OutboundWindowModel.Result extendedAck = null;
+            Iap2ReceiveWindowModel.Result received = null;
+
+            if (frame.control != 0) {
+                cumulativeAck = outbound.acknowledge(frame.acknowledgement, nowMillis);
+            }
+            if ((frame.control & Iap2LinkFrameCodec.CONTROL_EXTENDED_ACKNOWLEDGEMENT) != 0) {
+                extendedAck = outbound.requestMissing(
+                        frame.payload == null ? new byte[0] : frame.payload, nowMillis);
+            }
+            if (frame.control == Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT
+                    && frame.payload != null) {
+                received = inbound.receive(new Iap2ReceiveWindowModel.Packet(
+                        frame.sequence, frame.sessionId, frame.payload), nowMillis);
+            }
+            pendingEvents.add(new DispatchEvent(frame, cumulativeAck, extendedAck, received));
+        }
+    }
+
+    /** Drains parsed post-SYN link-frame outcomes in wire order. */
+    public synchronized List<DispatchEvent> drainEvents() {
+        ArrayList<DispatchEvent> events = new ArrayList<DispatchEvent>(pendingEvents);
+        pendingEvents.clear();
+        return Collections.unmodifiableList(events);
+    }
+
+    public static final class DispatchEvent {
+        public final Iap2LinkFrameDecoder.Frame frame;
+        public final Iap2OutboundWindowModel.Result cumulativeAcknowledgement;
+        public final Iap2OutboundWindowModel.Result extendedAcknowledgement;
+        public final Iap2ReceiveWindowModel.Result receivedData;
+        private DispatchEvent(Iap2LinkFrameDecoder.Frame frame,
+                Iap2OutboundWindowModel.Result cumulativeAcknowledgement,
+                Iap2OutboundWindowModel.Result extendedAcknowledgement,
+                Iap2ReceiveWindowModel.Result receivedData) {
+            this.frame = frame;
+            this.cumulativeAcknowledgement = cumulativeAcknowledgement;
+            this.extendedAcknowledgement = extendedAcknowledgement;
+            this.receivedData = receivedData;
+        }
     }
 
     private void ensureWindowModels() {
