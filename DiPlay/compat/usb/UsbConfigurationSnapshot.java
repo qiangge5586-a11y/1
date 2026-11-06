@@ -50,7 +50,7 @@ public final class UsbConfigurationSnapshot {
             requireByte("interface class", interfaceClass);
             requireByte("interface subclass", interfaceSubclass);
             requireByte("interface protocol", interfaceProtocol);
-            requireByte("alternate setting", alternateSetting);
+            if (alternateSetting != -1) requireByte("alternate setting", alternateSetting);
             if (endpoints == null) throw new NullPointerException("endpoints");
             this.id = id;
             this.interfaceClass = interfaceClass;
@@ -68,6 +68,7 @@ public final class UsbConfigurationSnapshot {
         public int getInterfaceSubclass() { return interfaceSubclass; }
         public int getInterfaceProtocol() { return interfaceProtocol; }
         public int getAlternateSetting() { return alternateSetting; }
+        public boolean isAlternateSettingKnown() { return alternateSetting >= 0; }
         public List<EndpointSnapshot> getEndpoints() { return endpoints; }
         public int getEndpointCount() { return endpoints.size(); }
     }
