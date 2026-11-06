@@ -15,10 +15,10 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-      - name: Compile Java 7-compatible code and run self-test
+          java-version: "8"
+      - name: Compile Java 7 source/bytecode and run self-test
         run: |
           set -euo pipefail
           mkdir -p build/hotspot-test
-          javac --release 7 -Xlint:-options -d build/hotspot-test DiPlay/compat/hotspot/HotspotTransactionCoordinator.java DiPlay/compat/hotspot/test/CoordinatorSelfTest.java
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/hotspot-test DiPlay/compat/hotspot/HotspotTransactionCoordinator.java DiPlay/compat/hotspot/test/CoordinatorSelfTest.java
           java -cp build/hotspot-test CoordinatorSelfTest
