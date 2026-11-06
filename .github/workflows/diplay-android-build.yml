@@ -10,6 +10,8 @@ on:
       - "DiPlay/compat/ncm/**"
       - "DiPlay/compat/iap2/**"
       - "DiPlay/compat/mfi/**"
+      - "tools/check-mfi-release-hygiene.py"
+      - "tools/test_check_mfi_release_hygiene.py"
       - ".github/workflows/diplay-android-build.yml"
 permissions:
   contents: read
@@ -48,6 +50,11 @@ jobs:
           grep -F "name='com.shilapi.xcertplay.compat'" app/build/apk-badging.txt
           grep -F "sdkVersion:'17'" app/build/apk-badging.txt
           grep -F "targetSdkVersion:'28'" app/build/apk-badging.txt
+      - name: Test MFi release hygiene scanner
+        working-directory: DiPlay/android
+        run: |
+          python3 ../../tools/test_check_mfi_release_hygiene.py
+          python3 ../../tools/check-mfi-release-hygiene.py app/build/outputs/apk/debug/app-debug.apk
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
