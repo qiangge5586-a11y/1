@@ -181,3 +181,8 @@ CI [run #160](https://github.com/qiangge5586-a11y/1/actions/runs/42174934442) pa
 The original CSM receive path calls `Iap2LinkChannel.recvControl()` and passes the returned control payload to `Iap2CsmFramer.offer()`. The framer accepts bounded incremental input into its 65,535-byte receive buffer; the 8,192-byte limit belongs to the lower-level `runPump()` raw stream read, not to the CSM offer call. Outbound `splitForLink()` caps each link chunk at 65,525 bytes. The offline CSM decoder's per-call input guard is therefore aligned to 65,525 bytes and has boundary coverage at 65,525/65,526.
 
 CI [run #161](https://github.com/qiangge5586-a11y/1/actions/runs/42175067632) passed **7,393 offline checks**. This is source-path and parser-boundary validation only; no live transport or hardware test was performed.
+
+
+### CSM framing source correction
+
+Recovered original Smali now confirms the exact `Iap2CsmChannel.recvControl() -> Iap2CsmFramer.offer()` path. CSM input is already-reassembled link-control data, not the 8 KiB raw stream read. The offline decoder's per-call guard is corrected to 65,525 bytes, matching the original `MAX_LINK_CHUNK_BYTES`; see [IAP2_CSM_FRAMER_SOURCE_AUDIT.md](analysis/IAP2_CSM_FRAMER_SOURCE_AUDIT.md). CI run [#163](https://github.com/qiangge5586-a11y/1/actions/runs/42175105245) passed **7,393 offline checks**. No real iPhone or vehicle handshake has been claimed.
