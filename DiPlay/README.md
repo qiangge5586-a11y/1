@@ -42,5 +42,7 @@ Run either from **Actions → workflow → Run workflow**. The original APK is a
 - [Chinese static analysis report](analysis/DiPlay-0.3.11-静态分析报告.md)
 - [Read-only Honda probe](tools/honda-readonly-probe.sh)
 - [Native ELF audit script](tools/analyze-native-libs.sh)
+- [Native audit workflow run #42141939470](https://github.com/qiangge5586-a11y/1/actions/runs/42141939470)
+- [Decompilation workflow run #42140451737](https://github.com/qiangge5586-a11y/1/actions/runs/42140451737)
 
 No modified APK has been built or tested on the Honda head unit yet. Static findings are not a substitute for an on-device test.
