@@ -263,3 +263,9 @@ GitHub Actions iAP2 run [#275](https://github.com/qiangge5586-a11y/1/actions/run
 - `RfcommConnectDeadlineTest: PASS (8 checks)`
 
 The run verifies the deterministic offline model and its timer tests. It does not verify a production link engine, RFCOMM connection on API 17, or an iPhone/vehicle handshake.
+
+### Zero-retransmission send-window behavior
+
+The original `sendPacket()` sets `lastSentAcknowledged = sentSequence` when the peer's negotiated maximum retransmissions is zero; it does not retain an unacknowledged packet or arm a retransmission deadline. The offline outbound model previously omitted this watermark update, which could eventually stall its send window. It now advances the watermark on each such send. Regression test: `zeroRetryLimitAdvancesAcknowledgedWatermark()`.
+
+GitHub Actions iAP2 run [#278](https://github.com/qiangge5586-a11y/1/actions/runs/42193814922) passed on commit `5daa7e04`, including `Iap2OutboundWindowModelTest: PASS (86 checks)` and the complete Java 7 offline suite. This remains offline source-parity verification only.
