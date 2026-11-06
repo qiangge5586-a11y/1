@@ -11,6 +11,7 @@ public final class Iap2CsmReceiveCoordinatorTest {
         ignoreNonControlSessions();
         preserveFrameOrderForCoalescedPayloads();
         closeOnReceiveQueueOverflow();
+        blockingReceiveTimeoutAndWakeup();
         System.out.println("Iap2CsmReceiveCoordinatorTest: " + checks + " checks passed");
     }
 
@@ -67,6 +68,43 @@ public final class Iap2CsmReceiveCoordinatorTest {
         truth(receiver.terminalReason() != null);
         equal(Iap2CsmReceiveQueueModel.MAX_PENDING_FRAMES, receiver.queuedFrames());
         equal(0, receiver.acceptDeliveredPackets(packets));
+        for (int i = 0; i < Iap2CsmReceiveQueueModel.MAX_PENDING_FRAMES; i++) {
+            receiver.poll();
+        }
+        boolean closedFailure = false;
+        try { receiver.receive(0); }
+        catch (java.io.IOException expected) { closedFailure = true; }
+        truth(closedFailure);
+    }
+
+    private static void blockingReceiveTimeoutAndWakeup() {
+        final Iap2CsmReceiveCoordinator receiver = new Iap2CsmReceiveCoordinator();
+        try {
+            equal(null, receiver.receive(2));
+            final Iap2CsmReceiveQueueModel.Frame[] received =
+                    new Iap2CsmReceiveQueueModel.Frame[1];
+            final Throwable[] failure = new Throwable[1];
+            Thread waiter = new Thread(new Runnable() {
+                public void run() {
+                    try { received[0] = receiver.receive(2000); }
+                    catch (Throwable error) { failure[0] = error; }
+                }
+            });
+            waiter.start();
+            Thread.sleep(20L);
+            List<Iap2ReceiveWindowModel.Packet> packets =
+                    new ArrayList<Iap2ReceiveWindowModel.Packet>();
+            packets.add(packet(1, Iap2LinkFrameCodec.CONTROL_SESSION_ID,
+                    Iap2CsmFrameCodec.encode(99, new byte[] {5})));
+            equal(1, receiver.acceptDeliveredPackets(packets));
+            waiter.join(2500L);
+            truth(!waiter.isAlive());
+            truth(failure[0] == null);
+            equal(99, received[0].messageId);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(interrupted);
+        }
     }
 
     private static Iap2ReceiveWindowModel.Packet packet(int seq, int session, byte[] payload) {
@@ -76,6 +114,11 @@ public final class Iap2CsmReceiveCoordinatorTest {
         byte[] out = new byte[to - from];
         System.arraycopy(b, from, out, 0, out.length);
         return out;
+    }
+    private static void equal(Object expected, Object actual) {
+        checks++;
+        if (expected == null ? actual != null : !expected.equals(actual))
+            throw new AssertionError("expected " + expected + " but was " + actual);
     }
     private static void equal(int expected, int actual) {
         checks++;
