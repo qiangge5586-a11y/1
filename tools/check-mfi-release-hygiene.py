@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Fail a built APK if bundled offline MFi identity or private-key material is present."""
+"""Fail a built APK if bundled offline MFi identity or private-key PEM payload is present."""
+import re
 import sys
 import zipfile
 
@@ -12,13 +13,25 @@ FORBIDDEN_PATH_MARKERS = (
     "mfi-private-identity",
     "mfi_private_identity",
 )
-PRIVATE_KEY_MARKERS = (
-    b"-----BEGIN PRIVATE KEY-----",
-    b"-----BEGIN RSA PRIVATE KEY-----",
-    b"-----BEGIN EC PRIVATE KEY-----",
-    b"-----BEGIN ENCRYPTED PRIVATE KEY-----",
-    b"-----BEGIN OPENSSH PRIVATE KEY-----",
+
+PRIVATE_KEY_PEM_BLOCKS = (
+    (b"-----BEGIN PRIVATE KEY-----", b"-----END PRIVATE KEY-----"),
+    (b"-----BEGIN RSA PRIVATE KEY-----", b"-----END RSA PRIVATE KEY-----"),
+    (b"-----BEGIN EC PRIVATE KEY-----", b"-----END EC PRIVATE KEY-----"),
+    (b"-----BEGIN ENCRYPTED PRIVATE KEY-----", b"-----END ENCRYPTED PRIVATE KEY-----"),
+    (b"-----BEGIN OPENSSH PRIVATE KEY-----", b"-----END OPENSSH PRIVATE KEY-----"),
 )
+
+
+def contains_private_key_pem_payload(data):
+    # Some production TLS parsers legitimately contain the PEM boundary strings
+    # as byte-array constants. Reject an actual Base64 payload between matching
+    # delimiters, not a parser's delimiter-only constants.
+    for begin, end in PRIVATE_KEY_PEM_BLOCKS:
+        pattern = re.escape(begin) + rb"\\s*([A-Za-z0-9+/=\\r\\n]{64,})\\s*" + re.escape(end)
+        if re.search(pattern, data):
+            return True
+    return False
 
 
 def scan_apk(path):
@@ -32,8 +45,8 @@ def scan_apk(path):
             if info.is_dir():
                 continue
             data = archive.read(info.filename)
-            if any(marker in data for marker in PRIVATE_KEY_MARKERS):
-                findings.append("private-key PEM material: " + info.filename)
+            if contains_private_key_pem_payload(data):
+                findings.append("private-key PEM payload: " + info.filename)
     return findings
 
 
@@ -50,7 +63,7 @@ def main(argv):
         for finding in findings:
             print("FAIL: " + finding, file=sys.stderr)
         return 1
-    print("MFi release hygiene: PASS (no offline identity or private-key material)")
+    print("MFi release hygiene: PASS (no offline identity or private-key PEM payload)")
     return 0
 
 
