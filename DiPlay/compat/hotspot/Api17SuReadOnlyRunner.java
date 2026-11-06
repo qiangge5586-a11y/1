@@ -91,7 +91,7 @@ public final class Api17SuReadOnlyRunner implements HotspotReadOnlyExecutor.Runn
     }
 
     /** POSIX single-quote escaping; input is still restricted to the exact catalog. */
-    static String quote(String value) {
+    public static String quote(String value) {
         if (value == null || value.indexOf('\u0000') >= 0)
             throw new IllegalArgumentException("invalid shell argument");
         return "'" + value.replace("'", "'\\''") + "'";
