@@ -1,4 +1,5 @@
 name: DiPlay APK Decompile
+# Re-run trigger: preserve original APK decompile artifact for iAP2 Smali evidence review.
 on:
   workflow_dispatch:
   push:
