@@ -238,6 +238,8 @@ public final class Iap2LinkEngineModel {
     }
 
     private void enqueueWireFrame(byte[] frame) {
+        // Original writePacket() resets the ACK batch counter on every emitted frame.
+        accumulatedAcknowledgements = 0;
         if (pendingWireFrames.size() >= 256) {
             localTerminalReason = "iAP2 pending wire-frame queue limit exceeded";
             return;
