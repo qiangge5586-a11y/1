@@ -45,10 +45,20 @@ jobs:
           curl -fsSL "$APKTOOL_URL" -o tools/apktool.jar
           java -jar tools/apktool.jar --version
           tools/jadx/bin/jadx --version
-      - name: Decompile Java sources
+      - name: Decompile Java sources (preserve partial output on decoder errors)
+        shell: bash
         run: |
-          set -euo pipefail
-          tools/jadx/bin/jadx --show-bad-code --deobf -d DiPlay/decompiled/jadx diplay0.3.11.apk
+          set -uo pipefail
+          mkdir -p DiPlay/decompiled/jadx
+          set +e
+          tools/jadx/bin/jadx --show-bad-code --deobf -d DiPlay/decompiled/jadx diplay0.3.11.apk 2>&1 | tee DiPlay/decompiled/jadx.log
+          JADX_EXIT=${PIPESTATUS[0]}
+          set -e
+          echo "$JADX_EXIT" > DiPlay/decompiled/JADX_EXIT_CODE.txt
+          if [ "$JADX_EXIT" -ne 0 ]; then
+            echo "JADX returned $JADX_EXIT after producing partial output; continuing with APKTool."
+          fi
+          test -d DiPlay/decompiled/jadx
       - name: Decode manifest resources and Smali
         run: |
           set -euo pipefail
@@ -63,7 +73,10 @@ jobs:
             echo "SHA-256:"
             sha256sum DiPlay/original/diplay0.3.11.apk
             echo
-            echo "Outputs: JADX Java-like source; APKTool manifest, resources and Smali."
+            echo "Outputs: JADX Java-like source (see JADX_EXIT_CODE.txt and jadx.log for decoder diagnostics); APKTool manifest, resources and Smali."
+            echo
+            echo "JADX exit code:"
+            cat DiPlay/decompiled/JADX_EXIT_CODE.txt
           } > DiPlay/decompiled/README.md
       - uses: actions/upload-artifact@v4
         with:
