@@ -35,11 +35,15 @@ public final class TunnelPackageAccumulator {
         try {
             // IapTunnel.Listener is supplied by the original APK's classes3 DEX
             // and is intentionally absent from the standalone overlay classpath.
-            // Resolve its two public callbacks once, not per TCP read.
-            this.onDebug = listener.getClass().getMethod("onDebug", String.class);
-            this.onIap = listener.getClass().getMethod("onIap", byte[].class);
+            // Resolve methods from the public interface (not the possibly
+            // package-private generated listener implementation) exactly once.
+            Class<?> contract = Class.forName("com.shilapi.xcertplay.airplay.IapTunnel$Listener");
+            this.onDebug = contract.getMethod("onDebug", String.class);
+            this.onIap = contract.getMethod("onIap", byte[].class);
+        } catch (ClassNotFoundException error) {
+            throw new IllegalStateException("original IapTunnel.Listener is missing", error);
         } catch (NoSuchMethodException error) {
-            throw new IllegalArgumentException("listener does not expose IapTunnel callbacks", error);
+            throw new IllegalStateException("original IapTunnel.Listener callbacks are missing", error);
         }
     }
 
