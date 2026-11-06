@@ -3,43 +3,104 @@ package com.shilapi.xcertplay;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
-/** Minimal Chinese-language shell for the isolated Honda compatibility build. */
+/**
+ * Chinese diagnostic dashboard shell. Values are explicitly marked as
+ * reference baseline or not yet measured; this screen performs no probes.
+ */
 public final class MainActivity extends Activity {
+    private static final int BG = 0xff101820;
+    private static final int PANEL = 0xff1b2a36;
+    private static final int TEXT = 0xffe6edf3;
+    private static final int MUTED = 0xff9fb0bd;
+    private static final int ACCENT = 0xff62b5e5;
+
     private int dp(float value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private TextView text(String value, float size, int color) {
+        TextView v = new TextView(this);
+        v.setText(value);
+        v.setTextSize(size);
+        v.setTextColor(color);
+        v.setLineSpacing(dp(3), 1.0f);
+        return v;
+    }
+
+    private void section(LinearLayout parent, String heading, String body) {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(16), dp(12), dp(16), dp(12));
+        panel.setBackgroundColor(PANEL);
+        TextView h = text(heading, 19, ACCENT);
+        panel.addView(h, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView b = text(body, 15, TEXT);
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        bp.topMargin = dp(8);
+        panel.addView(b, bp);
+        LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        pp.bottomMargin = dp(12);
+        parent.addView(panel, pp);
     }
 
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
 
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setBackgroundColor(BG);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER_VERTICAL);
-        root.setPadding(dp(28), dp(18), dp(28), dp(18));
-        root.setBackgroundColor(0xff101820);
-
-        TextView title = new TextView(this);
-        title.setText("DiPlay 思域适配验证版");
-        title.setTextColor(0xffffffff);
-        title.setTextSize(26);
-        root.addView(title, new LinearLayout.LayoutParams(
+        root.setPadding(dp(22), dp(18), dp(22), dp(18));
+        scroll.addView(root, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView status = new TextView(this);
-        status.setText("独立工程已启动\n\n目标设备：Honda MY16ADA\n系统基准：Android 4.2.2 / API 17\n处理器：ARMv7\n\n当前阶段：安全组件集成与兼容性验证\nROOT 热点操作：尚未启用\n设备写入：未执行");
-        status.setTextColor(0xffd6e2ea);
-        status.setTextSize(18);
-        status.setLineSpacing(dp(5), 1.0f);
-        LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
+        TextView title = text("DiPlay 思域适配验证版", 25, TEXT);
+        root.addView(title);
+        TextView subtitle = text("设备诊断中心 · 中文版", 14, MUTED);
+        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        statusParams.topMargin = dp(20);
-        root.addView(status, statusParams);
+        sp.topMargin = dp(5);
+        sp.bottomMargin = dp(16);
+        root.addView(subtitle, sp);
 
-        setContentView(root);
+        section(root, "设备适配基准（来自检测报告）",
+                "设备型号：MY16ADA\n系统：Android 4.2.2 / API 17\n"
+                + "平台：Honda Andromeda / vcm30t30\n处理器：ARMv7\n屏幕：800 × 480 / 横屏\n"
+                + "说明：以上为报告记录，不代表本次运行时重新检测结果。");
+
+        section(root, "运行时检测状态",
+                "ROOT 权限：尚未实时检测\nWi-Fi 服务：尚未实时检测\n"
+                + "网络接口：尚未实时检测\n热点配置文件：尚未读取\n"
+                + "hostapd / dnsmasq：尚未检测\nSELinux 属性：尚未检测");
+
+        section(root, "热点安全保护",
+                "状态：只完成安全模型与模拟测试\n"
+                + "配置备份：未执行\n系统文件恢复：未启用\n"
+                + "热点启动 / 停止：未启用\n"
+                + "本版本不会调用 su，不会修改系统 Wi-Fi 或热点配置。");
+
+        section(root, "适配进度",
+                "已完成：静态分析、只读解析器、备份记录模型、模拟测试\n"
+                + "进行中：API 17 运行时兼容性验证\n"
+                + "待完成：USB / 蓝牙 / CarPlay 功能逐项移植与实机测试");
+
+        TextView footer = text("安全提示：本验证版不是完整 DiPlay 复刻版，请勿作为车机正式升级包使用。",
+                13, MUTED);
+        footer.setPadding(dp(2), dp(4), dp(2), dp(12));
+        root.addView(footer);
+
+        setContentView(scroll);
     }
 }
