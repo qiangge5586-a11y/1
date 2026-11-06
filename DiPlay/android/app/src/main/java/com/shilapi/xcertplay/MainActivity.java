@@ -17,7 +17,7 @@ import android.widget.TextView;
 
 /**
  * Chinese diagnostic dashboard shell. Values are explicitly marked as
- * reference baseline or not yet measured; this screen performs no probes.
+ * reference baseline or not yet measured; probes run only after an explicit user tap.
  */
 public final class MainActivity extends Activity {
     private static final int BG = 0xff101820;
@@ -167,7 +167,7 @@ public final class MainActivity extends Activity {
                 com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe.Result r =
                         new com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe()
                                 .inspect(MainActivity.this);
-                String detail = r.getStatus() + "\\n适配器状态：" + r.getStateLabel();
+                String detail = r.getStatus() + "\n适配器状态：" + r.getStateLabel();
                 if (r.getName() != null) detail += "\n设备名称：" + r.getName();
                 detail += "\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
                 bluetoothStatus.setText(detail);
