@@ -123,3 +123,10 @@ This correction is based on the original Smali, not a protocol convention. Regre
 Actions run [#133](https://github.com/qiangge5586-a11y/1/actions/runs/42173519353) passed **7,257 offline checks**, including 152 negotiation checks and 84 link-engine composition checks. The tests now explicitly verify that SYN-only `0x80` remains NEGOTIATING, ACK bit `0x40` is required for readiness, invalid or too-small peer SYN data is not treated as an ACK event, and the ACK-bearing frame that completes readiness is passed into the post-ready dispatcher. The composition tests cover `0x00` data-only and `0x40` data-plus-ACK frames, plus Extended ACK separation and ACK timer behavior.
 
 This CI result is Java 7 offline-model verification only; it is not a live iPhone or MY16ADA handshake.
+
+
+## Pre-ready queue readiness and ACK-batch validation
+
+Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 158 negotiation and 200 composition checks. The composed model now checks every pre-ready queued payload against peer maxLength minus the 10-byte link overhead before flushing; an invalid queued packet terminates the readiness transition without a partial data flush. It also models the original ACK-batching counter and resets that counter whenever an encoded frame is emitted, matching the inspected `writePacket()` path.
+
+The local pre-ready queue cap of 64 is a defensive harness limit. The original NORMAL send path does not repeat the pre-ready payload-size predicate. All of this remains offline-only and is not a real iPhone or MY16ADA handshake.
