@@ -29,7 +29,8 @@ public final class Iap2CsmPumpSender {
             long elapsed = System.nanoTime() - startedAt;
             long remainingNanos = timeoutNanos - elapsed;
             long remainingMillis = remainingNanos <= 0L ? 0L
-                    : TimeUnit.NANOSECONDS.toMillis(remainingNanos);
+                    : remainingNanos / 1000000L
+                            + (remainingNanos % 1000000L == 0L ? 0L : 1L);
             if (!pump.sendControlAwaitCapacity(chunks.get(i), remainingMillis)) {
                 pump.close();
                 return false;
