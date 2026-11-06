@@ -96,7 +96,7 @@ public final class MfiProviderSession {
      */
     public void cancel() {
         synchronized (this) {
-            if (state == State.CHALLENGE_SIGNED || state == State.CLOSED) return;
+            if (state == State.CLOSED) return;
             state = State.CLOSED;
         }
         context.cancel();
