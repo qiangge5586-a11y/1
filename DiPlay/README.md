@@ -189,3 +189,6 @@ Recovered original Smali now confirms the exact `Iap2CsmChannel.recvControl() ->
 
 
 The CSM decoder was further aligned with the original framer's fixed-buffer append/drain loop: a single input array may contain multiple coalesced frames and exceed 65,535 bytes, while pending storage remains bounded to one maximum frame. The regression test covers two 40,006-byte frames supplied together.
+
+
+Latest CSM fixed-buffer parity validation: GitHub Actions [#166](https://github.com/qiangge5586-a11y/1/actions/runs/42175369108) passed **7,397 offline checks** (2,334 CSM decoder checks), including one-call decoding of two coalesced frames whose combined size exceeds the fixed 65,535-byte receive buffer.
