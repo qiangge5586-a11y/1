@@ -8,6 +8,8 @@ import com.shilapi.xcertplay.compat.usb.UsbNcmReadOnlyMatcher;
 import com.shilapi.xcertplay.compat.ncm.NcmInterfaceSelector;
 import java.util.List;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -96,6 +98,64 @@ public final class MainActivity extends Activity {
                 + "配置备份：未执行\n系统文件恢复：未启用\n"
                 + "热点启动 / 停止：未启用\n"
                 + "本版本不会调用 su，不会修改系统 Wi-Fi 或热点配置。");
+
+        section(root, "ROOT / 热点底层只读诊断",
+                "仅在你手动点击后，使用固定白名单命令读取 ROOT 身份、Wi-Fi/网络服务、接口表及热点相关文件/程序元数据。不会读取配置文件内容，不会写文件、启停服务或改变 Wi-Fi 状态。");
+        final TextView rootProbeStatus = text("ROOT 只读诊断：尚未执行", 14, MUTED);
+        root.addView(rootProbeStatus);
+        final Button rootProbe = new Button(this);
+        rootProbe.setText("执行 ROOT / 热点只读检查");
+        rootProbe.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                rootProbe.setEnabled(false);
+                rootProbeStatus.setText("正在执行固定白名单只读命令，请等待……");
+                Thread worker = new Thread(new Runnable() {
+                    public void run() {
+                        final String report;
+                        StringBuilder out = new StringBuilder();
+                        try {
+                            com.shilapi.xcertplay.network.safety.HotspotReadOnlyExecutor executor =
+                                    new com.shilapi.xcertplay.network.safety.HotspotReadOnlyExecutor(
+                                            new com.shilapi.xcertplay.network.safety.Api17SuReadOnlyRunner(),
+                                            5000L, 32768);
+                            com.shilapi.xcertplay.network.safety.HotspotReadOnlyOperation.Kind[] kinds =
+                                    com.shilapi.xcertplay.network.safety.HotspotReadOnlyOperation.Kind.values();
+                            for (int i = 0; i < kinds.length; i++) {
+                                out.append("\n[").append(kinds[i].name()).append("]\n");
+                                try {
+                                    com.shilapi.xcertplay.network.safety.HotspotReadOnlyExecutor.Result result =
+                                            executor.execute(kinds[i]);
+                                    String value = result.output.trim();
+                                    if (value.length() > 3500) {
+                                        value = value.substring(0, 3500) + "\n...[输出已截断]";
+                                    }
+                                    out.append(value.length() == 0 ? "(无输出)" : value);
+                                } catch (Exception failure) {
+                                    out.append("不可用：").append(failure.getMessage());
+                                }
+                                out.append("\n");
+                            }
+                            report = out.toString();
+                        } catch (Throwable failure) {
+                            report = "ROOT 只读诊断失败："
+                                    + failure.getClass().getSimpleName() + ": "
+                                    + failure.getMessage();
+                        }
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            public void run() {
+                                rootProbeStatus.setText(report);
+                                rootProbe.setEnabled(true);
+                            }
+                        });
+                    }
+                }, "honda-hotspot-read-only-probe");
+                worker.setDaemon(true);
+                worker.start();
+            }
+        });
+        root.addView(rootProbe, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         section(root, "适配进度",
                 "已完成：静态分析、只读解析器、备份记录模型、模拟测试\n"
