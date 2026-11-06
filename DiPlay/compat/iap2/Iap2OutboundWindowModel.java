@@ -55,6 +55,7 @@ public final class Iap2OutboundWindowModel {
     private final ArrayList<Packet> queued = new ArrayList<Packet>();
     private int sentSequence;
     private Integer lastSentAcknowledged;
+    private Long receiveAcknowledgementDeadlineMillis;
     private String terminalReason;
 
     public Iap2OutboundWindowModel(int initialSentSequence, Integer initialAcknowledgement,
@@ -107,31 +108,50 @@ public final class Iap2OutboundWindowModel {
         // u8 ACK watermark directly; it does not apply a forward-window validator.
         lastSentAcknowledged = Integer.valueOf(acknowledgement);
         ArrayList<Integer> removed = new ArrayList<Integer>();
-        // The source walks from the head and stops at the first packet still
-        // inside maxAcknowledgements + ACK_SLACK. It does not scan later entries.
+        boolean rearmed = false;
+        // The source walks from the head and rearms from the first packet
+        // inside maxAcknowledgements + ACK_SLACK; it does not take a global minimum.
         while (!unacknowledged.isEmpty()) {
             Packet first = unacknowledged.get(0);
             if (Iap2AckWindowPolicy.remainsUnacknowledged(first.sequence,
-                    acknowledgement, peerMaxAcknowledgements)) break;
+                    acknowledgement, peerMaxAcknowledgements)) {
+                receiveAcknowledgementDeadlineMillis = Long.valueOf(first.deadlineMillis);
+                rearmed = true;
+                break;
+            }
             removed.add(Integer.valueOf(first.sequence));
             unacknowledged.remove(0);
         }
+        if (!rearmed) receiveAcknowledgementDeadlineMillis = null;
         ArrayList<Packet> sent = drainQueued(nowMillis);
         return result(sent, new ArrayList<Packet>(), removed, true);
     }
 
-    /** Selects the earliest due packet and applies the original increment-then-equality retry rule. */
+    /** Advances the source engine's single receive-ACK timer and retransmits one earliest packet. */
     public synchronized Result advanceTime(long nowMillis) {
-        if (terminalReason != null || unacknowledged.isEmpty()) return empty(false);
+        if (terminalReason != null || unacknowledged.isEmpty()
+                || receiveAcknowledgementDeadlineMillis == null
+                || receiveAcknowledgementDeadlineMillis.longValue() > nowMillis) {
+            return empty(false);
+        }
+        receiveAcknowledgementDeadlineMillis = null;
         Packet earliest = null;
         for (int i = 0; i < unacknowledged.size(); i++) {
             Packet p = unacknowledged.get(i);
-            if (p.deadlineMillis <= nowMillis
-                    && (earliest == null || p.deadlineMillis < earliest.deadlineMillis)) {
+            if (earliest == null || p.deadlineMillis < earliest.deadlineMillis) {
                 earliest = p;
             }
         }
         if (earliest == null) return empty(false);
+        long secondDeadline = Long.MAX_VALUE;
+        boolean hasSecond = false;
+        for (int i = 0; i < unacknowledged.size(); i++) {
+            Packet p = unacknowledged.get(i);
+            if (p != earliest && (!hasSecond || p.deadlineMillis < secondDeadline)) {
+                secondDeadline = p.deadlineMillis;
+                hasSecond = true;
+            }
+        }
         int nextRetry = earliest.retryCount + 1;
         if (nextRetry > 255) nextRetry = 255;
         Packet updated = new Packet(earliest.sequence, earliest.sessionId, earliest.payload,
@@ -142,6 +162,8 @@ public final class Iap2OutboundWindowModel {
             return result(new ArrayList<Packet>(), new ArrayList<Packet>(),
                     new ArrayList<Integer>(), false);
         }
+        receiveAcknowledgementDeadlineMillis = Long.valueOf(
+                hasSecond ? secondDeadline : updated.deadlineMillis);
         ArrayList<Packet> retried = new ArrayList<Packet>();
         retried.add(updated);
         return result(new ArrayList<Packet>(), retried, new ArrayList<Integer>(), false);
@@ -164,6 +186,9 @@ public final class Iap2OutboundWindowModel {
             Packet updated = new Packet(p.sequence, p.sessionId, p.payload,
                     nextRetry, p.deadlineMillis);
             unacknowledged.set(i, updated);
+            // The source assigns this for every match, so the last requested
+            // outstanding packet in list order determines the timer.
+            receiveAcknowledgementDeadlineMillis = Long.valueOf(p.deadlineMillis);
             if (nextRetry == peerMaxRetransmissions) {
                 terminalReason = "iAP2 packet retransmission limit reached";
                 break;
@@ -181,6 +206,7 @@ public final class Iap2OutboundWindowModel {
         Packet packet = new Packet(sentSequence, sessionId, payload, 0,
                 nowMillis + retransmissionTimeoutMillis);
         unacknowledged.add(packet);
+        receiveAcknowledgementDeadlineMillis = Long.valueOf(packet.deadlineMillis);
         return packet;
     }
 
@@ -217,14 +243,7 @@ public final class Iap2OutboundWindowModel {
 
     /** Earliest outstanding retransmission deadline, or null when none remain. */
     public synchronized Long getNextDeadlineMillis() {
-        if (unacknowledged.isEmpty()) return null;
-        long earliest = Long.MAX_VALUE;
-        for (int i = 0; i < unacknowledged.size(); i++) {
-            if (unacknowledged.get(i).deadlineMillis < earliest) {
-                earliest = unacknowledged.get(i).deadlineMillis;
-            }
-        }
-        return Long.valueOf(earliest);
+        return receiveAcknowledgementDeadlineMillis;
     }
 
     public synchronized int getSentSequence() { return sentSequence; }
