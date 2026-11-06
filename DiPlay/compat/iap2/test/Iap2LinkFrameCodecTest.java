@@ -114,7 +114,6 @@ public final class Iap2LinkFrameCodecTest {
     private static void falsity(boolean b) { checks++; if (b) throw new AssertionError("expected false"); }
     private static void isNull(Object o) { checks++; if (o != null) throw new AssertionError("expected null"); }
     private static void notNull(Object o) { checks++; if (o == null) throw new AssertionError("expected non-null"); }
-    private static void isNull(Object o) { checks++; if (o != null) throw new AssertionError("expected null"); }
     private static void expectIllegalArgument(Runnable r) {
         checks++;
         try { r.run(); } catch (IllegalArgumentException expected) { return; }
