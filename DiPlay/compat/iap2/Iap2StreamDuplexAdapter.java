@@ -6,16 +6,17 @@ import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 
 /**
- * Minimal blocking-stream adapter. Configure the underlying transport's read timeout
- * before use (e.g. BluetoothSocket.setSoTimeout); no API newer than Android 4.2 is used.
- * The caller owns the streams and this adapter; close() closes both exactly once.
+ * Minimal blocking-stream adapter. The carrier must configure its own read timeout;
+ * SocketTimeoutException is translated to the contract's zero/no-data result.
+ * No API newer than Android 4.2 is used. close() closes both streams exactly once
+ * and closes input without waiting for a blocked read to release a monitor.
  */
 public final class Iap2StreamDuplexAdapter implements Iap2DuplexByteStream {
     private final InputStream input;
     private final OutputStream output;
     private final Object readLock = new Object();
     private final Object writeLock = new Object();
-    private boolean closed;
+    private volatile boolean closed;
 
     public Iap2StreamDuplexAdapter(InputStream input, OutputStream output) {
         if (input == null) throw new NullPointerException("input");
@@ -33,9 +34,7 @@ public final class Iap2StreamDuplexAdapter implements Iap2DuplexByteStream {
             try {
                 return input.read(buffer, offset, length);
             } catch (SocketTimeoutException timeout) {
-                synchronized (writeLock) {
-                    ensureOpen();
-                }
+                ensureOpen();
                 return 0;
             }
         }
@@ -51,17 +50,15 @@ public final class Iap2StreamDuplexAdapter implements Iap2DuplexByteStream {
     }
 
     public void close() throws IOException {
-        IOException failure = null;
         synchronized (writeLock) {
             if (closed) return;
             closed = true;
         }
-        synchronized (readLock) {
-            try { input.close(); } catch (IOException e) { failure = e; }
-            try { output.close(); } catch (IOException e) {
-                if (failure == null) failure = e;
-                else failure.addSuppressed(e);
-            }
+        IOException failure = null;
+        // Do not acquire readLock here: input.close() must be able to unblock read().
+        try { input.close(); } catch (IOException e) { failure = e; }
+        try { output.close(); } catch (IOException e) {
+            if (failure == null) failure = e;
         }
         if (failure != null) throw failure;
     }
