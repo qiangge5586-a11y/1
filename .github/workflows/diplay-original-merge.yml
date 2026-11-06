@@ -10,6 +10,8 @@ on:
       - "DiPlay/android/settings.gradle"
       - "DiPlay/android/build.gradle"
       - "tools/build-diplay-merged.sh"
+      - "tools/patch-diplay-original.py"
+      - "tools/check-mfi-release-hygiene.py"
       - ".github/workflows/diplay-original-merge.yml"
 
 permissions:
