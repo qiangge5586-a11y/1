@@ -23,9 +23,10 @@ unzip -q "$APK" 'lib/*/*.so' -d "$TMP" || true
     notes="$(readelf -n "$f" 2>/dev/null || true)"
     # First 4 bytes of .note.android.ident description are little-endian API level.
     # Example: 13 00 00 00 means API 19; readelf does not print this as decimal text.
-    note_hex="$(printf '%s\n' "$notes" | sed -nE 's/.*description data: ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}).*/\1\2\3\4/p' | head -n1)"
-    if [ -n "$note_hex" ]; then
-      api=$((16#$note_hex))
+    note_bytes="$(printf '%s\n' "$notes" | sed -nE 's/.*description data: ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}) ([0-9a-fA-F]{2}).*/\1 \2 \3 \4/p' | head -n1)"
+    if [ -n "$note_bytes" ]; then
+      read -r b0 b1 b2 b3 <<< "$note_bytes"
+      api=$((16#$b0 + (16#$b1 << 8) + (16#$b2 << 16) + (16#$b3 << 24)))
     else
       api="not-reported"
     fi
