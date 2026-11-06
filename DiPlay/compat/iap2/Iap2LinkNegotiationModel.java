@@ -12,6 +12,40 @@ import java.util.List;
 public final class Iap2LinkNegotiationModel {
     public enum State { IDLE, DETECTING, NEGOTIATING, NORMAL, DEAD }
 
+    /** Immutable copy of the peer's complete decoded SYN configuration. */
+    public static final class PeerConfiguration {
+        public final int maxOutgoing;
+        public final int maxLength;
+        public final int retransmissionTimeoutMillis;
+        public final int acknowledgementTimeoutMillis;
+        public final int maxRetransmissions;
+        public final int maxAcknowledgements;
+        public final int synchronizationSequence;
+        private final int[] sessionDescriptors;
+
+        private PeerConfiguration(int[] decoded, int sequence) {
+            maxOutgoing = decoded[0];
+            maxLength = decoded[1];
+            retransmissionTimeoutMillis = decoded[2];
+            acknowledgementTimeoutMillis = decoded[3];
+            maxRetransmissions = decoded[4];
+            maxAcknowledgements = decoded[5];
+            synchronizationSequence = sequence;
+            sessionDescriptors = new int[decoded.length - 6];
+            System.arraycopy(decoded, 6, sessionDescriptors, 0, sessionDescriptors.length);
+        }
+
+        public int getSessionDescriptorCount() { return sessionDescriptors.length / 3; }
+        public int[] getSessionDescriptor(int index) {
+            if (index < 0 || index >= getSessionDescriptorCount()) {
+                throw new IndexOutOfBoundsException("session descriptor " + index);
+            }
+            int offset = index * 3;
+            return new int[] { sessionDescriptors[offset], sessionDescriptors[offset + 1],
+                    sessionDescriptors[offset + 2] };
+        }
+    }
+
     public static final int MAX_SYNC_ATTEMPTS = 20;
     public static final long SYNC_RESEND_MILLIS = 500L;
     public static final long MARKER_RESEND_MILLIS = 1000L;
@@ -45,6 +79,8 @@ public final class Iap2LinkNegotiationModel {
     private int lastReceivedInOrder;
     private int syncAttempts;
     private int peerMaxLength = -1;
+    private int peerSynchronizationSequence = -1;
+    private PeerConfiguration peerConfiguration;
     private boolean peerSynchronizationReceived;
     private Long markerDeadline;
     private Long synchronizationDeadline;
@@ -112,7 +148,9 @@ public final class Iap2LinkNegotiationModel {
             int[] sync = Iap2LinkFrameCodec.decodeSynchronizationPayload(
                     frame.payload == null ? new byte[0] : frame.payload);
             if (sync != null && state == State.NEGOTIATING) {
-                peerMaxLength = sync[1];
+                peerConfiguration = new PeerConfiguration(sync, frame.sequence);
+                peerMaxLength = peerConfiguration.maxLength;
+                peerSynchronizationSequence = frame.sequence;
                 peerSynchronizationReceived = true;
                 lastReceivedInOrder = frame.sequence;
                 sendAcknowledgement();
@@ -216,6 +254,12 @@ public final class Iap2LinkNegotiationModel {
     public synchronized boolean isReady() { return state == State.NORMAL; }
     public synchronized int getSyncAttempts() { return syncAttempts; }
     public synchronized int getPeerMaxLength() { return peerMaxLength; }
+    public synchronized int getPeerSynchronizationSequence() {
+        return peerSynchronizationSequence;
+    }
+    public synchronized PeerConfiguration getPeerConfiguration() {
+        return peerConfiguration;
+    }
     public synchronized String getTerminalReason() { return terminalReason; }
     public synchronized int getPendingFrameBytes() { return decoder.pendingBytes(); }
 
