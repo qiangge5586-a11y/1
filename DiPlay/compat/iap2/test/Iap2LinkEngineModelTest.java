@@ -341,14 +341,15 @@ public final class Iap2LinkEngineModelTest {
         truth(oversizedQueued.getTerminalReason().contains("maxLength"));
         eq(0, oversizedQueued.drainWireFrames().size());
 
-        final Iap2LinkEngineModel oversizedReady =
+        Iap2LinkEngineModel oversizedReady =
                 new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
         oversizedReady.start(true, 0);
         oversizedReady.takeNegotiationOutput();
         feedPeerSyncAndAck(oversizedReady, 13, 5);
-        throwsIllegalArgument(new Runnable() {
-            public void run() { oversizedReady.send(10, new byte[] {1, 2, 3, 4}, 3); }
-        });
+        // Smali sendPacket() in NORMAL does not repeat the pre-ready queue size check.
+        Iap2OutboundWindowModel.Result postReady =
+                oversizedReady.send(10, new byte[] {1, 2, 3, 4}, 3);
+        eq(1, postReady.transmitted.size());
 
         Iap2LinkEngineModel capped = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
         capped.start(true, 0);
