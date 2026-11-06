@@ -9,6 +9,8 @@ public final class Iap2AckWindowPolicyTest {
         sendQueueUsesStrictGreaterThanBoundary();
         queuedDrainUsesStrictLessThanBoundary();
         nullAcknowledgementStartsAtZeroDistance();
+        exhaustivelyChecksModulo256AckWindowBoundaries();
+        exhaustivelyChecksSendWindowStrictComparisons();
         System.out.println("Iap2AckWindowPolicyTest: PASS (" + checks + " checks)");
     }
 
@@ -42,6 +44,43 @@ public final class Iap2AckWindowPolicyTest {
         eq(0, Iap2AckWindowPolicy.sequenceDistance(99, null));
         falsity(Iap2AckWindowPolicy.shouldQueueNewPacket(99, null, 4));
         truth(Iap2AckWindowPolicy.mayDrainQueuedPacket(99, null, 4));
+    }
+
+
+    private static void exhaustivelyChecksModulo256AckWindowBoundaries() {
+        int[] peerWindows = new int[] {0, 3, 245, 255};
+        for (int w = 0; w < peerWindows.length; w++) {
+            int maximum = Math.min(255, peerWindows[w] + 10);
+            for (int previous = 0; previous < 256; previous++) {
+                for (int candidate = 0; candidate < 256; candidate++) {
+                    int distance = (candidate - previous) & 0xff;
+                    boolean expected = distance > 0 && distance <= maximum;
+                    eq(expected, Iap2LinkFrameCodec.isAcceptableCumulativeAck(
+                            previous, candidate, peerWindows[w], 10));
+                    eq(expected, Iap2AckWindowPolicy.remainsUnacknowledged(
+                            candidate, previous, peerWindows[w]));
+                }
+            }
+        }
+    }
+
+    private static void exhaustivelyChecksSendWindowStrictComparisons() {
+        int[] windows = new int[] {0, 1, 4, 127, 255};
+        for (int w = 0; w < windows.length; w++) {
+            for (int previous = 0; previous < 256; previous++) {
+                for (int sent = 0; sent < 256; sent++) {
+                    int distance = (sent - previous) & 0xff;
+                    eq(distance > windows[w], Iap2AckWindowPolicy.shouldQueueNewPacket(
+                            sent, Integer.valueOf(previous), windows[w]));
+                    eq(distance < windows[w], Iap2AckWindowPolicy.mayDrainQueuedPacket(
+                            sent, Integer.valueOf(previous), windows[w]));
+                }
+            }
+        }
+    }
+
+    private static void eq(boolean expected, boolean actual) {
+        checks++; if (expected != actual) throw new AssertionError(expected + " != " + actual);
     }
 
     private static void eq(int expected, int actual) {
