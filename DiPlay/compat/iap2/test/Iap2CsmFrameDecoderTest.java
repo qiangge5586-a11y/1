@@ -8,6 +8,7 @@ public final class Iap2CsmFrameDecoderTest {
     public static void main(String[] args) {
         fragmentedAndCoalescedFrames();
         resynchronizesAfterGarbageAndBadShortLength();
+        reportsResynchronizationDiagnostics();
         retainsIncompleteFrame();
         randomizedFragmentationAndCoalescing();
         enforcesOriginalReceiveChunkBound();
@@ -32,6 +33,21 @@ public final class Iap2CsmFrameDecoderTest {
         List<Iap2CsmFrameDecoder.Frame> out=d.feed(concat(invalid,concat(new byte[]{11,12},valid)));
         eq(1,out.size()); eq(7,out.get(0).messageId); bytes(new byte[]{9},out.get(0).payload);
     }
+    private static void reportsResynchronizationDiagnostics() {
+        Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
+        byte[] invalid = new byte[]{0x40,0x40,0,5,0,1,99,98};
+        byte[] valid = frame(0x1234, new byte[]{7});
+        List<Iap2CsmFrameDecoder.Frame> out = d.feed(concat(invalid, valid));
+        eq(1, out.size());
+        eq(0x1234, out.get(0).messageId);
+        eq(8L, d.getDiscardedBytes());
+        eq(1L, d.getInvalidLengthCandidates());
+        d.reset();
+        eq(0L, d.getDiscardedBytes());
+        eq(0L, d.getInvalidLengthCandidates());
+        eq(0, d.pendingBytes());
+    }
+
     private static void retainsIncompleteFrame() {
         Iap2CsmFrameDecoder d=new Iap2CsmFrameDecoder();
         byte[] f=frame(99,new byte[]{1,2,3,4});
@@ -107,5 +123,6 @@ public final class Iap2CsmFrameDecoderTest {
     private static byte[] concat(byte[] a,byte[] b){byte[] o=new byte[a.length+b.length];System.arraycopy(a,0,o,0,a.length);System.arraycopy(b,0,o,a.length,b.length);return o;}
     private static byte[] slice(byte[] a,int s,int e){byte[] o=new byte[e-s];System.arraycopy(a,s,o,0,o.length);return o;}
     private static void eq(int a,int b){checks++;if(a!=b)throw new AssertionError(a+" != "+b);}
+    private static void eq(long a,long b){checks++;if(a!=b)throw new AssertionError(a+" != "+b);}
     private static void bytes(byte[] a,byte[] b){checks++;if(a.length!=b.length)throw new AssertionError("length");for(int i=0;i<a.length;i++)if(a[i]!=b[i])throw new AssertionError("byte "+i);}
 }
