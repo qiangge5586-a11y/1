@@ -88,9 +88,9 @@ public final class Iap2LinkModelPumpDriver implements Iap2LinkPump.Driver,
         return reason == null ? "iAP2 link model closed" : reason;
     }
 
-    /** Model deadlines are not exposed yet; pump polls at its bounded 100 ms cadence. */
+    /** Uses the composed model's earliest negotiation, retransmission, or delayed-ACK deadline. */
     public long nextDeadlineMillis() {
-        return lastNowMillis + 100L;
+        return engine.nextDeadlineMillis();
     }
 
     public boolean isReady() {
