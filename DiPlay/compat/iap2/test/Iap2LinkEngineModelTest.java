@@ -13,6 +13,7 @@ public final class Iap2LinkEngineModelTest {
         terminalWindowFailureClosesComposition();
         negotiatedPeerParametersBuildBothWindows();
         preReadyQueueUsesPeerPayloadLimit();
+        readinessAckUpdatesOutboundWindow();
         postSyncFramesDispatchIntoWindows();
         acknowledgementBatchingAndWriteReset();
         preReadyQueueFlushAndPeerPayloadBounds();
@@ -150,6 +151,28 @@ public final class Iap2LinkEngineModelTest {
         eq(Iap2LinkEngineModel.State.CLOSED, rejected.state());
         truth(rejected.getTerminalReason().contains("pending control packets"));
         eq(0, rejected.drainWireFrames().size());
+    }
+
+    private static void readinessAckUpdatesOutboundWindow() {
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        m.start(true, 0);
+        m.takeNegotiationOutput();
+        byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                2, 4096, 1500, 250, 3, 3,
+                new int[][] {{10, 0, 2}, {11, 2, 1}});
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, sync), 1);
+        m.takeNegotiationOutput();
+        // This ACK is within the source maxAcknowledgements + ACK-slack window.
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 111, 0, null), 2);
+        eq(Iap2LinkEngineModel.State.READY, m.state());
+        List<Iap2LinkEngineModel.DispatchEvent> events = m.drainEvents();
+        eq(1, events.size());
+        truth(events.get(0).cumulativeAcknowledgement != null);
+        truth(events.get(0).cumulativeAcknowledgement.acknowledgementAccepted);
+        // The ACK watermark advances to 111 before the first post-ready send,
+        // so sequence 100 remains queued outside the current peer send window.
+        Iap2OutboundWindowModel.Result queued = m.send(10, new byte[] {1}, 3);
+        eq(0, queued.transmitted.size());
     }
 
     private static void postSyncFramesDispatchIntoWindows() {
