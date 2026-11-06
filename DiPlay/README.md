@@ -70,6 +70,7 @@ An offline Java 7 handshake lifecycle tracker and test workflow have been added.
 - [iAP2 link-layer and CSM framing audit](analysis/IAP2_LINK_AND_CSM_FRAMING_AUDIT.md)
 - [Source-grounded iAP2 link engine findings](analysis/IAP2_LINK_ENGINE_SOURCE_FINDINGS.md)
 - [iAP2 link evidence matrix](analysis/IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md)
+- [iAP2 negotiation model source verification](analysis/IAP2_NEGOTIATION_MODEL_SOURCE_VERIFICATION.md)
 - [iAP2 CSM frame decoder review](analysis/IAP2_CSM_FRAME_DECODER_REVIEW.md)
 - [Offline iAP2 wireless handshake state tracker](compat/iap2/Iap2WirelessHandshake.java)
 - [iAP2 handshake self-test workflow](../.github/workflows/diplay-iap2-handshake.yml)
@@ -116,3 +117,8 @@ New offline components:
 - `analysis/IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md`: source-to-test checklist and remaining gaps.
 
 Latest CI [run #64](https://github.com/qiangge5586-a11y/1/actions/runs/42168651726) passed **7,004 offline checks** (61 handshake lifecycle, 3,380 IAP framing/package, 2,330 CSM, 59 link codec, 1,050 link decoder, 104 negotiation model, 20 retransmission policy). The negotiation model now gates readiness on a cumulative ACK of the local SYN and valid peer synchronization in either arrival order. The new retransmission policy helper encodes the source behavior that maxRetries=4 permits three retransmissions and terminates on the fourth increment; extended-ACK missing-sequence requests use the same per-packet counter. Full cumulative ACK windows, reorder buffering, retransmission queue/timers and transport integration remain unfinished. This is not proof of a real iPhone or MY16ADA vehicle handshake; no live Bluetooth, USB, AirPlay, or ROOT action was performed.
+
+
+### iAP2 negotiation readiness correction (2026-11-06)
+
+A fresh inspection of the recovered run #8 Smali corrected an offline-model readiness assumption: the original engine does not require ACK number 99 to transition out of NEGOTIATING. Any ACK frame invokes the gate; peer synchronization must already exist and peer maxLength must be greater than 10, otherwise the engine terminates. The simplified offline model and regression tests were aligned with that behavior. See `analysis/IAP2_NEGOTIATION_MODEL_SOURCE_VERIFICATION.md` for artifact provenance, Smali method locations, and the corrected 29-byte synchronization frame checksum (`29`). This remains offline-only; cumulative ACK windows and retransmission are not yet fully modeled.
