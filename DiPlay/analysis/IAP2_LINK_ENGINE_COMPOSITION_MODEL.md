@@ -80,3 +80,9 @@ The recovered Smali shows that readiness checks every already queued packet with
 The same payload-length predicate is exposed as `PeerConfiguration.acceptsPayload()`. It is intentionally applied to pre-readiness queued packets only: source `sendPacket()` does not repeat this check for packets submitted after the link is already NORMAL. The normal `send()` path therefore retains the source behavior rather than imposing a new post-ready payload rejection.
 
 Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/42174129287) passed **7,297 offline checks**, including 118 composition checks and 158 negotiation checks. New tests verify the exact maxLength=11 boundary: one-byte queued payload is accepted and two-byte payload causes a terminal readiness failure with no packet emitted.
+
+## Full pre-ready queue and ACK batching regression checkpoint
+
+Additional tests now cover defensive copying of queued payloads, the 64-packet pre-ready queue cap, whole-queue maxLength validation before flush, and the source behavior that post-ready `sendPacket()` does not repeat the pre-ready `peerPayloadIsAcceptable()` check. The same integration suite covers the peer ACK-batch counter: ACK-bit frames accumulate up to peer maxAcknowledgements; any outgoing `writePacket()` resets that counter; reaching the threshold advances the receive ACK watermark and queues an ACK-only frame.
+
+Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 200 composition checks and 158 negotiation checks. This remains deterministic Java 7 model verification, not a live transport or vehicle test.
