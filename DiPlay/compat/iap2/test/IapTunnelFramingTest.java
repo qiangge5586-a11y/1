@@ -108,7 +108,7 @@ public final class IapTunnelFramingTest {
                 else {
                     eq(1, out.size());
                     bytes(body, out.get(0).body);
-                    eq(n % 2 == 0, out.get(0).isComm() ? 1 : 0);
+                    eq(n % 2 == 0 ? 1 : 0, out.get(0).isComm() ? 1 : 0);
                 }
             }
             eq(0, decoder.pendingBytes());
