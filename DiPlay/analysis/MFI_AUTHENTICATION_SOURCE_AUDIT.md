@@ -154,3 +154,25 @@ The source uses Kotlin 2.2-era code and BouncyCastle in the local provider, plus
 - No iPhone pairing or iAP2 authentication was performed.
 - No authentication algorithm, credential, certificate, private key or release artifact was modified.
 - The compatibility repository does not yet contain a production MFi provider/session integration. This audit is a source-backed implementation gate, not a claim that MFi is already optimized.
+
+
+## Follow-up implementation and backend-selection verification (2026-11-06)
+
+A second pass traced the persisted backend selection path rather than relying only on the runtime config constructor:
+
+- `AirPlayPersistence.loadMfiTarget()` reads the `mfi_target` preference. When the key is absent or does not match a known enum value, it returns `MfiTarget.LOCAL`.
+- `DiPlayBootstrap.ensure(context, target)` copies the bundled `offline-mfi` resources into app-private storage when the selected target is LOCAL, and returns without copying for other targets.
+- The runtime config's synthetic constructor default of USB_CH341 does not override the separate preference loader's LOCAL fallback. The preference loader is the important first-run/default path.
+- This confirms a P0 release/configuration risk: a fresh install or invalid stored target can select LOCAL and bootstrap offline identity material without a user explicitly choosing test mode. The evidence does not establish that the fixture is authorized for production authentication.
+- The controller dispatches LOCAL, USB_CH341, I2C and REMOTE through separate backend branches. This static pass did not find evidence sufficient to claim that every provider failure path is fully isolated from all fallback paths; verify each error/retry branch before production integration.
+
+### Compatibility implementation added
+
+- `compat/mfi/MfiOperationContext.java`: shared monotonic timeout, cancellation and session-generation boundary.
+- `compat/mfi/MfiI2cCertificateReader.java`: source-grounded bounded certificate read using length register 0x30, data windows beginning at 0x31, 128-byte maximum windows, one caller-owned deadline and a process-wide reader lock. The hardware-specific register transport remains an interface and must enforce the same context during each blocking bus call.
+- `compat/mfi/MfiBackendSelectionPolicy.java`: rejects missing/unknown persisted targets, allows LOCAL only with explicit test mode, and disallows automatic backend fallback.
+- Fake transport and policy tests cover window boundaries (1, 128, 129 and 65,525 bytes), short reads, aggregate timeout, cancellation, lock release, invalid target and LOCAL test-only selection.
+
+### Current implementation boundary
+
+These classes are isolated compatibility primitives, not yet wired to the original app's real I2C/CH341/remote provider or the iAP2 MFi message exchange. The fake transport proves the bounded reader's behavior against the source-derived register-window contract; it does not prove the target car's I2C device, bus timing, retry semantics or authentication success. The original APK's persisted LOCAL fallback is documented as a finding, not modified by this compatibility-layer work.
