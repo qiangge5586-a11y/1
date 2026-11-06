@@ -223,3 +223,9 @@ The peer synchronization snapshot now has regression coverage for malformed vers
 The offline negotiation parser retains the ACK-bearing frame that transitions NEGOTIATING to NORMAL and marks its ACK as already processed, plus subsequent complete frames. The composition dispatches cumulative ACK only for bit `0x40`, Extended ACK only for bit `0x20` with payload, and data when `(control & ~0x40) == 0` with payload. It encodes model-generated data/ACK/Extended ACK frames into a drainable offline output queue but performs no transport write.
 
 Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. This validates offline dispatch semantics only, not a live link pump or vehicle session.
+
+## Pre-ready queued payload acceptance
+
+Direct Smali inspection of `handleAcknowledgement()` confirms the readiness gate requires peer synchronization, `peerLimitsAreUsable()`, and that no already queued packet fails `peerPayloadIsAcceptable()`. The latter is exactly `payload.length <= peer.maxLength - 10`. If any pending packet is too large, the original engine dies with `peer iAP2 maxLength cannot carry pending control packets`; otherwise it enters NORMAL and sets writable, which drains the queue. This check is applied to the pre-ready queue; `sendPacket()` in NORMAL does not repeat the payload-size check.
+
+The offline composition now mirrors this with `queueBeforeReady()`, a whole-queue validation before flush, and the source-derived maxLength-minus-ten boundary. Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/42174129287) passed **7,297 offline checks**.
