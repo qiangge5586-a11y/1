@@ -48,6 +48,11 @@ pub fn parse_setup_response(body: &[u8], connection_id: u32) -> Result<u16, Stri
     let stream = root.get("streams").and_then(Value::as_array)
         .and_then(|v| v.iter().find(|s| s.get("type").and_then(Value::as_int) == Some(130)))
         .ok_or_else(|| "type-130 SETUP response missing stream".to_string())?;
+    let stream_id = stream.get("streamID").and_then(Value::as_int)
+        .ok_or_else(|| "type-130 SETUP response missing streamID".to_string())?;
+    if stream_id != 1 {
+        return Err(format!("type-130 streamID mismatch expected=1 got={stream_id}"));
+    }
     if let Some(id) = stream.get("streamConnectionID").and_then(Value::as_int) {
         if id != connection_id as i64 {
             return Err(format!("type-130 streamConnectionID mismatch expected={connection_id} got={id}"));
@@ -163,6 +168,7 @@ mod tests {
         let body = bplist::encode(&Value::dict(vec![("streams", Value::array(vec![
             Value::dict(vec![
                 ("type", Value::int(130)),
+                ("streamID", Value::int(1)),
                 ("streamConnectionID", Value::int(77)),
                 ("dataPort", Value::int(49152)),
             ]),
