@@ -181,6 +181,97 @@ def main():
         "type-130 retain accumulator register across reads",
     )
 
+
+    # Replace decryptFrames' collection/concatenation pipeline with an exact-size
+    # two-pass output. Frame authentication and counter order remain unchanged.
+    with open(tunnel, "r", encoding="utf-8") as source:
+        tunnel_text = source.read()
+    method_start = ".method private final decryptFrames([B)Lkotlin/Pair;\n"
+    start = tunnel_text.find(method_start)
+    if start < 0 or tunnel_text.find(method_start, start + 1) >= 0:
+        raise SystemExit("decryptFrames: expected exactly one method")
+    method_end = tunnel_text.find("\n.end method", start)
+    if method_end < 0:
+        raise SystemExit("decryptFrames: method terminator not found")
+    method_end += len("\n.end method")
+    old_method = tunnel_text[start:method_end]
+    new_method = r""".method private final decryptFrames([B)Lkotlin/Pair;
+    .locals 13
+    .param p1, "buffer"    # [B
+
+    const/4 v0, 0x0
+    const/4 v1, 0x0
+
+    :scan_frames
+    array-length v2, p1
+    sub-int/2addr v2, v1
+    const/4 v3, 0x2
+    if-lt v2, v3, :scan_done
+    invoke-direct {p0, p1, v1}, Lcom/shilapi/xcertplay/airplay/IapTunnel;->readU16Le([BI)I
+    move-result v2
+    add-int/lit8 v3, v2, 0x12
+    array-length v4, p1
+    sub-int/2addr v4, v1
+    if-lt v4, v3, :scan_done
+    add-int/2addr v0, v2
+    add-int/2addr v1, v3
+    goto :scan_frames
+
+    :scan_done
+    new-array v0, v0, [B
+    const/4 v1, 0x0
+    const/4 v2, 0x0
+
+    :decrypt_frames
+    array-length v3, p1
+    sub-int/2addr v3, v1
+    const/4 v4, 0x2
+    if-lt v3, v4, :decrypt_done
+    invoke-direct {p0, p1, v1}, Lcom/shilapi/xcertplay/airplay/IapTunnel;->readU16Le([BI)I
+    move-result v3
+    add-int/lit8 v4, v3, 0x12
+    array-length v5, p1
+    sub-int/2addr v5, v1
+    if-lt v5, v4, :decrypt_done
+
+    add-int/lit8 v5, v1, 0x2
+    invoke-static {p1, v1, v5}, Lkotlin/collections/ArraysKt;->copyOfRange([BII)[B
+    move-result-object v5
+    add-int/lit8 v6, v1, 0x2
+    add-int v7, v1, v4
+    invoke-static {p1, v6, v7}, Lkotlin/collections/ArraysKt;->copyOfRange([BII)[B
+    move-result-object v6
+
+    sget-object v7, Lcom/shilapi/xcertplay/airplay/AirPlayCrypto;->INSTANCE:Lcom/shilapi/xcertplay/airplay/AirPlayCrypto;
+    iget-object v8, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->readKey:[B
+    iget-object v9, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->readCounter:Ljava/util/concurrent/atomic/AtomicLong;
+    invoke-virtual {v9}, Ljava/util/concurrent/atomic/AtomicLong;->get()J
+    move-result-wide v11
+    invoke-virtual {v7, v11, v12}, Lcom/shilapi/xcertplay/airplay/AirPlayCrypto;->nonce64(J)[B
+    move-result-object v9
+    invoke-virtual {v7, v8, v9, v6, v5}, Lcom/shilapi/xcertplay/airplay/AirPlayCrypto;->chachaOpen([B[B[B[B)[B
+    move-result-object v10
+
+    iget-object v7, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->readCounter:Ljava/util/concurrent/atomic/AtomicLong;
+    invoke-virtual {v7}, Ljava/util/concurrent/atomic/AtomicLong;->incrementAndGet()J
+
+    array-length v11, v10
+    const/4 v12, 0x0
+    invoke-static {v10, v12, v0, v2, v11}, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V
+    add-int/2addr v2, v11
+    add-int/2addr v1, v4
+    goto :decrypt_frames
+
+    :decrypt_done
+    array-length v3, p1
+    invoke-static {p1, v1, v3}, Lkotlin/collections/ArraysKt;->copyOfRange([BII)[B
+    move-result-object v3
+    invoke-static {v0, v3}, Lkotlin/TuplesKt;->to(Ljava/lang/Object;Ljava/lang/Object;)Lkotlin/Pair;
+    move-result-object v0
+    return-object v0
+.end method"""
+    replace_once(tunnel, old_method, new_method, "type-130 exact-size decrypted frame output")
+
     print("Original DiPlay MFi defaults patched; type-130 receive path uses incremental package accumulation.")
     return 0
 
