@@ -289,6 +289,23 @@ public final class Iap2LinkNegotiationModelTest {
         model.feedEof();
         eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
         truth(model.getTerminalReason().contains("EOF"));
+        eq(0, model.takeOutput().length);
+
+        Iap2LinkNegotiationModel ready = new Iap2LinkNegotiationModel();
+        ready.start(true, 0);
+        ready.takeOutput();
+        ready.feed(peerSyncFrame(77, 65535), 1);
+        // Keep the local SYN output pending and queue the ACK frame that
+        // transitions the model to NORMAL.
+        ready.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+        eq(Iap2LinkNegotiationModel.State.NORMAL, ready.getState());
+        eq(1, ready.drainPostReadyFrames().size());
+        ready.feed(new byte[] {(byte) 0xff, 0x5a, 0, 20}, 3);
+        truth(ready.getPendingFrameBytes() > 0);
+        ready.feedEof();
+        eq(0, ready.takeOutput().length);
+        eq(0, ready.drainPostReadyFrames().size());
+        eq(0, ready.getPendingFrameBytes());
     }
 
     private static byte[] peerSyncFrame(int sequence, int maxLength) {
