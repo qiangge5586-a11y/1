@@ -79,3 +79,12 @@ The catalog is descriptive only. It does not execute a process, invoke a shell, 
 The test was added to the Java 7 CI workflow. Run #24 was triggered by commit `43368bb2aa1fb7577e66a13a53d2f4662037e8cc`; its result must be checked before treating this addition as CI-verified.
 
 This catalog is not yet a production ROOT adapter. The next implementation gate is a fake executor with fixture outputs, strict output parsing, timeout/error handling, and tests proving that no arbitrary command or path can be introduced. Only after those tests should an actual read-only process executor be considered.
+
+
+## Fake read-only executor boundary (2026-11-06)
+
+`HotspotReadOnlyExecutor.java` adds an injectable `Runner` boundary. It accepts only the fixed operation enum, obtains executable/argv from the catalog, applies bounded timeout and output-size settings, and fails closed on null results, timeout, nonzero exit status, or oversized output. The operation catalog now returns defensive copies of argument arrays; callers cannot mutate a stored plan through its accessor.
+
+`HotspotReadOnlyExecutorTest.java` uses a fake runner and fixture strings only. It verifies fixed argv delivery, timeout propagation, successful fixture output, timeout failure, nonzero exit failure, output-size rejection, and invalid bounds. The fake runner does not start a process and no su/shell command is executed.
+
+The GitHub workflow now compiles and runs this sixth suite. This is an executor boundary and simulation test, not a production process runner. A real Android 4.2.2 adapter remains blocked until the exact device command paths, output formats, process I/O handling, and timeout behavior are verified. The next safe step is to add typed parsers for fixture outputs (ROOT identity, interface table and metadata) and test malformed/ambiguous outputs before considering any real read-only process execution.
