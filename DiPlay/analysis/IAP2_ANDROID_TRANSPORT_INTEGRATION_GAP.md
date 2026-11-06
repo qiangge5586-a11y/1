@@ -83,3 +83,10 @@ CI [#214](https://github.com/qiangge5586-a11y/1/actions/runs/42183487239) passed
 Added Iap2DuplexByteStream and Iap2StreamDuplexAdapter under compat/iap2, and included that source directory in the Android prototype source set. The contract is deliberately transport-neutral: read returns positive byte count, 0 for a carrier timeout, -1 for EOF; write must complete the requested range or throw; close is idempotent and must unblock a pending read. The adapter maps SocketTimeoutException to zero and closes the input side without waiting for a blocked read monitor.
 
 Important limitation: InputStream itself has no portable per-call timeout API. Each concrete carrier must configure its timeout before constructing the adapter (or provide a specialized implementation). This does not yet implement Bluetooth RFCOMM, TCP tunnel, the original BlockingDuplexByteStream, link worker/pump, or iAP2 handshake. The API 17 Android prototype now compiles the neutral contract and existing offline models, but production transport remains unconnected.
+
+
+## Single-owner pump scaffold (2026-11-06)
+
+Added Iap2LinkPump as a transport/engine boundary. It owns Driver callbacks and stream reads/writes on one worker, reads at most 8192 bytes per poll, polls no slower than 100 ms, drains engine output after each state change, and bounds queued application commands at 64 entries / 1 MiB / 65,525 bytes per payload. EOF, I/O failure, driver runtime failure and explicit close converge on one terminal cleanup path. The pump does not itself implement the iAP2 protocol engine; a concrete Driver must still be built from source-audited production behavior. A command-producing Driver must implement CommandSink. Optional readiness notification uses the Readiness interface.
+
+The isolated Android prototype compiles this pump scaffold because compat/iap2 is in its source set. CI now runs an EOF-shutdown contract test. This is not yet a live RFCOMM/TCP integration and is not a claim of successful iPhone pairing. Carrier-specific read timeouts and a production Driver remain the next integration gates.
