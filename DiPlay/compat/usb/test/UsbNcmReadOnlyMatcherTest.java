@@ -16,7 +16,8 @@ public final class UsbNcmReadOnlyMatcherTest {
         rejectsNonNcmAndAmbiguousSnapshots();
         descriptorCollectionsAreImmutable();
         unknownAlternateSettingRemainsExplicit();
-        System.out.println("UsbNcmReadOnlyMatcherTest: PASS (5 cases)");
+        preservesEndpointAddressAndPacketSize();
+        System.out.println("UsbNcmReadOnlyMatcherTest: PASS (6 cases)");
     }
 
     private static void mapsPassiveSnapshotToCdcNcmSelection() {
@@ -82,6 +83,20 @@ public final class UsbNcmReadOnlyMatcherTest {
                 "matcher must not fabricate alternate setting zero");
         check(selection.getDataClaim() == selection.getData(),
                 "without known alt-zero sibling, claim descriptor remains selected data");
+    }
+
+    private static void preservesEndpointAddressAndPacketSize() {
+        UsbConfigurationSnapshot config = config(1,
+                iface(2, 2, 13, 0),
+                iface(4, 10, 0, 1,
+                        ep(0x86, 2, 128, 2, 1024, 0),
+                        ep(0x07, 2, 0, 2, 1024, 0)));
+        NcmInterfaceSelector.Selection selection = UsbNcmReadOnlyMatcher.find(config);
+        check(selection != null, "NCM selection exists");
+        check(selection.getBulkIn().getAddress() == 0x86, "bulk IN address retained");
+        check(selection.getBulkIn().getMaxPacketSize() == 1024, "bulk IN packet size retained");
+        check(selection.getBulkOut().getAddress() == 0x07, "bulk OUT address retained");
+        check(selection.getBulkOut().getMaxPacketSize() == 1024, "bulk OUT packet size retained");
     }
 
     private static UsbConfigurationSnapshot config(int id,
