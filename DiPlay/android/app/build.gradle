@@ -24,7 +24,7 @@ android {
         main {
             // Includes API-17 iAP2 stream, pump, and offline engine-to-pump adapter scaffolds.
             java {
-                srcDirs = ['src/main/java', '../../compat/hotspot', '../../compat/usb', '../../compat/bluetooth', '../../compat/ncm', '../../compat/iap2']
+                srcDirs = ['src/main/java', '../../compat/hotspot', '../../compat/usb', '../../compat/bluetooth', '../../compat/ncm', '../../compat/iap2', '../../compat/cluster']
                 exclude 'test/**'
             }
         }
