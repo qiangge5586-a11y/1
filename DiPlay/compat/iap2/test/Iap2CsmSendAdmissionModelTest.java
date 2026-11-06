@@ -43,13 +43,15 @@ public final class Iap2CsmSendAdmissionModelTest {
     private static void partialAdmissionTimesOutFailClosed() {
         Iap2LinkCommandQueueModel q=new Iap2LinkCommandQueueModel();
         for(int i=0;i<16;i++) truth(q.enqueueIfCapacity(new byte[65525]));
-        truth(q.enqueueIfCapacity(new byte[176]));
+        truth(q.enqueueIfCapacity(new byte[126])); // exactly 50 bytes remain
         Iap2CsmSendAdmissionModel m=new Iap2CsmSendAdmissionModel(new byte[100],50,0,1000);
-        eq(Iap2CsmSendAdmissionModel.Status.WAITING,m.step(0,q).status);
+        eq(Iap2CsmSendAdmissionModel.Status.QUEUED,m.step(0,q).status);
+        eq(1,m.queuedChunkCount());
         eq(Iap2CsmSendAdmissionModel.Status.TIMEOUT_FAIL_CLOSED,m.step(1000000000L,q).status);
         truth(m.isFailedClosed());
         eq(Iap2CsmSendAdmissionModel.Status.TIMEOUT_FAIL_CLOSED,m.step(1100000000L,q).status);
-        eq(0,m.queuedChunkCount());
+        eq(1,m.queuedChunkCount());
+        eq(1048576,q.queuedBytes());
     }
 
     private static void zeroTimeoutStillAdmitsWhenCapacityExists() {
