@@ -205,3 +205,11 @@ The wireless synthetic constructor mask 494 includes the default-argument bit fo
 The repository now includes `compat/iap2/Iap2LinkEngineModel.java`, an orchestration harness over the independently tested negotiation, outbound-window, and receive-window models. It supplies a single READY gate, delegates send/ACK/Extended-ACK and receive operations, advances both timer domains at one deterministic timestamp, and models EOF closure. Its test suite passed 19 checks in Actions run [#98](https://github.com/qiangge5586-a11y/1/actions/runs/42170739023); the complete workflow passed 7,148 offline checks. A follow-up verifies that an outbound retry-limit failure propagates to the composed CLOSED state.
 
 This composition is intentionally incomplete: peer window limits are constructor inputs rather than being extracted and validated from the peer SYN by the composition layer; there is no unified live frame dispatch, socket/USB/Bluetooth transport, or output writer. It is not evidence of an actual iPhone or Honda head-unit session. The initial composition CI run #94 failed due to a null test fixture; the fixture was corrected and #95 passed.
+
+## Peer SYN configuration handoff and readiness correction (2026-11-06)
+
+The offline negotiation model now exports an immutable peer configuration snapshot with all six fixed SYN fields, the peer synchronization sequence, and complete session descriptors. The composition model can now build both windows from that snapshot instead of relying on caller-supplied window values. Wireless defaults applied locally are documented in `IAP2_LINK_ENGINE_COMPOSITION_MODEL.md`; they include ACK slack 10, maxOutgoingDelta 0, and defensive queue/buffer caps of 64.
+
+A source-consistency correction was also made: the original `processFrame()` calls its ACK/readiness handler for every non-zero control byte, including the SYN control frame. Therefore the peer SYN can complete READY immediately after its limits are recorded and the local ACK is queued; the model no longer requires a separate ACK-only frame for that transition.
+
+Verification: Actions run [#105](https://github.com/qiangge5586-a11y/1/actions/runs/42172333952) passed **7,174 offline checks**, including 121 negotiation checks and 32 composition checks. This remains an offline model, not a live iPhone/vehicle handshake.
