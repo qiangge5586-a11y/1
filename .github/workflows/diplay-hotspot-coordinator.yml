@@ -20,5 +20,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/hotspot-test
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/hotspot-test DiPlay/compat/hotspot/HotspotTransactionCoordinator.java DiPlay/compat/hotspot/test/CoordinatorSelfTest.java
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/hotspot-test DiPlay/compat/hotspot/HotspotTransactionCoordinator.java DiPlay/compat/hotspot/HotspotSafetyPrimitives.java DiPlay/compat/hotspot/test/CoordinatorSelfTest.java DiPlay/compat/hotspot/test/HotspotSafetyPrimitivesTest.java
           java -cp build/hotspot-test CoordinatorSelfTest
+          java -cp build/hotspot-test HotspotSafetyPrimitivesTest
