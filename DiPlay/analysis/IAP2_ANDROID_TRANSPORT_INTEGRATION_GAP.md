@@ -126,3 +126,18 @@ Scope limits:
 - It has not been tested against a physical Bluetooth controller or iPhone.
 - Android build CI is required to confirm compilation; runtime behavior and queue-pressure tests remain open.
 - The iAP2 link Driver is still a separate missing production component. This adapter alone does not establish an iAP2 session.
+
+
+## RFCOMM connection bootstrap port (2026-11-06)
+
+Added `compat/bluetooth/BluetoothRfcommConnector.java` based on the original `AndroidBluetoothAdapter.openRfcommStream` Smali:
+- Secure `createRfcommSocketToServiceRecord(UUID)` first.
+- On failure, wait 100 ms, then try `createInsecureRfcommSocketToServiceRecord(UUID)`.
+- If that fails, reflectively call `createInsecureRfcommSocket(1)`.
+- Each attempt uses a dedicated daemon connect thread and a 10,000 ms default latch deadline; timeout closes that attempt's socket.
+- The worker calls `cancelDiscovery()`, tolerates `SecurityException`, then waits up to ten 50 ms intervals for discovery to stop before connecting.
+- `cancel()` closes the active socket. The caller still owns device selection, pairing/user consent, and lifecycle.
+
+The service UUID default is the source-observed wireless RFCOMM UUID `00000000-deca-fade-deca-deafdecacafe`; callers may supply another UUID. Added legacy `BLUETOOTH_ADMIN` manifest permission for discovery cancellation on API 17.
+
+Important qualification: the connector is a source-parity port of the fallback sequence, not yet wired into the app's UI/session lifecycle. Android CI compilation is pending; no physical Bluetooth/iPhone test has been run. The 10-second timeout applies per fallback attempt, matching the original default helper behavior; total worst-case duration can exceed 20 seconds.
