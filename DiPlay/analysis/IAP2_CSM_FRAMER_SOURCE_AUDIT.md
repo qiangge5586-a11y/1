@@ -108,3 +108,8 @@ Added two Java 7 offline parity models:
 - Iap2CsmSendDeadline: deterministic shared-deadline arithmetic and ceil-to-millisecond remaining budget.
 
 Their tests cover exact capacity boundaries, queue-full behavior, release/re-admission, FIFO, close/termination, invalid payload lengths, zero timeout, deadline expiry, rounding and shared budget decay. These models do not perform blocking waits, link-engine admission, ACK/retransmission, or transport I/O; those remain distinct layers.
+
+
+### CI verification for queue/deadline models
+
+Actions run [#183](https://github.com/qiangge5586-a11y/1/actions/runs/42177750683) passed **8,145 Java 7 offline checks**. The new suites passed with 130 command-queue checks and 13 shared-deadline checks. An earlier run #182 failed because the new source files were not included in the javac input list; the workflow was corrected and run #183 compiled and passed all suites.
