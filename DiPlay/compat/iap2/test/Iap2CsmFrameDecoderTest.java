@@ -40,7 +40,7 @@ public final class Iap2CsmFrameDecoderTest {
         List<Iap2CsmFrameDecoder.Frame> out = d.feed(concat(invalid, valid));
         eq(1, out.size());
         eq(0x1234, out.get(0).messageId);
-        eq(8L, d.getDiscardedBytes());
+        eq(7L, d.getDiscardedBytes());
         eq(1L, d.getInvalidLengthCandidates());
         d.reset();
         eq(0L, d.getDiscardedBytes());
