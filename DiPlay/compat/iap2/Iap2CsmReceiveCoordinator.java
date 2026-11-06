@@ -10,8 +10,8 @@ import java.util.List;
  * window. This class performs no transport I/O and is not a production engine.
  */
 public final class Iap2CsmReceiveCoordinator {
-    private final Iap2CsmFrameDecoder decoder = new Iap2CsmFrameDecoder();
-    private final Iap2CsmReceiveQueueModel queue = new Iap2CsmReceiveQueueModel();
+    private Iap2CsmFrameDecoder decoder = new Iap2CsmFrameDecoder();
+    private Iap2CsmReceiveQueueModel queue = new Iap2CsmReceiveQueueModel();
     private boolean closed;
     private String terminalReason;
 
@@ -58,13 +58,8 @@ public final class Iap2CsmReceiveCoordinator {
 
     /** Reset all stream and queue state when a new transport session is created. */
     public synchronized void reset() {
-        decoder.reset();
-        // A queue is session-scoped; do not silently reuse a closed queue.
-        if (queue.size() != 0 || queue.isClosed()) {
-            closed = true;
-            terminalReason = "receive coordinator cannot reset a non-empty or closed queue";
-            return;
-        }
+        decoder = new Iap2CsmFrameDecoder();
+        queue = new Iap2CsmReceiveQueueModel();
         closed = false;
         terminalReason = null;
     }
