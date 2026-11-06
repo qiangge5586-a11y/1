@@ -54,8 +54,8 @@ public final class MfiIap2CsmAdapterTest {
             badAdapter.onInboundFrame(Iap2CsmFrameCodec.encode(0xAA02, Iap2ParameterCodec.encode(0,
                     new byte[] { 1 })));
         }}, "out-of-order challenge rejected");
-        check(badAdapter.state() == MfiIap2ExchangeCoordinator.State.CLOSED,
-                "protocol failure closes adapter session");
+        check(badAdapter.state() == MfiIap2ExchangeCoordinator.State.FAILED,
+                "protocol failure fails adapter session");
         System.out.println("MfiIap2CsmAdapterTest: " + checks + " checks passed");
     }
 
