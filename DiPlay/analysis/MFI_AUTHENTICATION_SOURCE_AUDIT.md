@@ -253,3 +253,17 @@ A further inspection of the original `Iap2AuthenticationMessages`, `Iap2Paramete
 Added `Iap2ParameterCodec` and `MfiIap2MessageCodec`, plus offline tests for MFI certificate/signature, BAA body pass-through, BAA leaf/intermediate package, challenge extraction, malformed parameter lengths and malformed CSM frame headers. The test is now part of the Java 7 CI workflow.
 
 This is a wire-format compatibility layer only. It is not yet connected to `Iap2CsmReceiveCoordinator` / `Iap2CsmPumpSender` or to the RFCOMM/TCP transport. Challenge length enforcement and the provider operation deadline remain in the provider/session layer. BAA provider material acquisition is still not implemented; these builders only encode already-supplied bytes. No real MFi hardware, iPhone, API 17 device, or vehicle was tested.
+
+
+## Source-parity follow-up: MFi CSM adapter boundary (2026-11-06)
+
+Added `MfiIap2CsmAdapter` to connect complete inbound CSM frames to the existing generation-safe exchange coordinator:
+
+- Incoming `0xAA00` now drives certificate acquisition and emits a complete `0xAA01` CSM frame using parameter 0.
+- Incoming `0xAA02` is decoded through the source-audited parameter parser, passed to the challenge signer, and emitted as a complete `0xAA03` CSM frame.
+- Incoming `0xAA04` / `0xAA05` are routed to the coordinator's terminal failure/success transitions and produce no outbound reply.
+- Unexpected, malformed, or out-of-order messages fail the current exchange; adapter errors request cancellation rather than allowing a stale exchange to continue.
+
+Offline Java 7 CI: [run 42208373713](https://github.com/qiangge5586-a11y/1/actions/runs/42208373713) passed. The new adapter test passed 9 checks; the MFi message codec passed 16 checks; the coordinator passed 16 checks; provider-session passed 21 checks; I2C certificate reader passed 1,070 checks; the existing iAP2/RFCOMM offline suite also passed.
+
+Integration boundary remains explicit: the adapter consumes/returns complete CSM frames but does not read from `Iap2CsmReceiveCoordinator`, enqueue into `Iap2CsmPumpSender`, or write to RFCOMM/type-130 TCP itself. The transport owner must call it from the single-threaded CSM pump and submit returned frames through the existing bounded sender. This is the next integration task. BAA encoding helpers are present, but provider-side BAA identity/material selection remains disabled/unimplemented. No MFi chip, iPhone, API 17 device, or Civic head unit was exercised.
