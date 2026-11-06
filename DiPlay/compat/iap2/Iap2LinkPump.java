@@ -85,6 +85,44 @@ public final class Iap2LinkPump {
         }
     }
 
+    /**
+     * Producer-side capacity wait. Never call this from Driver/Listener callbacks or the pump
+     * worker. The timeout is shared by the capacity wait only; a zero timeout still admits
+     * immediately when capacity is already available.
+     */
+    public boolean sendControlAwaitCapacity(byte[] payload, long timeoutMillis) {
+        if (payload == null) throw new NullPointerException("payload");
+        if (timeoutMillis < 0L) throw new IllegalArgumentException("negative timeout");
+        if (payload.length > MAX_CONTROL_PAYLOAD) {
+            throw new IllegalArgumentException("control payload exceeds " + MAX_CONTROL_PAYLOAD);
+        }
+        final long startedAt = System.nanoTime();
+        final long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        synchronized (lock) {
+            while (true) {
+                if (!started || closing || terminated) return false;
+                if (commands.size() < MAX_COMMANDS
+                        && payload.length <= MAX_COMMAND_BYTES - commandBytes) {
+                    commands.addLast(Arrays.copyOf(payload, payload.length));
+                    commandBytes += payload.length;
+                    lock.notifyAll();
+                    return true;
+                }
+                long elapsed = System.nanoTime() - startedAt;
+                long remaining = timeoutNanos - elapsed;
+                if (remaining <= 0L) return false;
+                long waitMillis = remaining / 1000000L;
+                int waitNanos = (int) (remaining % 1000000L);
+                try {
+                    lock.wait(waitMillis, waitNanos);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+        }
+    }
+
     public void close() {
         synchronized (lock) {
             if (closing || terminated) return;
@@ -195,6 +233,7 @@ public final class Iap2LinkPump {
                 command = commands.pollFirst();
                 if (command == null) return;
                 commandBytes -= command.length;
+                lock.notifyAll();
             }
             if (driver instanceof CommandSink) {
                 ((CommandSink) driver).sendControl(command, nowMillis);
