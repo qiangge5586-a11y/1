@@ -48,7 +48,7 @@ https://github.com/qiangge5586-a11y/1/actions/runs/42149522090
 
 Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; expires 2026-11-20). Archive digest: `sha256:035090779625eff20ee4cbc8e01eeda8d2cf0e568f71e4cbddf6e8b1464908bb`.
 
-## GitHub Actions and project records
+## iAP2 wireless tunnel handshake work (2026-11-06)\n\nAn offline Java 7 handshake lifecycle tracker and test workflow have been added. It separates RFCOMM bootstrap milestones from the later type-130 tunnel stream and tunnel authentication, rejects stale callbacks using a per-session generation token, treats duplicate events idempotently, and reports missing handoff milestones without imposing an unverified ordering between Wi-Fi configuration notifications and tunnel arrival. This is a semantic state model only: it is not connected to the original packet parser or Bluetooth/tunnel I/O, and no real iPhone or vehicle handshake has been performed. See the [handshake review](analysis/IAP2_WIRELESS_TUNNEL_HANDSHAKE_REVIEW.md).\n\n## GitHub Actions and project records
 
 - [DiPlay Android build workflow](../.github/workflows/diplay-android-build.yml)
 - [Chinese static analysis report](analysis/DiPlay-0.3.11-静态分析报告.md)
@@ -61,6 +61,9 @@ Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; 
 - [USB read-only scanner](compat/usb/README.md)
 - [Offline NCM/NTB16 codec](compat/ncm/README.md)
 - [Protocol path map](analysis/DiPlay_PROTOCOL_PATH_MAP.md)
+- [iAP2 wireless tunnel and handshake review](analysis/IAP2_WIRELESS_TUNNEL_HANDSHAKE_REVIEW.md)
+- [Offline iAP2 wireless handshake state tracker](compat/iap2/Iap2WirelessHandshake.java)
+- [iAP2 handshake self-test workflow](../.github/workflows/diplay-iap2-handshake.yml)
 - [Original NCM/NTB16 codec comparison](analysis/NCM_NTB16_CODEC_COMPARISON.md)
 - [CDC-NCM interface selection policy review](analysis/NCM_INTERFACE_SELECTION_POLICY.md)
 - [API 17 legacy USB claim, raw usbfs and VPN/lwIP review](analysis/API17_LEGACY_USB_NCM_AND_VPN_REVIEW.md)
