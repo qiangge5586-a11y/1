@@ -1,11 +1,9 @@
 package com.shilapi.xcertplay.compat.mfi;
 
 /**
- * Source-grounded iAP2 MFi exchange coordinator.
- *
- * This class coordinates the AA00..AA05 message sequence only. The transport,
- * parameter encoding/decoding and actual provider remain supplied by the caller;
- * no wire parameter layout is guessed here.
+ * Coordinates source-confirmed iAP2 MFi message IDs. Provider work is deliberately
+ * outside the coordinator monitor so reconnect/cancel can invalidate blocked work.
+ * Wire parameter serialization remains the responsibility of the source-parity codec.
  */
 public final class MfiIap2ExchangeCoordinator {
     public static final int REQUEST_CERTIFICATE = 0xAA00;
@@ -15,8 +13,8 @@ public final class MfiIap2ExchangeCoordinator {
     public static final int AUTHENTICATION_FAILED = 0xAA04;
     public static final int AUTHENTICATION_SUCCEEDED = 0xAA05;
 
-    public enum State { WAITING_FOR_CERTIFICATE, CERTIFICATE_SENT,
-        SIGNATURE_SENT, SUCCEEDED, FAILED, CLOSED }
+    public enum State { WAITING_FOR_CERTIFICATE, READING_CERTIFICATE, CERTIFICATE_SENT,
+        SIGNING_CHALLENGE, SIGNATURE_SENT, SUCCEEDED, FAILED, CLOSED }
 
     public static final class Reply {
         public final int messageId;
@@ -27,7 +25,6 @@ public final class MfiIap2ExchangeCoordinator {
         }
         public byte[] payload() { return payload.clone(); }
     }
-
     public static final class ProtocolException extends IllegalStateException {
         public ProtocolException(String message) { super(message); }
     }
@@ -42,12 +39,18 @@ public final class MfiIap2ExchangeCoordinator {
         this.generation = generation;
     }
 
-    /** Handle AA00 and produce AA01. */
-    public synchronized Reply requestCertificate() {
-        require(State.WAITING_FOR_CERTIFICATE);
+    /** Incoming AA00: read certificate and return the payload for AA01. */
+    public Reply requestCertificate() {
+        synchronized (this) {
+            require(State.WAITING_FOR_CERTIFICATE);
+            state = State.READING_CERTIFICATE;
+        }
         try {
             byte[] certificate = provider.readCertificate(generation);
-            state = State.CERTIFICATE_SENT;
+            synchronized (this) {
+                require(State.READING_CERTIFICATE);
+                state = State.CERTIFICATE_SENT;
+            }
             return new Reply(CERTIFICATE_RESPONSE, certificate);
         } catch (RuntimeException failure) {
             fail();
@@ -55,12 +58,18 @@ public final class MfiIap2ExchangeCoordinator {
         }
     }
 
-    /** Handle AA02 and produce AA03. Challenge parameter is the decoded raw value. */
-    public synchronized Reply requestChallenge(byte[] challenge) {
-        require(State.CERTIFICATE_SENT);
+    /** Incoming AA02: sign decoded parameter zero and return the payload for AA03. */
+    public Reply requestChallenge(byte[] challenge) {
+        synchronized (this) {
+            require(State.CERTIFICATE_SENT);
+            state = State.SIGNING_CHALLENGE;
+        }
         try {
             byte[] signature = provider.signChallenge(challenge, generation);
-            state = State.SIGNATURE_SENT;
+            synchronized (this) {
+                require(State.SIGNING_CHALLENGE);
+                state = State.SIGNATURE_SENT;
+            }
             return new Reply(SIGNATURE_RESPONSE, signature);
         } catch (RuntimeException failure) {
             fail();
@@ -68,7 +77,6 @@ public final class MfiIap2ExchangeCoordinator {
         }
     }
 
-    /** Handle peer terminal result AA04/AA05. */
     public synchronized void peerResult(int messageId) {
         if (messageId == AUTHENTICATION_FAILED) {
             if (state == State.SUCCEEDED || state == State.CLOSED)
@@ -84,9 +92,11 @@ public final class MfiIap2ExchangeCoordinator {
         throw protocolFailure("message is not an MFi terminal result");
     }
 
-    public synchronized void cancel() {
-        if (state == State.SUCCEEDED || state == State.FAILED || state == State.CLOSED) return;
-        state = State.CLOSED;
+    public void cancel() {
+        synchronized (this) {
+            if (state == State.SUCCEEDED || state == State.FAILED || state == State.CLOSED) return;
+            state = State.CLOSED;
+        }
         provider.cancel();
     }
 
@@ -96,16 +106,16 @@ public final class MfiIap2ExchangeCoordinator {
         if (state != expected)
             throw protocolFailure("unexpected MFi message for state " + state);
     }
-
     private ProtocolException protocolFailure(String message) {
         fail();
         return new ProtocolException(message);
     }
-
     private void fail() {
-        if (state != State.SUCCEEDED && state != State.CLOSED) {
-            state = State.FAILED;
-            provider.cancel();
+        boolean cancel;
+        synchronized (this) {
+            cancel = state != State.SUCCEEDED && state != State.CLOSED && state != State.FAILED;
+            if (cancel) state = State.FAILED;
         }
+        if (cancel) provider.cancel();
     }
 }
