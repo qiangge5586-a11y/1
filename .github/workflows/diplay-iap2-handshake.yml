@@ -33,6 +33,7 @@ jobs:
             DiPlay/compat/iap2/Iap2ReceiveWindowModel.java \
             DiPlay/compat/iap2/Iap2AckWindowPolicy.java \
             DiPlay/compat/iap2/Iap2OutboundWindowModel.java \
+            DiPlay/compat/iap2/Iap2LinkEngineModel.java \
             DiPlay/compat/iap2/test/Iap2WirelessHandshakeTest.java \
             DiPlay/compat/iap2/test/IapTunnelFramingTest.java \
             DiPlay/compat/iap2/test/Iap2CsmFrameDecoderTest.java \
@@ -42,7 +43,8 @@ jobs:
             DiPlay/compat/iap2/test/Iap2RetransmissionPolicyTest.java \
             DiPlay/compat/iap2/test/Iap2ReceiveWindowModelTest.java \
             DiPlay/compat/iap2/test/Iap2AckWindowPolicyTest.java \
-            DiPlay/compat/iap2/test/Iap2OutboundWindowModelTest.java
+            DiPlay/compat/iap2/test/Iap2OutboundWindowModelTest.java \
+            DiPlay/compat/iap2/test/Iap2LinkEngineModelTest.java
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2WirelessHandshakeTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.IapTunnelFramingTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmFrameDecoderTest
@@ -53,3 +55,4 @@ jobs:
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2ReceiveWindowModelTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2AckWindowPolicyTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2OutboundWindowModelTest
+          java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkEngineModelTest
