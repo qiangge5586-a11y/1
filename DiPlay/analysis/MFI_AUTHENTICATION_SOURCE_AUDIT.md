@@ -183,3 +183,12 @@ These classes are isolated compatibility primitives, not yet wired to the origin
 The new compatibility primitives use only Java language level 7 and core APIs available well before Android API 17 (`System.nanoTime`, `AtomicBoolean`, thread interruption state, `Locale.US`, arrays and synchronization). They compile in the Java 7 CI job and are included in the isolated Android module whose manifest/build metadata declares minSdk 17.
 
 This is a source/build compatibility checkpoint, not an API 17 runtime certification. The original AirPlay SAP path still requires runtime verification for its X25519 implementation, AES/CTR and hash providers; the original local identity provider references BouncyCastle. No API 17 emulator/device test, real MFi coprocessor test, or legitimate-provider/iPhone authentication was performed. Keep production MFi enablement gated until those checks are run on the actual Android 4.2.2 target with authorized hardware/credentials.
+
+
+## CI verification record (2026-11-06)
+
+- Java 7 offline protocol/MFi test run: [run 42200211252](https://github.com/qiangge5586-a11y/1/actions/runs/42200211252) — passed. MFi checks: operation context 16; I2C certificate reader 1,065; backend selection policy 12. Existing iAP2/RFCOMM test suite also passed.
+- Android compatibility APK build and hygiene scan: [run 42200474000](https://github.com/qiangge5586-a11y/1/actions/runs/42200474000) — passed. APK metadata confirmed minSdk 17 and targetSdk 28; hygiene scanner's 3 tests passed; built APK scan reported no offline identity/private-key material.
+- Artifact: `diplay-honda-compat-debug`, ID `13493602871`, SHA-256 `dbd3c12bc4adad87248de96bbe0d3ccf08dab37a11de6f25d922a123806693de`.
+
+These are offline Java/CI and APK archive checks only. They do not prove API 17 device runtime behavior, actual I2C/CH341 access, legitimate MFi authentication, iPhone pairing, or operation on the Civic head unit.
