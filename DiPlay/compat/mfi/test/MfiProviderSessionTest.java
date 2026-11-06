@@ -42,7 +42,7 @@ public final class MfiProviderSessionTest {
     private static void staleGenerationCannotAdvanceSession() {
         Clock clock = new Clock();
         MfiOperationContext context = context(clock, 1000L, 5L);
-        MfiProviderSession session = new MfiProviderSession(new MfiProviderSession.Provider() {
+        final MfiProviderSession session = new MfiProviderSession(new MfiProviderSession.Provider() {
             public byte[] readCertificate(MfiOperationContext c) { return new byte[] {1}; }
             public byte[] signChallenge(byte[] b, MfiOperationContext c) { return new byte[] {2}; }
         }, context, 5L);
