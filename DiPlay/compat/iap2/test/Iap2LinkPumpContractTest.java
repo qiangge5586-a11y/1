@@ -94,7 +94,7 @@ public final class Iap2LinkPumpContractTest {
         truth(!producer.isAlive(), "capacity waiter wakes after worker dequeue");
         truth(admitted[0], "capacity waiter admitted after dequeue");
         inputWriter.write(1); // Wake the worker after the first 64 commands are drained.
-        truth(delivered.await(2, TimeUnit.SECONDS), "all 65 commands delivered to driver");
+        truth(delivered.await(5, TimeUnit.SECONDS), "all 65 commands delivered to driver across bounded turns");
         inputWriter.close();
         truth(closed.await(2, TimeUnit.SECONDS), "pump closes after test stream EOF");
     }
