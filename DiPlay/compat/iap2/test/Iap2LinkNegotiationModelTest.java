@@ -211,6 +211,9 @@ public final class Iap2LinkNegotiationModelTest {
             eq(values[i][4], peer.maxRetransmissions);
             eq(values[i][5], peer.maxAcknowledgements);
             eq(0, peer.getSessionDescriptorCount());
+            truth(peer.acceptsPayload(new byte[peer.maxLength - 10]));
+            truth(!peer.acceptsPayload(new byte[peer.maxLength - 9]));
+            truth(!peer.acceptsPayload(null));
             eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
         }
 
