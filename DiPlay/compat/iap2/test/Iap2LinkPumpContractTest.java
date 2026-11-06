@@ -3,24 +3,33 @@ package com.shilapi.xcertplay.compat.iap2;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public final class Iap2LinkPumpContractTest {
     public static void main(String[] args) throws Exception {
-        testCommandBounds();
+        testCommandBoundsAndEofShutdown();
         testRejectsOversizedPayload();
         System.out.println("Iap2LinkPumpContractTest: 4 checks passed");
     }
 
-    private static void testCommandBounds() throws Exception {
+    private static void testCommandBoundsAndEofShutdown() throws Exception {
+        final CountDownLatch closed = new CountDownLatch(1);
+        final String[] reason = new String[1];
+        Iap2LinkPump.Listener listener = new Iap2LinkPump.Listener() {
+            public void onReady() {}
+            public void onClosed(String value) { reason[0] = value; closed.countDown(); }
+            public void onFailure(IOException failure) { throw new AssertionError(failure); }
+        };
         Iap2LinkPump pump = new Iap2LinkPump(
                 new Iap2StreamDuplexAdapter(new ByteArrayInputStream(new byte[0]),
                         new ByteArrayOutputStream()),
-                new DriverStub(), new ListenerStub());
+                new DriverStub(), listener);
         truth(!pump.sendControl(new byte[] { 1 }), "cannot enqueue before start");
         pump.start();
-        // The EOF stream terminates the pump immediately; close is idempotent either way.
-        pump.close();
-        truth(pump.isTerminated() || !pump.isTerminated(), "termination state is readable");
+        truth(closed.await(2, TimeUnit.SECONDS), "EOF closes pump");
+        truth("iAP2 transport EOF".equals(reason[0]), "EOF reason preserved");
+        truth(pump.isTerminated(), "pump reports terminated");
     }
 
     private static void testRejectsOversizedPayload() throws Exception {
@@ -32,7 +41,6 @@ public final class Iap2LinkPumpContractTest {
         try { pump.sendControl(new byte[65526]); }
         catch (IllegalArgumentException expected) { rejected = true; }
         truth(rejected, "payload above 65525 rejected");
-        truth(!pump.sendControl(new byte[1]), "not started queue rejected");
     }
 
     private static void truth(boolean value, String label) {
