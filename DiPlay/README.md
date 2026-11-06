@@ -48,7 +48,7 @@ https://github.com/qiangge5586-a11y/1/actions/runs/42149522090
 
 Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; expires 2026-11-20). Archive digest: `sha256:035090779625eff20ee4cbc8e01eeda8d2cf0e568f71e4cbddf6e8b1464908bb`.
 
-## iAP2 wireless tunnel handshake work (2026-11-06)\n\nAn offline Java 7 handshake lifecycle tracker and test workflow have been added. A deeper source trace distinguishes AirPlay type-130 DataStream SETUP, its encrypted IAP TCP carrier, and the iAP2 tunnel session carried inside it; see the type-130/IAP source trace. Offline frame and package decoders with tests have also been added. It separates RFCOMM bootstrap milestones from the later type-130 tunnel stream and tunnel authentication, rejects stale callbacks using a per-session generation token, treats duplicate events idempotently, and reports missing handoff milestones without imposing an unverified ordering between Wi-Fi configuration notifications and tunnel arrival. This is a semantic state model only: it is not connected to the original packet parser or Bluetooth/tunnel I/O, and no real iPhone or vehicle handshake has been performed. See the [handshake review](analysis/IAP2_WIRELESS_TUNNEL_HANDSHAKE_REVIEW.md).\n\n## GitHub Actions and project records
+## iAP2 wireless tunnel handshake work (2026-11-06)\n\nAn offline Java 7 handshake lifecycle tracker and test workflow have been added. A deeper source trace distinguishes AirPlay type-130 DataStream SETUP, its encrypted IAP TCP carrier, and the iAP2 tunnel session carried inside it; see the type-130/IAP source trace. Offline frame, package and CSM decoders with tests have also been added. The link-layer audit documents synchronization, sequence/ACK, retransmission and CSM readiness gates. It separates RFCOMM bootstrap milestones from the later type-130 tunnel stream and tunnel authentication, rejects stale callbacks using a per-session generation token, treats duplicate events idempotently, and reports missing handoff milestones without imposing an unverified ordering between Wi-Fi configuration notifications and tunnel arrival. This is a semantic state model only: it is not connected to the original packet parser or Bluetooth/tunnel I/O, and no real iPhone or vehicle handshake has been performed. See the [handshake review](analysis/IAP2_WIRELESS_TUNNEL_HANDSHAKE_REVIEW.md).\n\n## GitHub Actions and project records
 
 - [DiPlay Android build workflow](../.github/workflows/diplay-android-build.yml)
 - [Chinese static analysis report](analysis/DiPlay-0.3.11-静态分析报告.md)
@@ -63,6 +63,7 @@ Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; 
 - [Protocol path map](analysis/DiPlay_PROTOCOL_PATH_MAP.md)
 - [iAP2 wireless tunnel and handshake review](analysis/IAP2_WIRELESS_TUNNEL_HANDSHAKE_REVIEW.md)
 - [AirPlay type-130 SETUP and encrypted IAP TCP tunnel source trace](analysis/AIRPLAY_TYPE130_IAP_TUNNEL_SOURCE_TRACE.md)
+- [iAP2 link-layer and CSM framing audit](analysis/IAP2_LINK_AND_CSM_FRAMING_AUDIT.md)
 - [Offline iAP2 wireless handshake state tracker](compat/iap2/Iap2WirelessHandshake.java)
 - [iAP2 handshake self-test workflow](../.github/workflows/diplay-iap2-handshake.yml)
 - [Original NCM/NTB16 codec comparison](analysis/NCM_NTB16_CODEC_COMPARISON.md)
