@@ -60,3 +60,8 @@ These copies are intentional ownership boundaries: the reader reuses its scratch
 The pump outbound sendControl() copies caller payloads before queueing. This prevents caller mutation after admission. It should remain until an explicit ownership-transfer API is introduced and tested; silently removing the copy is unsafe.
 
 Conclusion: do not remove these copies based only on source inspection. The next optimization should add low-overhead counters/timing around socket read, ring occupancy, pump read, driver onBytes, driver output, and socket write. Use aggregate counters (not per-packet logcat output), then profile on target hardware to determine whether either copy is material.
+
+
+## Aggregate pump instrumentation
+
+Added Iap2PumpMetrics, an API-17-compatible aggregate snapshot exposed by Iap2LinkPump.metricsSnapshot(). It records read calls/bytes/time, driver input bytes/time, timer calls/time, write calls/bytes/time, delivered commands, and maximum queued command count/bytes. Updates use AtomicLong counters and max high-water marks; there is no per-packet logcat output and no allocation per metric event. Snapshot allocation occurs only when a caller explicitly requests metricsSnapshot(). These counters measure pump-level stream and driver costs; they do not yet measure the RFCOMM reader thread's socket.read duration or ring occupancy. Device-side sampling is still required before selecting further optimizations.
