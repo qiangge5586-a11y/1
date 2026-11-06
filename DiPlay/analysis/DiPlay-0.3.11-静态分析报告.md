@@ -215,3 +215,31 @@ Manifest 还声明了启动 Activity、CarPlay Host Activity、USB 附件处理�
 5. 如果拿不到原生库源代码，需评估用 Java/Kotlin 或系统已有接口替代；不能直接修改 ELF 标记伪装成 API 17。
 
 本田目标设备为 ARMv7，与这些库的 CPU ABI 匹配；但 **ABI 匹配不等于 Android API/动态链接兼容**。
+
+
+## 12. 以资料库《思域报告(1).pdf》校准的本田实机基准
+
+已重新检索并读取资料库中的《思域报告(1).pdf》（3 页），后续适配以该报告记录为准，不要求用户重复提供这些信息。
+
+| 项目 | 报告记录 |
+|---|---|
+| ROOT | 已获取，`su -c id` 验证 UID 0 |
+| Android | 4.2.2 / API 17 |
+| 系统构建 | `1.F1A4.65` |
+| Build 指纹 | `Honda/Andromeda/vcm30t30:4.2.2/1.F1A4.65/138:user/release-keys` |
+| 设备型号 | `MY16ADA` |
+| 制造商 | Honda / MITSUBISHI ELECTRIC |
+| 设备代号 / 主板 | `vcm30t30` / Andromeda |
+| CPU | ARMv7 Processor rev 9 (v7l)，4 核，最高 900 MHz |
+| ABI | `armeabi-v7a, armeabi` |
+| 显示 | 800 × 480，160 dpi，横屏 |
+| RAM | 总量 0.94 GB，可用 0.27 GB（检测时） |
+| 内部存储 | 总量 2.34 GB，可用 2.18 GB（检测时） |
+| Wi-Fi | 报告检测为可用 |
+
+### 对实施计划的直接修正
+1. ROOT 权限已经有实机报告证据，不能再把“是否 Root”当成未知前置条件；后续只需在 DiPlay 自身进程中验证授权链是否可用。
+2. Wi-Fi 确认可用，但报告没有给出无线接口名、驱动、AP 模式、hostapd/dnsmasq 路径或 Binder 方法签名。因此只读探测脚本的目的，是补齐这些底层细节，不是重新检测 Wi-Fi 是否存在。
+3. 可用 RAM 仅约 0.27 GB，需控制后台服务、反编译/诊断日志缓存和 CarPlay 音视频缓冲，避免在车机端运行大型诊断组件。
+4. 800×480 横屏是界面适配基准；正式车机 APK 应采用低内存、横屏优先布局。
+5. 设备型号为 MY16ADA，硬件平台为 Mitsubishi Electric Andromeda/vcm30t30；不能把“2019 款劲动版”车型信息直接等同于车机硬件代号，软件适配应以实机报告的系统和硬件标识为准。
