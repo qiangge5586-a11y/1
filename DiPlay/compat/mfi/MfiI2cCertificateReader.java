@@ -1,5 +1,8 @@
 package com.shilapi.xcertplay.compat.mfi;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Source-grounded, deadline-bounded certificate reader for the MFi I2C register protocol.
  * Register transport remains hardware-specific and must bound each bus call using the
@@ -20,7 +23,11 @@ public final class MfiI2cCertificateReader {
         public TransportDataException(String message) { super(message); }
     }
 
-    private static final Object COPROCESSOR_LOCK = new Object();
+    /*
+     * Retain one process-wide coprocessor lock, as the original implementation serialized
+     * access globally. Unlike synchronized, timed acquisition consumes the operation budget.
+     */
+    private static final ReentrantLock COPROCESSOR_LOCK = new ReentrantLock();
 
     private final RegisterTransport transport;
     private final long generation;
@@ -33,14 +40,27 @@ public final class MfiI2cCertificateReader {
 
     /**
      * Reads the 16-bit big-endian length at 0x30 and then 128-byte windows from 0x31 onward.
-     * The entire operation is serialized and consumes one caller-owned deadline.
+     * Lock acquisition, register reads, and every window share one caller-owned deadline.
      */
     public byte[] readCertificate(int maximumLength, MfiOperationContext context) {
         if (maximumLength < 1 || maximumLength > MAX_CERTIFICATE_BYTES)
             throw new IllegalArgumentException("maximumLength must be in 1..65525");
         if (context == null) throw new IllegalArgumentException("context == null");
 
-        synchronized (COPROCESSOR_LOCK) {
+        context.checkActive(generation);
+        boolean locked;
+        try {
+            locked = COPROCESSOR_LOCK.tryLock(context.remainingNanos(), TimeUnit.NANOSECONDS);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new MfiOperationContext.OperationCancelledException(
+                    "interrupted while waiting for MFi coprocessor");
+        }
+        if (!locked)
+            throw new MfiOperationContext.OperationTimeoutException(
+                    "deadline exceeded waiting for MFi coprocessor");
+
+        try {
             context.checkActive(generation);
             byte[] lengthBytes = transport.readRegister(
                     CERTIFICATE_LENGTH_REGISTER, 2, context);
@@ -67,6 +87,8 @@ public final class MfiI2cCertificateReader {
             }
             context.checkActive(generation);
             return certificate;
+        } finally {
+            COPROCESSOR_LOCK.unlock();
         }
     }
 
