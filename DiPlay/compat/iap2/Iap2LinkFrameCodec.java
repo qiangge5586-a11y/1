@@ -15,6 +15,13 @@ public final class Iap2LinkFrameCodec {
     public static final int CONTROL_ACKNOWLEDGEMENT = 0x40;
     public static final int CONTROL_EXTENDED_ACKNOWLEDGEMENT = 0x20;
     public static final int CONTROL_RESET = 0x10;
+    public static final int INITIAL_SEQUENCE = 99;
+    public static final int CONTROL_SESSION_ID = 10;
+    public static final int EA_SESSION_ID = 11;
+    public static final int FILE_TRANSFER_SESSION_ID = 12;
+    public static final byte[] IAP2_MARKER = new byte[] {
+        (byte) 0xFF, 0x55, 0x02, 0x00, (byte) 0xEE, 0x10
+    };
     private static final int START_HIGH = 0xFF;
     private static final int START_LOW = 0x5A;
 
@@ -99,6 +106,71 @@ public final class Iap2LinkFrameCodec {
         int sum = 0;
         for (int i = 0; i < bytes.length; i++) sum = (sum + u8(bytes[i])) & 0xFF;
         return sum == 0;
+    }
+
+
+    /** Encodes the 10-byte synchronization prefix and 3-byte session descriptors. */
+    public static byte[] encodeSynchronizationPayload(int maxOutgoing, int maxLength,
+            int retransmissionTimeoutMillis, int acknowledgementTimeoutMillis,
+            int maxRetransmissions, int maxAcknowledgements, int[][] sessions) {
+        requireByte(maxOutgoing);
+        requireU16(maxLength);
+        requireU16(retransmissionTimeoutMillis);
+        requireU16(acknowledgementTimeoutMillis);
+        requireByte(maxRetransmissions);
+        requireByte(maxAcknowledgements);
+        if (sessions == null) throw new IllegalArgumentException("sessions");
+        byte[] out = new byte[10 + sessions.length * 3];
+        out[0] = 1;
+        out[1] = (byte) maxOutgoing;
+        putU16(out, 2, maxLength);
+        putU16(out, 4, retransmissionTimeoutMillis);
+        putU16(out, 6, acknowledgementTimeoutMillis);
+        out[8] = (byte) maxRetransmissions;
+        out[9] = (byte) maxAcknowledgements;
+        for (int i = 0; i < sessions.length; i++) {
+            if (sessions[i] == null || sessions[i].length != 3) {
+                throw new IllegalArgumentException("session descriptor must have 3 fields");
+            }
+            for (int j = 0; j < 3; j++) {
+                requireByte(sessions[i][j]);
+                out[10 + i * 3 + j] = (byte) sessions[i][j];
+            }
+        }
+        return out;
+    }
+
+    /** Returns [maxOutgoing,maxLength,retransmitMs,ackMs,maxRetries,maxAcks, descriptors...]. */
+    public static int[] decodeSynchronizationPayload(byte[] bytes) {
+        if (bytes == null || bytes.length < 10 || u8(bytes[0]) != 1) return null;
+        int descriptorCount = (bytes.length - 10) / 3;
+        int[] out = new int[6 + descriptorCount * 3];
+        out[0] = u8(bytes[1]);
+        out[1] = readU16(bytes, 2);
+        out[2] = readU16(bytes, 4);
+        out[3] = readU16(bytes, 6);
+        out[4] = u8(bytes[8]);
+        out[5] = u8(bytes[9]);
+        int index = 6;
+        for (int offset = 10; offset + 3 <= bytes.length; offset += 3) {
+            out[index++] = u8(bytes[offset]);
+            out[index++] = u8(bytes[offset + 1]);
+            out[index++] = u8(bytes[offset + 2]);
+        }
+        return out;
+    }
+
+    private static void putU16(byte[] bytes, int offset, int value) {
+        bytes[offset] = (byte) (value >>> 8);
+        bytes[offset + 1] = (byte) value;
+    }
+
+    private static void requireByte(int value) {
+        if (value < 0 || value > 255) throw new IllegalArgumentException("u8");
+    }
+
+    private static void requireU16(int value) {
+        if (value < 0 || value > 65535) throw new IllegalArgumentException("u16");
     }
 
     private static int readU16(byte[] bytes, int offset) {
