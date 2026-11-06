@@ -88,7 +88,7 @@ The decoder requires at least 10 bytes and version 1. It reads complete 3-byte d
 `Iap2LinkChannel.WIRELESS_LINK_CONFIG` is instantiated with:
 - maxOutgoing = 4
 - maxOutgoingDelta = 0
-- acknowledgementTimeoutMillis = 0
+- acknowledgementTimeoutMillis = 500 (defaulted from LwipNcmBridge.WRITE_TIMEOUT_MILLIS)
 - zeroAcknowledgements = false
 - controlSessionVersion = 2
 - default queue/buffer limits (64 queued packets, 64 out-of-order packets, 1 MiB pending output, 256 pending events)
@@ -97,7 +97,7 @@ The engine's local synchronization payload for this wireless configuration is ex
 - maxOutgoing 4
 - maxLength 65,535
 - retransmission timeout 4,000 ms
-- acknowledgement timeout 0 ms
+- acknowledgement timeout 500 ms
 - max retransmissions 4
 - max acknowledgements 3
 - descriptors: `0A 00 02`, `0B 02 01`, `0C 01 02`
@@ -105,14 +105,14 @@ The engine's local synchronization payload for this wireless configuration is ex
 Golden payload:
 
 ```
-01 04 FF FF 0F A0 00 00 04 03 0A 00 02 0B 02 01 0C 01 02
+01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02
 ```
 
 Golden synchronization frame (sequence 99, acknowledgement 0, session 0):
 
 ```
 FF 5A 00 1D 80 63 00 00 A7
-01 04 FF FF 0F A0 00 00 04 03 0A 00 02 0B 02 01 0C 01 02 1E
+01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02 1E
 ```
 
 The offline test `Iap2LinkFrameCodecTest` now asserts this source-derived vector.
@@ -170,3 +170,8 @@ Still required before a complete link-engine model is considered source-equivale
 7. End-to-end original engine comparison, if a harness can instantiate the original implementation without Android dependencies.
 
 This codec/test layer is offline only. It is not a Bluetooth session, real iPhone handshake, or MY16ADA vehicle test. No ROOT, hotspot, USB, Bluetooth, or live AirPlay action is performed.
+
+
+## Configuration mask correction
+
+The wireless synthetic constructor mask 494 includes the default-argument bit for acknowledgementTimeoutMillis. The default resolves to LwipNcmBridge.WRITE_TIMEOUT_MILLIS = 500 ms. Therefore the wireless local synchronization advertises ACK timeout 500 ms, not 0 ms; the payload contains `01 F4` at offsets 6..7. The canonical offline implementation and tests are `Iap2LinkFrameCodec.java` and `Iap2LinkFrameCodecTest.java`.
