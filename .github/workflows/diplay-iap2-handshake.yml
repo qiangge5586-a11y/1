@@ -32,6 +32,7 @@ jobs:
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiIap2MessageCodecTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiIap2CsmAdapterTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiIap2CsmPumpBridgeTest
+          java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiIap2SessionOwnerTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiI2cCertificateReaderTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiBackendSelectionPolicyTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2DuplexByteStreamTest
