@@ -1,6 +1,7 @@
 package com.shilapi.xcertplay.compat.iap2;
 
 import java.util.List;
+import java.io.IOException;
 
 /**
  * Offline receive-side composition: ordered iAP2 control-session payloads
@@ -43,12 +44,44 @@ public final class Iap2CsmReceiveCoordinator {
                 if (!queue.enqueue(frame.messageId, frame.payload)) {
                     closed = true;
                     terminalReason = queue.getTerminalReason();
+                    notifyAll();
                     return admitted;
                 }
                 admitted++;
+                notifyAll();
             }
         }
         return admitted;
+    }
+
+    /** Blocking receive API with the original CSM channel's bounded timeout contract. */
+    public synchronized Iap2CsmReceiveQueueModel.Frame receive(long timeoutMillis)
+            throws IOException {
+        if (timeoutMillis < 0L || timeoutMillis > 300000L) {
+            throw new IllegalArgumentException("timeoutMillis must be between 0 and 300000");
+        }
+        Iap2CsmReceiveQueueModel.Frame frame = queue.poll();
+        if (frame != null) return frame;
+        long deadline = System.nanoTime() + timeoutMillis * 1000000L;
+        while (true) {
+            if (closed || queue.isClosed()) {
+                throw new IOException(terminalReason == null
+                        ? queue.getTerminalReason() : terminalReason);
+            }
+            if (timeoutMillis == 0L) return null;
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0L) return null;
+            long millis = remaining / 1000000L;
+            int nanos = (int) (remaining % 1000000L);
+            try {
+                wait(millis, nanos);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IOException("CSM receive interrupted", interrupted);
+            }
+            frame = queue.poll();
+            if (frame != null) return frame;
+        }
     }
 
     public synchronized Iap2CsmReceiveQueueModel.Frame poll() {
@@ -69,5 +102,6 @@ public final class Iap2CsmReceiveCoordinator {
         queue = new Iap2CsmReceiveQueueModel();
         closed = false;
         terminalReason = null;
+        notifyAll();
     }
 }
