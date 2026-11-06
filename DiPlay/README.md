@@ -32,9 +32,9 @@ A dedicated project now exists at `DiPlay/android/`, separate from the root `and
 - Offline Java 7 NTB16 codec primitive and fixture self-test (no USB I/O).
 - Hotspot safety transaction models and simulation tests are included; no real ROOT executor or system-write path is enabled.
 
-Latest successful APK build containing USB and Bluetooth read-only modules: [GitHub Actions run #42149355016](https://github.com/qiangge5586-a11y/1/actions/runs/42149355016).
+Latest successful APK build containing USB and Bluetooth read-only modules plus the offline NTB16 codec: [GitHub Actions run #30](https://github.com/qiangge5586-a11y/1/actions/runs/42150954430).
 
-Artifact: `diplay-honda-compat-debug`, ID `13472055975`, 26,587 bytes; digest `sha256:7756ecc3b823f4b3edaf64b058360daf3ec2bf726ba1d6f16fc4688be2e25e65`.
+Artifact: `diplay-honda-compat-debug`, ID `13472297967`, 28,577 bytes; digest `sha256:56a0cc0733b66d475cc3fed93fdeb88f7662faa59000c1c3bf95eb225e1a9ab2` (expires 2026-11-20).
 
 The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
 
