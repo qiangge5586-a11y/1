@@ -391,6 +391,29 @@ public final class Iap2LinkEngineModelTest {
         model.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
     }
 
+    private static void inboundGapEmitsExtendedAckWithSessionZero() {
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        m.start(true, 0);
+        m.takeNegotiationOutput();
+        feedPeerSyncAndAck(m, 4096, 5);
+        m.drainEvents();
+        m.drainWireFrames();
+        byte[] gap = Iap2LinkFrameCodec.encode(0x00, 80, 99, 10, new byte[] {8});
+        m.feedNegotiation(gap, 3);
+        List<Iap2LinkEngineModel.DispatchEvent> events = m.drainEvents();
+        eq(1, events.size());
+        bytes(new byte[] {78, 79}, events.get(0).receivedData.extendedAcknowledgement);
+        List<byte[]> wire = m.drainWireFrames();
+        eq(1, wire.size());
+        List<Iap2LinkFrameDecoder.Frame> frames =
+                new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, frames.size());
+        eq(0x20, frames.get(0).control);
+        eq(0, frames.get(0).sessionId);
+        eq(77, frames.get(0).acknowledgement);
+        bytes(new byte[] {78, 79}, frames.get(0).payload);
+    }
+
     private static void eofClosesBeforeAndAfterReadiness() {
         Iap2LinkEngineModel before = model();
         before.start(true, 0);
