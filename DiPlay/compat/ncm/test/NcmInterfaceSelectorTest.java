@@ -11,12 +11,14 @@ public final class NcmInterfaceSelectorTest {
     public static void main(String[] args) {
         selectsCdcNcmAndAlternateZeroClaimInterface();
         prefersAlternateSettingOne();
+        keepsFirstOfMultipleAlternateSettingOneCandidates();
+        fallsBackWhenAlternateSettingOneIsAbsent();
         rejectsMissingControlInterface();
         rejectsAmbiguousBulkEndpoints();
         rejectsMissingBulkDirection();
         statusEndpointMustBeUnique();
         keepsFirstMatchingControlInterface();
-        System.out.println("NcmInterfaceSelectorTest: PASS (7 cases)");
+        System.out.println("NcmInterfaceSelectorTest: PASS (9 cases)");
     }
 
     private static void selectsCdcNcmAndAlternateZeroClaimInterface() {
@@ -42,6 +44,26 @@ public final class NcmInterfaceSelectorTest {
         NcmInterfaceSelector.UsbInterface alt1 = iface(8, 10, 0, 1,
                 ep(128, 2), ep(0, 2));
         check(find(control, alt2, alt1).getData() == alt1, "alternate 1 preferred");
+    }
+
+    private static void keepsFirstOfMultipleAlternateSettingOneCandidates() {
+        NcmInterfaceSelector.UsbInterface control = iface(0, 2, 13, 0);
+        NcmInterfaceSelector.UsbInterface first = iface(7, 10, 0, 1,
+                ep(128, 2), ep(0, 2));
+        NcmInterfaceSelector.UsbInterface second = iface(8, 10, 0, 1,
+                ep(128, 2), ep(0, 2));
+        check(find(control, first, second).getData() == first,
+                "first alternate-setting 1 candidate retained");
+    }
+
+    private static void fallsBackWhenAlternateSettingOneIsAbsent() {
+        NcmInterfaceSelector.UsbInterface control = iface(0, 2, 13, 0);
+        NcmInterfaceSelector.UsbInterface alt0 = iface(7, 10, 0, 0,
+                ep(128, 2), ep(0, 2));
+        NcmInterfaceSelector.UsbInterface alt2 = iface(8, 10, 0, 2,
+                ep(128, 2), ep(0, 2));
+        check(find(control, alt0, alt2).getData() == alt0,
+                "first eligible data candidate used when alt 1 absent");
     }
 
     private static void rejectsMissingControlInterface() {
