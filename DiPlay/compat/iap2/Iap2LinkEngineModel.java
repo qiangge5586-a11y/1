@@ -253,7 +253,7 @@ public final class Iap2LinkEngineModel {
             enqueueWireFrame(Iap2LinkFrameCodec.encode(
                     Iap2LinkFrameCodec.CONTROL_EXTENDED_ACKNOWLEDGEMENT,
                     outbound.getSentSequence(), inbound.getLastReceivedInOrder(),
-                    Iap2LinkFrameCodec.EA_SESSION_ID, result.extendedAcknowledgement));
+                    0, result.extendedAcknowledgement));
         } else if (result.acknowledgementNow) {
             enqueueWireFrame(Iap2LinkFrameCodec.encode(
                     Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT,
