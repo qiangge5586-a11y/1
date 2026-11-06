@@ -93,7 +93,9 @@ public final class Iap2LinkEngineModel {
     }
 
     public synchronized State state() {
-        if (closed || negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD) {
+        if (closed || negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD
+                || outbound.getTerminalReason() != null
+                || inbound.getTerminalReason() != null) {
             return State.CLOSED;
         }
         if (negotiation.isReady()) return State.READY;
@@ -106,9 +108,9 @@ public final class Iap2LinkEngineModel {
     }
 
     public synchronized String getTerminalReason() {
-        if (closed) return negotiation.getTerminalReason();
         if (outbound.getTerminalReason() != null) return outbound.getTerminalReason();
-        return inbound.getTerminalReason();
+        if (inbound.getTerminalReason() != null) return inbound.getTerminalReason();
+        return negotiation.getTerminalReason();
     }
 
     private void requireStarted() {
