@@ -8,6 +8,7 @@ public final class Iap2LinkEngineModelTest {
         ackReleasesQueuedOutboundPacket();
         receiveAndExtendedAckRemainDistinctEvents();
         bothTimersAdvanceOnSameClock();
+        terminalWindowFailureClosesComposition();
         eofClosesBeforeAndAfterReadiness();
         System.out.println("Iap2LinkEngineModelTest: PASS (" + checks + " checks)");
     }
@@ -61,6 +62,20 @@ public final class Iap2LinkEngineModelTest {
         Iap2LinkEngineModel.TimerResult due = m.advanceTimers(600);
         eq(1, due.outbound.retransmitted.size());
         truth(due.inbound.acknowledgementNow);
+    }
+
+    private static void terminalWindowFailureClosesComposition() {
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel(),
+                new Iap2OutboundWindowModel(99, Integer.valueOf(99), 4, 3,
+                        10, 500, 1, 8),
+                new Iap2ReceiveWindowModel(10, 10, 4, 3, 500, 0, 64));
+        m.start(true, 0);
+        becomeReady(m);
+        m.send(10, new byte[] {1}, 100);
+        Iap2LinkEngineModel.TimerResult due = m.advanceTimers(600);
+        truth(due.outbound.terminalReason != null);
+        eq(Iap2LinkEngineModel.State.CLOSED, m.state());
+        truth(m.getTerminalReason().contains("retransmission"));
     }
 
     private static void eofClosesBeforeAndAfterReadiness() {
