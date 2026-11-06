@@ -1034,45 +1034,6 @@ fn log_feedback_streams(body: &[u8]) {
 }
 
 fn spawn_diplay_iap_sender(
-    mut tunnel: crate::iap_tunnel::IapTunnelWriter,
-    mut packets: mpsc::Receiver<crate::media_start::IapCommand>,
-    stop: Arc<SessionStop>,
-    readiness: Arc<crate::media_start::MediaReadiness>,
-) {
-    spawn_scoped(stop.clone(), async move {
-        let mut sent = 0u64;
-        let mut failed = false;
-        while let Some(command) = packets.recv().await {
-            match command {
-                crate::media_start::IapCommand::ControlReady => {
-                    if failed {
-                        emit_log("IAP-TUNNEL: control_ready deferred because type-130 tunnel previously failed");
-                        continue;
-                    }
-                    readiness.control_ready();
-                    emit_log("IAP-TUNNEL: control_ready prior_commands_acknowledged=true transport=type130");
-                }
-                crate::media_start::IapCommand::Packet(bytes) => {
-                    if failed { continue; }
-                    match tunnel.send(&bytes).await {
-                        Ok(()) => {
-                            sent += 1;
-                            if sent <= 8 || sent % 30 == 0 {
-                                emit_log(&format!("IAP-TUNNEL: type130 packet_sent count={sent} bytes={}", bytes.len()));
-                            }
-                        }
-                        Err(error) => {
-                            failed = true;
-                            emit_log(&format!("IAP-TUNNEL: outbound iAP send failed; stop further tunnel writes while retaining media: {error}"));
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-fn spawn_diplay_iap_sender(
     control: Arc<RtspChannel>,
     mut tunnel: crate::iap_tunnel::IapTunnelWriter,
     mut packets: mpsc::Receiver<crate::media_start::IapCommand>,
