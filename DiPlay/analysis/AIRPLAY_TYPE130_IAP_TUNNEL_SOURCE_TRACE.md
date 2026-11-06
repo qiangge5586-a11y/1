@@ -109,3 +109,38 @@ These are independent offline parsers only. They are not wired into original DiP
 3. Audit the exact iAP2 framing/sequence/ACK layer after `onIap` enters `Iap2Session.openTunnel`.
 4. Review the AirPlay event-channel outbound command and encryption direction separately.
 5. Keep API 17 socket, crypto-provider and thread behavior as a separate runtime gate. No live vehicle connection has been attempted.
+
+
+## Follow-up: decryptFrames allocation audit (2026-11-06)
+
+### Current allocation map
+
+The optimized `decryptFrames([B)` now performs a first pass over complete encrypted frames to compute the exact aggregate plaintext length, allocates one output array, then performs the original authenticated decrypt calls in frame order and copies each plaintext directly into that output. The incomplete trailing frame is still returned separately. This removes the former per-frame list, object-array conversion, second copy, and final concatenation chain.
+
+The remaining per-frame allocations are intentional in the current interface:
+
+- **AAD (2 bytes):** copied from the frame prefix and passed as a standalone array to `AirPlayCrypto.chachaOpen`.
+- **Sealed input (ciphertext + 16-byte tag):** copied into a standalone array and passed to the selected crypto backend.
+- **Nonce (12 bytes):** returned by `nonce64(counter)`; the 64-bit counter remains little-endian in bytes 4..11.
+- **Plaintext:** returned by the crypto backend, then copied once into the exact-size aggregate output.
+
+### Backend boundary evidence
+
+- The inspected native entry point is `nativeOpen(key, nonce, sealed, aad, length)`; it accepts complete arrays and a length, but no offset/length pair for AAD or sealed input.
+- The current Java wrapper receives complete arrays and attempts native decryption before its fallback path.
+- The BouncyCastle AEAD API can process a selected input range, but switching only that backend would not remove the copies required by the current native/platform wrapper contract.
+- Android API 17 runtime provider availability cannot be inferred from desktop compilation. Do not assume platform ChaCha20-Poly1305 is available on the Honda head unit.
+
+### Safe decision
+
+Do not change JNI signatures, crypto provider selection, AAD bytes, sealed-frame boundaries, nonce generation, or read-counter increment timing without native source/build provenance and golden ciphertext/plaintext vectors. No native ChaCha C/C++ source is currently present in the tracked repository tree, so an offset-aware JNI optimization is not presently evidence-backed.
+
+### Next verification gate
+
+1. Preserve the current optimized method as the baseline.
+2. Obtain reproducible golden encrypted frames with known key, counter, AAD, expected plaintext, and incomplete-tail cases from authorized test fixtures.
+3. Add parity tests for native and BouncyCastle backends on supported test runtimes; explicitly record that API 17 must be tested on-device.
+4. Only then consider an offset-aware backend interface. If JNI remains array-only, retain the copies for that backend rather than adding unsafe buffer reuse.
+5. Measure allocations and latency on the actual target device before claiming a user-visible performance gain.
+
+This audit is a source/interface review, not a live cryptographic benchmark or vehicle validation.
