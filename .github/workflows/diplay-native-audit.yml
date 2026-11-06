@@ -1,0 +1,37 @@
+name: DiPlay Native Library Compatibility Audit
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "diplay0.3.11.apk"
+      - "DiPlay/tools/analyze-native-libs.sh"
+      - ".github/workflows/diplay-native-audit.yml"
+permissions:
+  contents: read
+jobs:
+  native-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original APK
+        run: |
+          set -euo pipefail
+          test -s diplay0.3.11.apk
+          echo "Actual SHA-256:"
+          sha256sum diplay0.3.11.apk
+          echo "Expected: 22f61878e0e7e78a3fb9c2e2051881d3cc2e4b0232f4c3f13090ace04a966fb1"
+          test "$(sha256sum diplay0.3.11.apk | awk '{print $1}')" = "22f61878e0e7e78a3fb9c2e2051881d3cc2e4b0232f4c3f13090ace04a966fb1"
+      - name: Audit ELF headers, Android notes and shared libraries
+        run: |
+          set -euo pipefail
+          chmod +x DiPlay/tools/analyze-native-libs.sh
+          DiPlay/tools/analyze-native-libs.sh diplay0.3.11.apk DiPlay/native-audit
+          test -s DiPlay/native-audit/REPORT.md
+          test -s DiPlay/native-audit/LIBRARIES.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diplay-native-api17-audit
+          path: DiPlay/native-audit/
+          if-no-files-found: error
+          retention-days: 30
