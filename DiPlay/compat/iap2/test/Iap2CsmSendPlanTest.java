@@ -33,7 +33,7 @@ public final class Iap2CsmSendPlanTest {
     private static void handlesExactAndPartialFinalChunks() {
         eq(1, Iap2CsmSendPlan.chunkCount(65525, 65525));
         eq(2, Iap2CsmSendPlan.chunkCount(65526, 65525));
-        eq(3, Iap2CsmSendPlan.chunkCount(65525, 32763));
+        eq(2, Iap2CsmSendPlan.chunkCount(65525, 32763));
         List<byte[]> exact = Iap2CsmSendPlan.splitForLink(sequence(65525), 65525);
         eq(1, exact.size());
         eq(65525, exact.get(0).length);
