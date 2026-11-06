@@ -7,9 +7,9 @@ import java.util.List;
 /**
  * Offline composition boundary for the audited iAP2 link sub-models.
  *
- * This class coordinates lifecycle/readiness only. Peer window values are
- * supplied by the caller from a separately verified negotiation result;
- * it does not claim to be the original transport engine and performs no I/O.
+ * This class composes the offline negotiation, outbound-window and receive-window
+ * models, dispatches post-SYN frames into those models, and exposes deterministic
+ * events. It does not open a transport or write encoded frames to a live peer.
  */
 public final class Iap2LinkEngineModel {
     public enum State { IDLE, NEGOTIATING, READY, CLOSED }
