@@ -38,4 +38,4 @@ jobs:
           java -cp build/ncm-test com.shilapi.xcertplay.compat.ncm.NcmInterfaceSelectorTest
           javac -source 1.7 -target 1.7 -Xlint:-options -cp build/ncm-test -d build/usb-test DiPlay/compat/usb/UsbDeviceDescriptor.java DiPlay/compat/usb/UsbConfigurationSnapshot.java DiPlay/compat/usb/UsbNcmReadOnlyMatcher.java DiPlay/compat/usb/test/UsbDeviceDescriptorTest.java DiPlay/compat/usb/test/UsbNcmReadOnlyMatcherTest.java
           java -cp build/ncm-test:build/usb-test UsbDeviceDescriptorTest
-          java -cp build/ncm-test:build/usb-test UsbNcmReadOnlyMatcherTest
+          java -cp build/ncm-test:build/usb-test com.shilapi.xcertplay.compat.usb.UsbNcmReadOnlyMatcherTest
