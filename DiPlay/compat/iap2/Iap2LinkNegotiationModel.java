@@ -74,6 +74,8 @@ public final class Iap2LinkNegotiationModel {
     private final Config config;
     private final Iap2LinkFrameDecoder decoder = new Iap2LinkFrameDecoder();
     private final ArrayDeque<byte[]> output = new ArrayDeque<byte[]>();
+    private final ArrayDeque<Iap2LinkFrameDecoder.Frame> postReadyFrames =
+            new ArrayDeque<Iap2LinkFrameDecoder.Frame>();
     private byte[] detectingBytes = new byte[0];
     private int sentSequence = Iap2LinkFrameCodec.INITIAL_SEQUENCE;
     private int lastReceivedInOrder;
@@ -142,6 +144,14 @@ public final class Iap2LinkNegotiationModel {
     private void handleFrame(Iap2LinkFrameDecoder.Frame frame, long nowMillis) {
         if ((frame.control & Iap2LinkFrameCodec.CONTROL_RESET) != 0) {
             die("peer sent iAP2 reset");
+            return;
+        }
+        if (state == State.NORMAL) {
+            if (postReadyFrames.size() >= 256) {
+                die("iAP2 pending ready-frame queue limit exceeded");
+                return;
+            }
+            postReadyFrames.addLast(frame);
             return;
         }
         if ((frame.control & Iap2LinkFrameCodec.CONTROL_SYNCHRONIZE) != 0) {
@@ -261,6 +271,13 @@ public final class Iap2LinkNegotiationModel {
     }
     public synchronized String getTerminalReason() { return terminalReason; }
     public synchronized int getPendingFrameBytes() { return decoder.pendingBytes(); }
+    /** Returns and clears frames parsed after the peer SYN completed readiness. */
+    public synchronized List<Iap2LinkFrameDecoder.Frame> drainPostReadyFrames() {
+        ArrayList<Iap2LinkFrameDecoder.Frame> frames =
+                new ArrayList<Iap2LinkFrameDecoder.Frame>();
+        while (!postReadyFrames.isEmpty()) frames.add(postReadyFrames.removeFirst());
+        return frames;
+    }
 
     private static boolean startsWith(byte[] bytes, byte[] prefix) {
         if (bytes.length < prefix.length) return false;
