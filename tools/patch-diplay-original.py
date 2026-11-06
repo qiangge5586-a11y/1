@@ -119,7 +119,30 @@ def main():
         "type-130 remove redundant IAP body copy",
     )
 
-    print("Original DiPlay MFi defaults patched to I2C; offline identity excluded.")
+    # Replace the repeated plaintext ArraysKt.plus()/parsePackages() copy chain
+    # with an amortized-growth accumulator. Ciphertext framing/decryption stays
+    # byte-for-byte on the original path.
+    tunnel = os.path.join(root, "smali_classes3/com/shilapi/xcertplay/airplay/IapTunnel.smali")
+    replace_once(
+        tunnel,
+        """    new-array v0, v0, [B\n\n    .line 131\n    .local v0, \\"plaintext\\":[B\n""",
+        """    new-instance v0, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n\n    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->listener:Lcom/shilapi/xcertplay/airplay/IapTunnel$Listener;\n\n    invoke-direct {v0, v2}, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;-><init>(Ljava/lang/Object;)V\n\n    .line 131\n    .local v0, \\"packageAccumulator\\":Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n""",
+        "type-130 incremental package accumulator initialization",
+    )
+    replace_once(
+        tunnel,
+        """    invoke-static {v0, v9}, Lkotlin/collections/ArraysKt;->plus([B[B)[B\n\n    move-result-object v9\n\n    move-object v0, v9\n\n    .line 149\n""",
+        """    invoke-virtual {v0, v9}, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;->append([B)V\n\n    .line 149\n""",
+        "type-130 remove repeated plaintext concatenation",
+    )
+    replace_once(
+        tunnel,
+        """    invoke-direct {p0, v0}, Lcom/shilapi/xcertplay/airplay/IapTunnel;->parsePackages([B)[B\n\n    move-result-object v9\n""",
+        """    # Complete packages are dispatched by TunnelPackageAccumulator.append().\n""",
+        "type-130 remove per-read parsePackages tail copy",
+    )
+
+    print("Original DiPlay MFi defaults patched; type-130 receive path uses incremental package accumulation.")
     return 0
 
 
