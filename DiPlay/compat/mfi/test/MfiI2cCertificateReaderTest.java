@@ -85,7 +85,7 @@ public final class MfiI2cCertificateReaderTest {
             new MfiI2cCertificateReader(new FakeTransport(0), 1L)
                     .readCertificate(65525, operation(new FakeClock(), 1000L));
         }});
-        FakeTransport shortTransport = new FakeTransport(129);
+        final FakeTransport shortTransport = new FakeTransport(129);
         shortTransport.shortNextRead = true;
         expectDataFailure(new Runnable() { public void run() {
             new MfiI2cCertificateReader(shortTransport, 1L)
@@ -119,7 +119,7 @@ public final class MfiI2cCertificateReaderTest {
     }
 
     private static void failedReadReleasesSharedLock() {
-        FakeTransport broken = new FakeTransport(1);
+        final FakeTransport broken = new FakeTransport(1);
         broken.shortNextRead = true;
         expectDataFailure(new Runnable() { public void run() {
             new MfiI2cCertificateReader(broken, 1L)
