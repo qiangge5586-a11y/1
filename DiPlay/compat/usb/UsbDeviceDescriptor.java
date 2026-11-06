@@ -11,15 +11,29 @@ public final class UsbDeviceDescriptor {
     private final int deviceSubclass;
     private final int deviceProtocol;
     private final int interfaceCount;
+    private final List<UsbConfigurationSnapshot> configurations;
 
     public UsbDeviceDescriptor(int vendorId, int productId, int deviceClass,
             int deviceSubclass, int deviceProtocol, int interfaceCount) {
+        this(vendorId, productId, deviceClass, deviceSubclass, deviceProtocol,
+                interfaceCount, Collections.<UsbConfigurationSnapshot>emptyList());
+    }
+
+    public UsbDeviceDescriptor(int vendorId, int productId, int deviceClass,
+            int deviceSubclass, int deviceProtocol, int interfaceCount,
+            List<UsbConfigurationSnapshot> configurations) {
         requireUnsigned16("vendorId", vendorId);
         requireUnsigned16("productId", productId);
         requireUnsigned8("deviceClass", deviceClass);
         requireUnsigned8("deviceSubclass", deviceSubclass);
         requireUnsigned8("deviceProtocol", deviceProtocol);
         requireUnsigned8("interfaceCount", interfaceCount);
+        if (configurations == null) throw new NullPointerException("configurations");
+        this.configurations = Collections.unmodifiableList(
+                new ArrayList<UsbConfigurationSnapshot>(configurations));
+        for (UsbConfigurationSnapshot configuration : this.configurations) {
+            if (configuration == null) throw new IllegalArgumentException("null configuration");
+        }
         this.vendorId = vendorId;
         this.productId = productId;
         this.deviceClass = deviceClass;
@@ -40,6 +54,8 @@ public final class UsbDeviceDescriptor {
     public int getDeviceSubclass() { return deviceSubclass; }
     public int getDeviceProtocol() { return deviceProtocol; }
     public int getInterfaceCount() { return interfaceCount; }
+    public List<UsbConfigurationSnapshot> getConfigurations() { return configurations; }
+    public int getConfigurationCount() { return configurations.size(); }
 
     public String getDescriptorKey() {
         return hex4(vendorId) + ":" + hex4(productId) + ":"
