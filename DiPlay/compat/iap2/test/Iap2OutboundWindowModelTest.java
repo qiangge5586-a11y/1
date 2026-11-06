@@ -8,6 +8,7 @@ public final class Iap2OutboundWindowModelTest {
     public static void main(String[] args) {
         sendsAndRetainsWithDeadline();
         zeroRetryLimitDoesNotRetain();
+        zeroRetryLimitAdvancesAcknowledgedWatermark();
         outgoingWindowQueuesAndAckDrains();
         cumulativeAckRemovesOnlyCoveredPackets();
         cumulativeAckKeepsLaterDeadlinesArmed();
@@ -45,6 +46,18 @@ public final class Iap2OutboundWindowModelTest {
         eq(0, m.getUnacknowledgedCount());
         eq(null, m.getNextDeadlineMillis());
         eq(null, m.advanceTime(10000).terminalReason);
+    }
+
+    private static void zeroRetryLimitAdvancesAcknowledgedWatermark() {
+        Iap2OutboundWindowModel m = model(99, 99, 2, 3, 10, 500, 0, 8);
+        eq(100, m.send(10, new byte[] {1}, 0).transmitted.get(0).sequence);
+        eq(100, m.getLastSentAcknowledged().intValue());
+        eq(101, m.send(10, new byte[] {2}, 1).transmitted.get(0).sequence);
+        eq(101, m.getLastSentAcknowledged().intValue());
+        eq(102, m.send(10, new byte[] {3}, 2).transmitted.get(0).sequence);
+        eq(0, m.getQueuedCount());
+        eq(102, m.getLastSentAcknowledged().intValue());
+        eq(null, m.getNextDeadlineMillis());
     }
 
     private static void outgoingWindowQueuesAndAckDrains() {
