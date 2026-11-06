@@ -141,3 +141,17 @@ Added `compat/bluetooth/BluetoothRfcommConnector.java` based on the original `An
 The service UUID default is the source-observed wireless RFCOMM UUID `00000000-deca-fade-deca-deafdecacafe`; callers may supply another UUID. Added legacy `BLUETOOTH_ADMIN` manifest permission for discovery cancellation on API 17.
 
 Important qualification: the connector is a source-parity port of the fallback sequence, not yet wired into the app's UI/session lifecycle. Android CI compilation is pending; no physical Bluetooth/iPhone test has been run. The 10-second timeout applies per fallback attempt, matching the original default helper behavior; total worst-case duration can exceed 20 seconds.
+
+
+## CSM receive-channel source parity (2026-11-06)
+
+The original `Iap2CsmChannel` was rechecked against the archived JADX and Smali artifact:
+
+- `recv(timeoutMillis)` serializes readers with `receiveLock`, returns an already queued frame first, then reads link control payloads against one monotonic deadline.
+- CSM receive queue admission is guarded by `stateLock`; it is bounded to 64 frames and 1 MiB of encoded CSM frame bytes. Dequeue decrements the same encoded-byte accounting.
+- A queue overflow or invalid CSM control payload enters `failClosed`, records the terminal failure, and closes the underlying `Iap2LinkChannel`.
+- CSM timeout values are constrained to 0..300,000 ms. The default 5,000 ms constant applies to send's default overload, not a general transport timeout.
+
+The offline `Iap2CsmReceiveCoordinator` now adds a monotonic blocking receive API with FIFO dequeue, bounded timeout validation, producer wake-up, malformed-input terminal state, and queue-overflow terminal state. `Iap2LinkModelPumpDriver` propagates receive failure by terminating its offline link model and surfacing an I/O failure to the pump. The CI test covers timeout, wake-up, split/coalesced frames, non-control session filtering, and queue overflow.
+
+Parity boundary: the coordinator is still an offline adapter fed by already ordered `Iap2ReceiveWindowModel` deliveries. It does not implement the original link channel's independently blocking `recvControl`, Kotlin exception/suppressed-exception behavior, or a live production `Iap2CsmChannel`. Physical RFCOMM/iPhone tests remain outstanding.
