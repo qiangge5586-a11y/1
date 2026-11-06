@@ -24,6 +24,7 @@ public final class Iap2LinkEngineModel {
     private Iap2ReceiveWindowModel inbound;
     private final ArrayList<DispatchEvent> pendingEvents = new ArrayList<DispatchEvent>();
     private final ArrayList<byte[]> pendingWireFrames = new ArrayList<byte[]>();
+    private final ArrayList<PreReadyPacket> preReadyPackets = new ArrayList<PreReadyPacket>();
     private String localTerminalReason;
     private int accumulatedAcknowledgements;
     private boolean started;
@@ -77,9 +78,28 @@ public final class Iap2LinkEngineModel {
         return state();
     }
 
+    /** Queues an application packet before link readiness, matching the original engine queue gate. */
+    public synchronized boolean queueBeforeReady(int sessionId, byte[] payload) {
+        requireStarted();
+        if (payload == null) throw new NullPointerException("payload");
+        if (state() == State.READY) throw new IllegalStateException("link is already ready");
+        if (state() == State.CLOSED) return false;
+        if (sessionId < 0 || sessionId > 255) throw new IllegalArgumentException("sessionId");
+        if (preReadyPackets.size() >= WIRELESS_MAX_QUEUED_PACKETS) {
+            localTerminalReason = "iAP2 outbound packet queue limit exceeded";
+            return false;
+        }
+        preReadyPackets.add(new PreReadyPacket(sessionId, payload));
+        return true;
+    }
+
     public synchronized Iap2OutboundWindowModel.Result send(
             int sessionId, byte[] payload, long nowMillis) {
         requireReady();
+        Iap2LinkNegotiationModel.PeerConfiguration peer = negotiation.getPeerConfiguration();
+        if (!peer.acceptsPayload(payload)) {
+            throw new IllegalArgumentException("payload exceeds peer maxLength - 10");
+        }
         Iap2OutboundWindowModel.Result result = outbound.send(sessionId, payload, nowMillis);
         enqueuePacketFrames(result.transmitted);
         return result;
@@ -156,6 +176,8 @@ public final class Iap2LinkEngineModel {
     private void dispatchPostReadyFrames(long nowMillis) {
         if (!negotiation.isReady()) return;
         ensureWindowModels();
+        flushPreReadyPackets(nowMillis);
+        if (localTerminalReason != null) return;
         List<Iap2LinkNegotiationModel.ReadyFrame> frames = negotiation.drainPostReadyFrames();
         for (int i = 0; i < frames.size(); i++) {
             if (pendingEvents.size() >= 256) {
@@ -270,6 +292,40 @@ public final class Iap2LinkEngineModel {
             this.extendedAcknowledgement = extendedAcknowledgement;
             this.receivedData = receivedData;
             this.acknowledgementBatch = acknowledgementBatch;
+        }
+    }
+
+    private void flushPreReadyPackets(long nowMillis) {
+        if (preReadyPackets.isEmpty()) return;
+        Iap2LinkNegotiationModel.PeerConfiguration peer = negotiation.getPeerConfiguration();
+        for (int i = 0; i < preReadyPackets.size(); i++) {
+            if (!peer.acceptsPayload(preReadyPackets.get(i).payload)) {
+                localTerminalReason = "peer iAP2 maxLength cannot carry pending control packets";
+                preReadyPackets.clear();
+                return;
+            }
+        }
+        for (int i = 0; i < preReadyPackets.size(); i++) {
+            PreReadyPacket packet = preReadyPackets.get(i);
+            Iap2OutboundWindowModel.Result result =
+                    outbound.send(packet.sessionId, packet.payload, nowMillis);
+            enqueuePacketFrames(result.transmitted);
+            if (result.terminalReason != null) {
+                localTerminalReason = result.terminalReason;
+                preReadyPackets.clear();
+                return;
+            }
+        }
+        preReadyPackets.clear();
+    }
+
+    private static final class PreReadyPacket {
+        final int sessionId;
+        final byte[] payload;
+        PreReadyPacket(int sessionId, byte[] payload) {
+            this.sessionId = sessionId;
+            this.payload = new byte[payload.length];
+            System.arraycopy(payload, 0, this.payload, 0, payload.length);
         }
     }
 
