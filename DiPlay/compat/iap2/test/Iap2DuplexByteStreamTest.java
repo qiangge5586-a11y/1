@@ -14,6 +14,7 @@ public final class Iap2DuplexByteStreamTest {
     public static void main(String[] args) throws Exception {
         testReadBytesAndEof();
         testTimeoutMapping();
+        testTimeoutControllerReceivesPumpDeadline();
         testWriteRangeAndCompleteWrite();
         testCloseIsIdempotentAndClosesBothSides();
         System.out.println("Iap2DuplexByteStreamTest: " + checks + " checks passed");
@@ -39,6 +40,24 @@ public final class Iap2DuplexByteStreamTest {
         };
         Iap2StreamDuplexAdapter stream = new Iap2StreamDuplexAdapter(timeout, new ByteArrayOutputStream());
         equal(0, stream.read(new byte[4], 0, 4, 25), "timeout maps to zero");
+        stream.close();
+    }
+
+
+    private static void testTimeoutControllerReceivesPumpDeadline() throws Exception {
+        final int[] configured = new int[] { -1 };
+        InputStream timeout = new InputStream() {
+            public int read() throws IOException { throw new SocketTimeoutException("timeout"); }
+            public int read(byte[] b, int off, int len) throws IOException {
+                throw new SocketTimeoutException("timeout");
+            }
+        };
+        Iap2StreamDuplexAdapter stream = new Iap2StreamDuplexAdapter(timeout,
+                new ByteArrayOutputStream(), new Iap2StreamDuplexAdapter.TimeoutController() {
+                    public void setReadTimeoutMillis(int value) { configured[0] = value; }
+                });
+        equal(0, stream.read(new byte[4], 0, 4, 37), "controlled timeout maps to zero");
+        equal(37, configured[0], "pump timeout applied to carrier");
         stream.close();
     }
 
