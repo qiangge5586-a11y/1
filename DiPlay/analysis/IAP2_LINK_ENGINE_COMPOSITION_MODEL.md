@@ -113,3 +113,9 @@ Actions run [#156](https://github.com/qiangge5586-a11y/1/actions/runs/4217456657
 A source check of `sendExtendedAcknowledgement()` confirms its response uses control `0x20`, the current send sequence, the current in-order receive ACK, and **session ID 0**; the payload is the raw missing-sequence byte list. The composition now emits that exact session field (the session descriptor ID 11 is not the frame session ID for this control packet). Regression coverage drives an inbound gap and decodes the generated Extended ACK frame, asserting control, session 0, acknowledgement watermark and raw missing sequence bytes.
 
 Actions run [#159](https://github.com/qiangge5586-a11y/1/actions/runs/42174678655) passed **7,384 offline checks**, including 205 composition checks.
+
+## Encoded response-frame checkpoint (Actions #207)
+
+The composition now turns model decisions into encoded iAP2 link-frame byte arrays in a bounded drain queue (maximum 256 frames). Data transmissions and targeted retransmissions are encoded as ACK-control data frames carrying the packet sequence/session/payload and the current in-order receive acknowledgement. Receive-window immediate ACKs and Extended ACK responses are encoded as header-only ACK or Extended ACK frames. Cumulative-ACK queue releases are encoded as newly transmitted data frames. These bytes are available through `drainWireFrames()`; they are **not written to a socket, Bluetooth stream, USB endpoint, or AirPlay tunnel**.
+
+Actions run [#207](https://github.com/qiangge5586-a11y/1/actions/runs/42181647104) passed **2,323,738 offline checks**. Link Engine composition tests: 238 checks. This run follows #206 (failed because the test incorrectly expected peer SYN alone to complete readiness); the existing model/source rule remains that readiness is entered on the ACK control bit, and the test fixture was restored to that rule. No live device handshake was performed.
