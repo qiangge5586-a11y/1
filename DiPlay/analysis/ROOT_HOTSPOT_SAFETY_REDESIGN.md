@@ -131,3 +131,6 @@ New coordinator self-tests cover lock release, failure after process launch, pro
 These are safety contracts and pure-Java transaction tests, not a production ROOT executor. No implementation currently binds these contracts to the Honda device su, filesystem, Wi-Fi framework or hostapd/dnsmasq services. Before enabling real writes, the adapter still must implement and test: cross-process lock ownership; durable backup file creation and restore; atomic staging/rename; metadata and SELinux restoration; process identity capture and re-check before TERM/KILL; Wi-Fi/interface state restoration; command timeout/exit-code handling; and crash/reboot recovery. The adapter must probe actual MY16ADA paths and utilities instead of assuming standard Linux behavior.
 
 No live vehicle command or hotspot configuration write was performed by this update.
+
+
+Additional rollback invariant: every registered owned child is considered in reverse launch order. A failure to stop one child does not prevent attempts to stop the remaining children or restore the backed-up configuration; the transaction is marked RECOVERY_REQUIRED if any stop, restore, or required journal step fails. Tests cover multiple children and restore-after-stop-failure.
