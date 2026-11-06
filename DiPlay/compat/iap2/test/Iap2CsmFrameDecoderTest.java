@@ -12,7 +12,7 @@ public final class Iap2CsmFrameDecoderTest {
         reportsResynchronizationDiagnostics();
         retainsIncompleteFrame();
         randomizedFragmentationAndCoalescing();
-        enforcesOriginalReceiveChunkBound();
+        enforcesOriginalLinkControlChunkBound();
         decodesMaximumLengthFrameInBoundedChunks();
         System.out.println("Iap2CsmFrameDecoderTest: PASS (" + checks + " checks)");
     }
@@ -109,14 +109,16 @@ public final class Iap2CsmFrameDecoderTest {
         }
     }
 
-    private static void enforcesOriginalReceiveChunkBound() {
+    private static void enforcesOriginalLinkControlChunkBound() {
         final Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
-        d.feed(new byte[]{0x40});
-        eq(1, d.pendingBytes());
+        byte[] accepted = new byte[Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES];
+        // A maximum-sized link-control chunk may contain arbitrary partial frame bytes.
+        d.feed(accepted);
+        eq(Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES, d.pendingBytes());
         byte[] tooLarge = new byte[Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES + 1];
         try {
             d.feed(tooLarge);
-            throw new AssertionError("oversized chunk accepted");
+            throw new AssertionError("oversized link-control chunk accepted");
         } catch (IllegalArgumentException expected) {
             checks++;
         }
