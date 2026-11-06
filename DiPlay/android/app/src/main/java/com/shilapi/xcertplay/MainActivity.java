@@ -2,7 +2,6 @@ package com.shilapi.xcertplay;
 
 import android.app.Activity;
 import android.widget.Button;
-import android.bluetooth.BluetoothReadOnlyProbe;
 import com.shilapi.xcertplay.compat.usb.UsbHostReadOnlyScanner;
 import java.util.List;
 import android.os.Bundle;
@@ -141,8 +140,8 @@ public final class MainActivity extends Activity {
                         new com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe()
                                 .inspect(MainActivity.this);
                 String detail = r.getStatus();
-                if (r.getName() != null) detail += "\\n设备名称：" + r.getName();
-                detail += "\\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
+                if (r.getName() != null) detail += "\n设备名称：" + r.getName();
+                detail += "\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
                 bluetoothStatus.setText(detail);
             }
         });
