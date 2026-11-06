@@ -150,8 +150,9 @@ public final class MainActivity extends Activity {
                                     .append(failure.getMessage());
                         }
                         final String report = out.toString();
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        mainHandler.post(new Runnable() {
                             public void run() {
+                                if (activityDestroyed) return;
                                 rootProbeStatus.setText(report);
                                 rootProbe.setEnabled(true);
                             }
