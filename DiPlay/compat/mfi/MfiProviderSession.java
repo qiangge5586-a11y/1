@@ -78,15 +78,9 @@ public final class MfiProviderSession {
     }
 
     public synchronized void cancel() {
-        contextCancellation().cancel();
+        context.cancel();
         if (state != State.CHALLENGE_SIGNED) state = State.CLOSED;
     }
-
-    private MfiOperationContext.Cancellation contextCancellation() {
-        return cancellation;
-    }
-
-    private final MfiOperationContext.Cancellation cancellation = null;
 
     public synchronized State state() { return state; }
 
