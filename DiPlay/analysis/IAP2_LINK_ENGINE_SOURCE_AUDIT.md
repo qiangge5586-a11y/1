@@ -200,3 +200,13 @@ Regression coverage includes EOF before/after readiness, stale output/event supp
 A further source check of `Iap2LinkEngine.appendOutput([B)` confirms the original enforces `maximumPendingOutputBytes` by comparing the incoming encoded bytes against the remaining capacity of its `ByteArrayOutputStream`; the wireless config sets this to **1,048,576 bytes**. It does not impose a 256-frame output-count limit (the separate 256 limit is for pending events). The offline engine model now tracks aggregate encoded-frame bytes, accepts output up to the exact byte budget, and transitions terminal/clears pending output when the next frame exceeds it.
 
 Regression test queues sixteen maximum-size 65,535-byte wire frames (1,048,560 bytes), then verifies a further 30-byte frame exceeds the remaining 16-byte budget and clears the output queue. CI run [#205](https://github.com/qiangge5586-a11y/1/actions/runs/42180659719) passed **2,323,738 Java 7 offline checks**, including 238 link-engine composition checks. No live transport or vehicle test was performed.
+
+
+## Extended ACK retransmission deadline parity (2026-11-06)
+
+A direct comparison with the original `Iap2LinkEngine.handleExtendedAcknowledgement()` and `retransmitDuePacket()` confirms two distinct deadline rules:
+
+- Extended ACK-triggered retransmission increments the packet retry counter and sends the same sequence/session/payload, but preserves that packet's existing `deadlineMillis`. It also clears the send-ACK deadline and rearms the receive-ACK deadline from the preserved packet deadline.
+- Timer-triggered retransmission changes the selected earliest-due packet deadline to `nowMillis + peerRetransmissionTimeoutMillis`; after sending, the receive-ACK timer is set to the next remaining packet deadline, or the retried packet's new deadline when no other packet remains.
+
+The offline outbound model now keeps these paths separate. Regression expectation for an Extended ACK at t=20 against a packet originally due at t=101 is that its deadline remains t=101, not t=120. This correction is covered by `Iap2OutboundWindowModelTest.extendedAckRetransmitsOnlyRequestedSequences()`.
