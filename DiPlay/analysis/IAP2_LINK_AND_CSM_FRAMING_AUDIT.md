@@ -114,3 +114,16 @@ The Java 7 offline workflow now compiles and runs `Iap2LinkFrameCodecTest`. CI r
 The original APKTool Smali was retrieved from successful decompile artifact run #7 (Actions run `42166504575`, artifact ID `13478968581`). The exact synchronization payload and link-frame behavior, ACK semantics, out-of-order receive handling, extended ACK sequence list, retransmission retry boundary, and wireless worker timers are documented in [IAP2_LINK_ENGINE_SOURCE_FINDINGS.md](IAP2_LINK_ENGINE_SOURCE_FINDINGS.md).
 
 A source-derived wireless synchronization golden vector is now tested in `Iap2LinkWireCodecTest`. This closes the previous evidence gap for the local sync bytes, but it does not yet implement or validate the complete link state machine.
+
+
+## Original Smali source recovery and corrections (2026-11-06)
+
+The decompile artifact is now available from workflow run [#6](https://github.com/qiangge5586-a11y/1/actions/runs/42166126298), artifact ID `13478149398`. The original `Iap2LinkEngine`, companion, `Iap2LinkChannel`, and `Iap2LinkConfig` Smali files were recovered and checked. See [IAP2_LINK_ENGINE_SOURCE_AUDIT.md](IAP2_LINK_ENGINE_SOURCE_AUDIT.md) for exact wire fields, checksum rules, synchronization payload layout, ACK/reorder/retry behavior, and method provenance.
+
+Corrections to the earlier audit:
+- The startup marker `FF 55 02 00 EE 10` is now confirmed from the original Smali, not merely a candidate.
+- Packet headers begin with a separate `FF 5A` marker.
+- The wireless and wired synthetic constructor masks `494` and `486` are Kotlin default-argument masks, not maxOutgoing values. Both configs set actual maxOutgoing to 4. Wireless has zeroAcknowledgements=false; wired has zeroAcknowledgements=true.
+- Wireless ACK timeout resolves to 500 ms from the config default. The wireless local sync payload advertises maxOutgoing=4, maxLength=65535, retransmit=4000 ms, ACK timeout=500 ms, max retransmissions=4, max acknowledgements=3, and session descriptors (10,0,2), (11,2,1), (12,1,2).
+
+The compatibility implementation remains offline-only. The codec golden vectors are source-derived; full link state-machine parity and real device interoperability are not yet claimed.
