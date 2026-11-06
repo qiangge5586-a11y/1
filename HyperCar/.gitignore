@@ -1,0 +1,48 @@
+# Android
+/local.properties
+/.idea/
+/.gradle/
+/.kotlin/
+*.iml
+/app/build/
+/app/release/
+/captures/
+*.apk
+*.aab
+
+# Rust
+/rust-core/target/
+# 编译产物由 cargo-ndk 生成（可复现，不入库）
+/app/src/main/jniLibs/
+
+# 签名
+keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+# 正式签名材料与 Secrets 清单（hypercar.p12 / keystore_base64.txt / HYPERCAR-SECRETS.txt）
+/release/
+
+# 杂项
+.DS_Store
+*.log
+
+# 图标生成脚本的预览输出（tools/icon/out/，脚本本身入库）
+/tools/icon/out/
+
+# ---- 运行时产物（务必留在用户目录，别提交）----
+# AirPlay 长期身份 / 缓存 / GUI 配置：默认写到 %LOCALAPPDATA%\hypercar-hub\
+controller_identity*.txt
+identity-cache.txt
+gui.ini
+*.identity
+tools/*.identity
+
+# ---- 抓包文件（含隐私，绝不入库）----
+*.pklg
+sysdiagnose*
+*.tar.gz
+*.pcap
+*.pcapng
+*.etl
