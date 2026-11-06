@@ -451,6 +451,9 @@ public final class Iap2LinkEngineModelTest {
         becomeReady(after);
         after.endOfStream();
         eq(Iap2LinkEngineModel.State.CLOSED, after.state());
+        eq(0, after.takeNegotiationOutput().length);
+        eq(0, after.drainWireFrames().size());
+        eq(0, after.drainEvents().size());
     }
 
     private static Iap2LinkEngineModel model() {
