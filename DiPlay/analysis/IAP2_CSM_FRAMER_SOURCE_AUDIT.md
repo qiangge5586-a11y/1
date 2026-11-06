@@ -113,3 +113,19 @@ Their tests cover exact capacity boundaries, queue-full behavior, release/re-adm
 ### CI verification for queue/deadline models
 
 Actions run [#183](https://github.com/qiangge5586-a11y/1/actions/runs/42177750683) passed **8,145 Java 7 offline checks**. The new suites passed with 130 command-queue checks and 13 shared-deadline checks. An earlier run #182 failed because the new source files were not included in the javac input list; the workflow was corrected and run #183 compiled and passed all suites.
+
+
+## CSM chunk admission under link-queue backpressure (2026-11-06)
+
+Added Iap2CsmSendAdmissionModel to connect the source-audited chunk plan, link pending-command queue and one shared send deadline. It is a deterministic step model, not a blocking implementation:
+
+- Attempts one chunk at a time using the queue's atomic capacity-check-and-enqueue operation.
+- Returns WAITING with the remaining shared deadline when capacity is unavailable.
+- Allows capacity to become available after the link pump removes a queued command, then resumes the same chunk without resetting the deadline.
+- Checks immediate capacity before checking an expired deadline, preserving zero-timeout immediate admission.
+- Returns CLOSED or TERMINAL_FAILURE when the queue closes or the pump terminates; terminal failure text is retained.
+- If the deadline expires after partial chunk admission, records fail-closed state and does not restart or duplicate previously queued chunks.
+
+The regression suite covers complete multi-chunk admission, queue-full wait and resume, partial admission followed by timeout, zero-timeout success/failure, close and terminal failure, and empty frames.
+
+Actions run [#188](https://github.com/qiangge5586-a11y/1/actions/runs/42178672950) passed **8,400 Java 7 offline checks**, including 255 checks in the new admission suite. No blocking wait, live link pump, ACK delivery, USB/Bluetooth transport or vehicle/iPhone handshake is implemented or claimed by this model.
