@@ -48,7 +48,7 @@ public final class MfiIap2CsmAdapterTest {
             public byte[] readCertificate(MfiOperationContext c) { return new byte[] { 1 }; }
             public byte[] signChallenge(byte[] b, MfiOperationContext c) { return new byte[] { 2 }; }
         }, badContext, generation + 1);
-        MfiIap2CsmAdapter badAdapter = new MfiIap2CsmAdapter(
+        final MfiIap2CsmAdapter badAdapter = new MfiIap2CsmAdapter(
                 new MfiIap2ExchangeCoordinator(badProvider, generation + 1));
         expectFailure(new Runnable() { public void run() {
             badAdapter.onInboundFrame(Iap2CsmFrameCodec.encode(0xAA02, Iap2ParameterCodec.encode(0,
