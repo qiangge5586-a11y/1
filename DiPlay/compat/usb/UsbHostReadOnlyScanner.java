@@ -2,6 +2,9 @@ package com.shilapi.xcertplay.compat.usb;
 
 import android.content.Context;
 import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbConfiguration;
+import android.hardware.usb.UsbInterface;
+import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbManager;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +29,44 @@ public final class UsbHostReadOnlyScanner {
         public String getStatus() { return status; }
     }
 
+    private List<UsbConfigurationSnapshot> readConfigurations(UsbDevice device) {
+        List<UsbConfigurationSnapshot> configurations =
+                new ArrayList<UsbConfigurationSnapshot>();
+        int configurationCount = device.getConfigurationCount();
+        if (configurationCount < 0) configurationCount = 0;
+        if (configurationCount > 32) configurationCount = 32;
+        for (int c = 0; c < configurationCount; c++) {
+            UsbConfiguration configuration = device.getConfiguration(c);
+            if (configuration == null) continue;
+            List<UsbConfigurationSnapshot.InterfaceSnapshot> interfaces =
+                    new ArrayList<UsbConfigurationSnapshot.InterfaceSnapshot>();
+            int interfaceCount = Math.min(Math.max(configuration.getInterfaceCount(), 0), 255);
+            for (int i = 0; i < interfaceCount; i++) {
+                UsbInterface usbInterface = configuration.getInterface(i);
+                if (usbInterface == null) continue;
+                List<UsbConfigurationSnapshot.EndpointSnapshot> endpoints =
+                        new ArrayList<UsbConfigurationSnapshot.EndpointSnapshot>();
+                int endpointCount = Math.min(Math.max(usbInterface.getEndpointCount(), 0), 255);
+                for (int e = 0; e < endpointCount; e++) {
+                    UsbEndpoint endpoint = usbInterface.getEndpoint(e);
+                    if (endpoint == null) continue;
+                    endpoints.add(new UsbConfigurationSnapshot.EndpointSnapshot(
+                            endpoint.getAddress(), endpoint.getAttributes(),
+                            endpoint.getDirection(), endpoint.getType(),
+                            endpoint.getMaxPacketSize(), endpoint.getInterval()));
+                }
+                interfaces.add(new UsbConfigurationSnapshot.InterfaceSnapshot(
+                        usbInterface.getId(), usbInterface.getInterfaceClass(),
+                        usbInterface.getInterfaceSubclass(), usbInterface.getInterfaceProtocol(),
+                        usbInterface.getAlternateSetting(), endpoints));
+            }
+            configurations.add(new UsbConfigurationSnapshot(configuration.getId(),
+                    configuration.getName(), configuration.getAttributes(),
+                    configuration.getMaxPower(), interfaces));
+        }
+        return configurations;
+    }
+
     public ScanResult scan(Context context) {
         if (context == null) {
             return new ScanResult(new ArrayList<UsbDeviceDescriptor>(), "上下文不可用");
@@ -43,9 +84,12 @@ public final class UsbHostReadOnlyScanner {
                     int count = device.getInterfaceCount();
                     if (count < 0) count = 0;
                     if (count > 255) count = 255;
+                    List<UsbConfigurationSnapshot> configurations =
+                            readConfigurations(device);
                     result.add(new UsbDeviceDescriptor(device.getVendorId(),
                             device.getProductId(), device.getDeviceClass(),
-                            device.getDeviceSubclass(), device.getDeviceProtocol(), count));
+                            device.getDeviceSubclass(), device.getDeviceProtocol(), count,
+                            configurations));
                 }
             }
             return new ScanResult(result, result.isEmpty()
