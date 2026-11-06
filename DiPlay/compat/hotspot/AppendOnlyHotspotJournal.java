@@ -34,6 +34,8 @@ public final class AppendOnlyHotspotJournal implements HotspotTransactionCoordin
             if (!dir.isDirectory() || !dir.canWrite())
                 throw new IllegalArgumentException("journal directory must already exist and be writable");
             journalFile = new File(dir, "hotspot-transactions.log");
+            if (!dir.equals(journalFile.getCanonicalFile().getParentFile()))
+                throw new IllegalArgumentException("journal file escapes private directory");
             if (journalFile.exists() && (!journalFile.isFile() || !journalFile.canWrite()))
                 throw new IllegalArgumentException("journal file is not a writable regular file");
         } catch (java.io.IOException e) {
@@ -123,6 +125,14 @@ public final class AppendOnlyHotspotJournal implements HotspotTransactionCoordin
                 String[] p = line.split("\\|", -1);
                 if (p.length != 6 || !previous.equals(p[4]))
                     throw new java.io.IOException("journal chain malformed");
+                try {
+                    validateId(p[0]);
+                    HotspotTransactionCoordinator.State.valueOf(p[1]);
+                    if (Long.parseLong(p[2]) <= 0) throw new IllegalArgumentException("timestamp");
+                    fromHex(p[3]);
+                } catch (RuntimeException invalid) {
+                    throw new java.io.IOException("journal record fields invalid", invalid);
+                }
                 String body = p[0] + "|" + p[1] + "|" + p[2] + "|" + p[3] + "|" + p[4];
                 String actual = sha256(body);
                 if (!actual.equals(p[5])) throw new java.io.IOException("journal checksum mismatch");
