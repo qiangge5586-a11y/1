@@ -2,6 +2,7 @@ package com.shilapi.xcertplay;
 
 import android.app.Activity;
 import android.widget.Button;
+import android.bluetooth.BluetoothReadOnlyProbe;
 import com.shilapi.xcertplay.compat.usb.UsbHostReadOnlyScanner;
 import java.util.List;
 import android.os.Bundle;
@@ -125,6 +126,27 @@ public final class MainActivity extends Activity {
             }
         });
         root.addView(usbScan, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        section(root, "蓝牙状态（只读）",
+                "只读取蓝牙适配器是否存在、开关状态和设备名称；不会开启蓝牙、扫描、配对或连接。");
+        final TextView bluetoothStatus = text("蓝牙状态：尚未检测", 14, MUTED);
+        root.addView(bluetoothStatus);
+        Button bluetoothCheck = new Button(this);
+        bluetoothCheck.setText("检测蓝牙状态（只读）");
+        bluetoothCheck.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe.Result r =
+                        new com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe()
+                                .inspect(MainActivity.this);
+                String detail = r.getStatus();
+                if (r.getName() != null) detail += "\\n设备名称：" + r.getName();
+                detail += "\\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
+                bluetoothStatus.setText(detail);
+            }
+        });
+        root.addView(bluetoothCheck, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView footer = text("安全提示：本验证版不是完整 DiPlay 复刻版，请勿作为车机正式升级包使用。",
