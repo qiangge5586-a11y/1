@@ -1,9 +1,12 @@
 package com.shilapi.xcertplay.network.safety;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Transaction state machine. RootOps is responsible for durable, cross-process
- * locking and for invoking ProcessStartedListener immediately after a child is
- * created, before performing any other fallible work.
+ * locking and for invoking ProcessStartedListener immediately after each child
+ * is created, before performing any other fallible work.
  */
 public final class HotspotTransactionCoordinator {
  public enum State { NEW, PREFLIGHTED, BACKED_UP, APPLYING, ACTIVE, ROLLING_BACK, ROLLED_BACK, RECOVERY_REQUIRED }
@@ -22,9 +25,8 @@ public final class HotspotTransactionCoordinator {
   Snapshot preflight() throws Exception;
   Backup createAndVerifyBackup(String id,Snapshot snapshot) throws Exception;
   /**
-   * Notify listener immediately after each owned process is created and its
-   * PID/start-time/cmdline identity is captured. Do this before any later step
-   * that may throw. Return the primary process identity on success.
+   * Notify listener immediately after every owned child process is created
+   * and its PID/start-time/cmdline identity is captured, before later work.
    */
   ProcessIdentity apply(String id,Snapshot snapshot,Backup backup,ProcessStartedListener listener) throws Exception;
   void verifyActive(ProcessIdentity launched) throws Exception;
@@ -38,11 +40,9 @@ public final class HotspotTransactionCoordinator {
   LockHandle lock=ops.acquireExclusiveLock(id);
   if(lock==null)throw new IllegalStateException("Exclusive hotspot lock unavailable");
   Exception failure=null;
-  try {
-   return runLocked(id);
-  } catch(Exception e) {
-   failure=e; throw e;
-  } finally {
+  try { return runLocked(id); }
+  catch(Exception e) { failure=e; throw e; }
+  finally {
    try { lock.close(); }
    catch(Exception unlockFailure) {
     if(failure!=null) failure.addSuppressed(unlockFailure);
@@ -51,7 +51,7 @@ public final class HotspotTransactionCoordinator {
   }
  }
  private State runLocked(final String id) throws Exception {
-  Snapshot s=null; Backup b=null; final ProcessIdentity[] launched=new ProcessIdentity[1];
+  Snapshot s=null; Backup b=null; final List<ProcessIdentity> launched=new ArrayList<ProcessIdentity>();
   State state=State.NEW; journal.persist(id,state,"begin; exclusive lock held");
   try {
    s=ops.preflight(); if(s==null)throw new IllegalStateException("No preflight snapshot");
@@ -62,25 +62,40 @@ public final class HotspotTransactionCoordinator {
    ProcessIdentity returned=ops.apply(id,s,b,new ProcessStartedListener(){
     public void onStarted(ProcessIdentity identity) {
      if(identity==null)throw new IllegalArgumentException("Started process identity required");
-     launched[0]=identity;
+     launched.add(identity);
     }
    });
    if(returned==null)throw new IllegalStateException("No owned process identity");
-   if(launched[0]==null)launched[0]=returned;
-   else if(!same(launched[0],returned))throw new IllegalStateException("Returned process differs from registered process");
+   if(!containsSame(launched,returned))throw new IllegalStateException("Returned process was not registered at launch");
    ops.verifyActive(returned);state=State.ACTIVE;journal.persist(id,state,"active and verified");return state;
   } catch(Exception failure) {
    if(s==null||b==null){state=State.RECOVERY_REQUIRED;journal.persist(id,state,"aborted before verified backup");throw failure;}
-   try {
-    state=State.ROLLING_BACK;journal.persist(id,state,"rollback started");
-    if(launched[0]!=null)ops.stopIfStillOwned(launched[0]);
-    ops.restore(s,b);state=State.ROLLED_BACK;journal.persist(id,state,"rollback verified");
-   } catch(Exception rollbackFailure) {
-    state=State.RECOVERY_REQUIRED;journal.persist(id,state,"rollback failed");
+   Exception rollbackFailure=null;
+   try { journal.persist(id,State.ROLLING_BACK,"rollback started"); }
+   catch(Exception e) { rollbackFailure=e; }
+   for(int i=launched.size()-1;i>=0;i--) {
+    try { ops.stopIfStillOwned(launched.get(i)); }
+    catch(Exception e) { if(rollbackFailure==null)rollbackFailure=e;else rollbackFailure.addSuppressed(e); }
+   }
+   try { ops.restore(s,b); }
+   catch(Exception e) { if(rollbackFailure==null)rollbackFailure=e;else rollbackFailure.addSuppressed(e); }
+   if(rollbackFailure==null) {
+    try { journal.persist(id,State.ROLLED_BACK,"rollback completed; owned processes checked and config restore requested"); }
+    catch(Exception e) { rollbackFailure=e; }
+   }
+   if(rollbackFailure==null) state=State.ROLLED_BACK;
+   else {
+    state=State.RECOVERY_REQUIRED;
+    try { journal.persist(id,state,"one or more rollback or journal steps failed"); }
+    catch(Exception e) { rollbackFailure.addSuppressed(e); }
     failure.addSuppressed(rollbackFailure);
    }
    throw failure;
   }
+ }
+ private static boolean containsSame(List<ProcessIdentity> values,ProcessIdentity expected) {
+  for(int i=0;i<values.size();i++) if(same(values.get(i),expected)) return true;
+  return false;
  }
  private static boolean same(ProcessIdentity a,ProcessIdentity b) {
   return a.pid==b.pid&&a.startTicks==b.startTicks&&a.commandLine.equals(b.commandLine);
