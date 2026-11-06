@@ -30,7 +30,7 @@ public final class IapTunnelFramingTest {
     }
 
     private static void frameRejectsOversizeAndResets() {
-        IapTunnelFrameDecoder d = new IapTunnelFrameDecoder(10);
+        final IapTunnelFrameDecoder d = new IapTunnelFrameDecoder(10);
         expectFailure(new Runnable(){public void run(){d.feed(new byte[]{11,0});}});
         eq(0,d.pendingBytes());
     }
@@ -50,7 +50,7 @@ public final class IapTunnelFramingTest {
     }
 
     private static void packageRejectsInvalidSizesAndResets() {
-        IapTunnelPackageDecoder d=new IapTunnelPackageDecoder(64);
+        final IapTunnelPackageDecoder d=new IapTunnelPackageDecoder(64);
         expectFailure(new Runnable(){public void run(){d.feed(new byte[]{0,0,0,31,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});}});
         eq(0,d.pendingBytes());
         expectFailure(new Runnable(){public void run(){d.feed(new byte[]{0,0,0,65});}});
