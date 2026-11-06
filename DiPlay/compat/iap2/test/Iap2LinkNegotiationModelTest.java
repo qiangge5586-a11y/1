@@ -169,7 +169,7 @@ public final class Iap2LinkNegotiationModelTest {
             model.takeOutput();
             model.feed(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, invalid[i]), 1);
             eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
-            eq(null, model.getPeerConfiguration());
+            truth(model.getPeerConfiguration() == null);
         }
     }
 
