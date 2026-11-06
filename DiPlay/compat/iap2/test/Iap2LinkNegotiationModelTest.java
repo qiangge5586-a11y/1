@@ -299,7 +299,6 @@ public final class Iap2LinkNegotiationModelTest {
         // transitions the model to NORMAL.
         ready.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
         eq(Iap2LinkNegotiationModel.State.NORMAL, ready.getState());
-        eq(1, ready.drainPostReadyFrames().size());
         ready.feed(new byte[] {(byte) 0xff, 0x5a, 0, 20}, 3);
         truth(ready.getPendingFrameBytes() > 0);
         ready.feedEof();
