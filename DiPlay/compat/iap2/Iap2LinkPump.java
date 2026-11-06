@@ -91,13 +91,19 @@ public final class Iap2LinkPump {
      * immediately when capacity is already available.
      */
     public boolean sendControlAwaitCapacity(byte[] payload, long timeoutMillis) {
-        if (payload == null) throw new NullPointerException("payload");
         if (timeoutMillis < 0L) throw new IllegalArgumentException("negative timeout");
+        return sendControlAwaitCapacityNanos(payload,
+                java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMillis));
+    }
+
+    /** Package-private nanosecond variant for multi-chunk senders sharing one deadline. */
+    boolean sendControlAwaitCapacityNanos(byte[] payload, long timeoutNanos) {
+        if (payload == null) throw new NullPointerException("payload");
+        if (timeoutNanos < 0L) throw new IllegalArgumentException("negative timeout");
         if (payload.length > MAX_CONTROL_PAYLOAD) {
             throw new IllegalArgumentException("control payload exceeds " + MAX_CONTROL_PAYLOAD);
         }
         final long startedAt = System.nanoTime();
-        final long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         synchronized (lock) {
             while (true) {
                 if (!started || closing || terminated) return false;
