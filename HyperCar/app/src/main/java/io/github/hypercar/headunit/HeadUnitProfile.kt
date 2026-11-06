@@ -200,8 +200,25 @@ object HeadUnitProfiles {
         touchDisplay = null,
         pairingHint = "首次要在 MMI 里选「Apple CarPlay」并确认这台手机（车机会弹提示）",
     )
+    /** Honda factory head unit running DiPlay 0.3.11; experimental until validated in the vehicle. */
+    val DIPLAY_0311 = HeadUnitProfile(
+        id = "diplay_0311",
+        label = "DiPlay 0.3.11（本田原厂车机）",
+        model = "Honda Civic factory head unit",
+        notes = "Experimental: outbound iAP2 uses AirPlay DataStream type 130 with a per-connection encrypted TCP tunnel. Not yet validated on the vehicle.",
+        verified = false,
+        validatesDeviceId = false,
+        sendCarPlayAvailability = false,
+        openEaSessions = false,
+        sendTransportIdentifier = false,
+        replyPowerUpdates = true,
+        preferMdnsAirplay = true,
+        fallbackAirplayPorts = listOf(7000, 7001, 7100, 17000),
+        pairingHint = "先完成车机蓝牙配对，再确认 AirPlay 配对与热点连接",
+    )
+
     /** 内置档案（出厂就有的，断网也一定在）。宝马排第一：它是默认档案。 */
-    val builtin: List<HeadUnitProfile> = listOf(BMW_ID85, GENERIC, WINPLAY, AUDI_MIB3)
+    val builtin: List<HeadUnitProfile> = listOf(BMW_ID85, GENERIC, WINPLAY, AUDI_MIB3, DIPLAY_0311)
 
     /**
      * 全部可用档案 = 内置 + 远程（GitHub 下发的 `profiles/headunits.json`）。
