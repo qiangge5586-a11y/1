@@ -35,3 +35,13 @@ https://github.com/qiangge5586-a11y/1/actions/runs/42147380599
 Artifact: `diplay-honda-compat-debug` (artifact ID `13470194027`, 21,128 bytes; expires 2026-11-20). The artifact archive digest reported by Actions is `sha256:993b8b4e6643f81186bd8fdff3638290b0f9c7fd3c454c97d7e3d8348034527b`.
 
 This confirms a debug APK was assembled and uploaded by CI. It is an initial Chinese-language shell containing the safety/diagnostic classes, not a feature-complete recreation of DiPlay 0.3.11. It has not been installed on the Honda head unit, and ROOT/hotspot operations remain disabled.
+
+
+## Chinese diagnostic dashboard build (2026-11-06)
+
+The Chinese diagnostic dashboard update was assembled and uploaded in GitHub Actions run #6:
+https://github.com/qiangge5586-a11y/1/actions/runs/42147789283
+
+Artifact: `diplay-honda-compat-debug` (artifact ID `13471180642`, 22,314 bytes; expires 2026-11-20). Reported artifact archive digest: `sha256:92f5e32a09694ab618db75b25b3a24562f585c1ba9043c8fded3b4fa48cf9b01`.
+
+The dashboard displays the MY16ADA report baseline and clearly labels live ROOT, Wi-Fi, interface, config-file and daemon checks as not yet measured. It performs no device probing and does not invoke su. The APK build and artifact upload steps succeeded; this is still not an on-device API-17 or vehicle test.
