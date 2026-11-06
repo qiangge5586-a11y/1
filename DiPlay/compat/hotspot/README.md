@@ -88,3 +88,15 @@ This catalog is not yet a production ROOT adapter. The next implementation gate 
 `HotspotReadOnlyExecutorTest.java` uses a fake runner and fixture strings only. It verifies fixed argv delivery, timeout propagation, successful fixture output, timeout failure, nonzero exit failure, output-size rejection, and invalid bounds. The fake runner does not start a process and no su/shell command is executed.
 
 The GitHub workflow now compiles and runs this sixth suite. This is an executor boundary and simulation test, not a production process runner. A real Android 4.2.2 adapter remains blocked until the exact device command paths, output formats, process I/O handling, and timeout behavior are verified. The next safe step is to add typed parsers for fixture outputs (ROOT identity, interface table and metadata) and test malformed/ambiguous outputs before considering any real read-only process execution.
+
+
+## Typed diagnostic parsers (2026-11-06)
+
+`HotspotDiagnosticParsers.java` parses captured fixture text only; it has no device, process, shell or filesystem access. It provides:
+- ROOT identity parsing with exactly one numeric UID and GID; UID 0 is reported as root, while malformed or ambiguous identity text is rejected.
+- Linux interface table parsing with exactly 16 non-negative counters per row, duplicate-name rejection and immutable result-list structure.
+- Numeric-owner long-list metadata parsing for mode, UID, GID and byte size. This parser does not infer SELinux context, original-file existence from unrelated output, or whether the metadata belongs to an expected path; those must be bound by a separately verified capture record.
+
+The test suite includes root/non-root, missing and duplicate identity fields, multiple interface rows, truncated/negative counters, valid numeric metadata and malformed/missing-file diagnostics. The GitHub workflow compiles this as Java 7 source/bytecode and executes the parser fixtures.
+
+Important limitation: these are parsers for controlled fixture shapes, not proof that the target Honda firmware emits identical text. In particular, ls output varies by Android toolbox/toybox implementation and locale. Before any real read-only probe, capture actual output and validate it against the parser without changing system state. No command was executed on the head unit.
