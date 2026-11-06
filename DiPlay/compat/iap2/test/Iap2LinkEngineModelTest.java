@@ -349,7 +349,7 @@ public final class Iap2LinkEngineModelTest {
         Iap2LinkEngineModel capped = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
         capped.start(true, 0);
         for (int i = 0; i < 64; i++) truth(capped.queueBeforeReady(10, new byte[] {(byte) i}));
-        falsity(capped.queueBeforeReady(10, new byte[] {65}));
+        truth(!capped.queueBeforeReady(10, new byte[] {65}));
         eq(Iap2LinkEngineModel.State.CLOSED, capped.state());
     }
 
