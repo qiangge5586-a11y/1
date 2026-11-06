@@ -178,3 +178,16 @@ Added `compat/iap2/Iap2LinkEngineModel.java` as an offline lifecycle/readiness c
 - No iPhone/vehicle link, Android runtime, MFi, AirPlay encrypted tunnel, USB, Bluetooth or ROOT write test was performed.
 
 Next: extend negotiation to expose a validated immutable peer-configuration snapshot, then bind that snapshot into the composition model with tests for minimum/maximum peer limits. Keep the data plane abstract until source-grounded packet dispatch and exact bidirectional fixtures are complete.
+
+## Automatic peer-configuration handoff (2026-11-06)
+
+The negotiation model now retains a read-only peer SYN snapshot: maxOutgoing, maxLength, retransmission timeout, ACK timeout, max retransmissions, max acknowledgements, synchronization sequence, and complete session descriptors. The composition's automatic constructor uses this snapshot to instantiate both windows after READY.
+
+- Outbound values: peer maxOutgoing, maxAcknowledgements, retransmission timeout and max retransmissions; initial TX/ACK sequence 99; ACK slack 10; local defensive queue cap 64.
+- Inbound values: initial receive/ACK sequence from peer SYN sequence; peer maxOutgoing, maxAcknowledgements and ACK timeout; wireless local maxOutgoingDelta 0; out-of-order cap 64.
+- Original source readiness behavior is now represented: every non-zero control byte is passed through the acknowledgement/readiness path, so the peer SYN itself may complete READY after valid peer limits are recorded and the local ACK is queued.
+- Explicit-injection construction remains for unit tests; automatic construction currently targets the audited wireless configuration only.
+
+Actions run [#105](https://github.com/qiangge5586-a11y/1/actions/runs/42172333952) passed **7,174 offline checks**, including 121 negotiation checks and 32 composition checks. Runs #102 and #104 failed on a boxed numeric assertion and stale readiness expectations respectively; both were corrected before #105.
+
+Remaining: validate the exact source-side peer-limit and queued-payload readiness predicates against additional Smali excerpts, then add malformed/truncated SYN and peer boundary tests. This model still has no live packet writer, USB/Bluetooth/TCP transport, or MY16ADA hardware verification.
