@@ -13,6 +13,7 @@ public final class Iap2LinkNegotiationModelTest {
         acknowledgementNumberDoesNotGateNegotiationReady();
         acknowledgementBeforePeerSyncIsTerminal();
         tooSmallPeerLimitIsTerminalOnAcknowledgement();
+        exposesImmutablePeerSynchronizationSnapshot();
         rejectsWrongStartupMarker();
         eofTerminatesSession();
         System.out.println("Iap2LinkNegotiationModelTest: PASS (" + checks + " checks)");
@@ -128,6 +129,30 @@ public final class Iap2LinkNegotiationModelTest {
         model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
         eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
         falsity(model.isReady());
+    }
+
+    private static void exposesImmutablePeerSynchronizationSnapshot() {
+        Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
+        model.start(true, 0);
+        model.takeOutput();
+        byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                2, 4096, 1500, 250, 3, 5,
+                new int[][] {{10, 0, 2}, {11, 2, 1}});
+        model.feed(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, sync), 1);
+        Iap2LinkNegotiationModel.PeerConfiguration peer = model.getPeerConfiguration();
+        notNull(peer);
+        eq(2, peer.maxOutgoing);
+        eq(4096, peer.maxLength);
+        eq(1500, peer.retransmissionTimeoutMillis);
+        eq(250, peer.acknowledgementTimeoutMillis);
+        eq(3, peer.maxRetransmissions);
+        eq(5, peer.maxAcknowledgements);
+        eq(77, peer.synchronizationSequence);
+        eq(2, peer.getSessionDescriptorCount());
+        int[] control = peer.getSessionDescriptor(0);
+        eq(10, control[0]); eq(0, control[1]); eq(2, control[2]);
+        control[0] = 99;
+        eq(10, peer.getSessionDescriptor(0)[0]);
     }
 
     private static void rejectsWrongStartupMarker() {
