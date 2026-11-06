@@ -203,6 +203,25 @@ public final class Iap2LinkEngineModelTest {
         eq(0x40, wireFrames.get(0).control);
         eq(80, wireFrames.get(0).acknowledgement);
         truth(wireFrames.get(0).payload == null);
+
+        // Five ACK-bearing frames hit the peer maxAcknowledgements batch threshold.
+        byte[] fourthAck = Iap2LinkFrameCodec.encode(0x40, 81, 100, 0, null);
+        m.feedNegotiation(fourthAck, 320);
+        events = m.drainEvents();
+        truth(events.get(0).acknowledgementBatch == null);
+        eq(0, m.drainWireFrames().size());
+        byte[] fifthAck = Iap2LinkFrameCodec.encode(0x40, 82, 100, 0, null);
+        m.feedNegotiation(fifthAck, 330);
+        events = m.drainEvents();
+        truth(events.get(0).acknowledgementBatch != null);
+        truth(events.get(0).acknowledgementBatch.acknowledgementNow);
+        wire = m.drainWireFrames();
+        eq(1, wire.size());
+        wireFrames = new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, wireFrames.size());
+        eq(0x40, wireFrames.get(0).control);
+        eq(80, wireFrames.get(0).acknowledgement);
+        truth(wireFrames.get(0).payload == null);
         eq(Iap2LinkEngineModel.State.READY, m.state());
     }
 
