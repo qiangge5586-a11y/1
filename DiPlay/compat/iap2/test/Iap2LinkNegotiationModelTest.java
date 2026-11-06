@@ -30,7 +30,9 @@ public final class Iap2LinkNegotiationModelTest {
 
         byte[] peerSync = peerSyncFrame(77, 65535);
         model.feed(concat(slice(Iap2LinkFrameCodec.IAP2_MARKER, 2, 6), peerSync), 120);
-        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        // The SYN's non-zero control value causes processFrame() to run
+        // handleAcknowledgement() after handleSynchronization().
+        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
         eq(65535, model.getPeerMaxLength());
 
         Iap2LinkFrameDecoder decoder = new Iap2LinkFrameDecoder();
@@ -45,14 +47,8 @@ public final class Iap2LinkNegotiationModelTest {
         eq(Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT, response.get(1).control);
         eq(77, response.get(1).acknowledgement);
 
-        byte[] peerAck = Iap2LinkFrameCodec.encode(Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT,
-                77, 99, 0, null);
-        model.feed(peerAck, 140);
-        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
         truth(model.isReady());
-        Iap2LinkFrameDecoder ackDecoder = new Iap2LinkFrameDecoder();
-        List<Iap2LinkFrameDecoder.Frame> ack = ackDecoder.feed(model.takeOutput());
-        eq(0, ack.size());
+        eq(0, model.getPendingFrameBytes());
     }
 
     private static void initiatorStartsSyncImmediately() {
@@ -103,9 +99,8 @@ public final class Iap2LinkNegotiationModelTest {
             Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
             model.start(true, 0);
             model.takeOutput();
-            model.feed(peerSyncFrame(77, 65535), 1);
+            model.feed(peerSyncFrame(77, 65535, acknowledgements[i]), 1);
             model.takeOutput();
-            model.feed(Iap2LinkFrameCodec.encode(0x40, 77, acknowledgements[i], 0, null), 2);
             eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
             truth(model.isReady());
         }
@@ -126,7 +121,6 @@ public final class Iap2LinkNegotiationModelTest {
         model.takeOutput();
         model.feed(peerSyncFrame(77, 10), 1);
         model.takeOutput();
-        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
         eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
         falsity(model.isReady());
     }
@@ -149,10 +143,14 @@ public final class Iap2LinkNegotiationModelTest {
     }
 
     private static byte[] peerSyncFrame(int sequence, int maxLength) {
+        return peerSyncFrame(sequence, maxLength, 0);
+    }
+
+    private static byte[] peerSyncFrame(int sequence, int maxLength, int acknowledgement) {
         byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
                 4, maxLength, 4000, 500, 4, 3,
                 new int[][] {{10, 0, 2}, {11, 2, 1}, {12, 1, 2}});
-        return Iap2LinkFrameCodec.encode(0x80, sequence, 0, 0, sync);
+        return Iap2LinkFrameCodec.encode(0x80, sequence, acknowledgement, 0, sync);
     }
 
     private static byte[] concat(byte[] a, byte[] b) {
