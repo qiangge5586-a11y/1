@@ -237,3 +237,19 @@ The coordinator previously held its monitor while calling provider methods. A bl
 Java 7 offline test run: run 42207282507 — compile/test step passed, including the new blocked-provider cancellation test. Android package run 42207282456 was still running at the time of this audit update.
 
 Evidence boundary: no iPhone, real coprocessor, I2C bus, CH341 adapter, remote provider, or API 17 device was exercised.
+
+
+## Source-parity follow-up: MFi CSM parameter and message codec (2026-11-06)
+
+A further inspection of the original `Iap2AuthenticationMessages`, `Iap2ParameterList`, `Iap2Parameter` and `Iap2CsmFramer` implementations establishes the exact framing contract now represented in compatibility code:
+
+- A CSM frame is a six-byte header: magic `0x4040`, total frame length u16 big-endian, message ID u16 big-endian, followed by payload.
+- Each parameter is `length:u16be` (including its four-byte header), `parameterId:u16be`, then opaque value bytes. The parser rejects a truncated header, length below four, or length beyond the remaining body.
+- The original MFI certificate and signature builders each encode parameter 0 as bytes.
+- The original BAA body path parses the supplied byte array as a complete parameter list, then uses that same body directly in the AuthenticationCertificate frame. It does not add a new parameter wrapper.
+- The separate BAA package builder emits parameter 0 = leaf bytes, parameter 1 = u8 value 1, parameter 2 = intermediate bytes.
+- The original challenge extractor first requires the request-challenge-response message ID, then reads parameter 0.
+
+Added `Iap2ParameterCodec` and `MfiIap2MessageCodec`, plus offline tests for MFI certificate/signature, BAA body pass-through, BAA leaf/intermediate package, challenge extraction, malformed parameter lengths and malformed CSM frame headers. The test is now part of the Java 7 CI workflow.
+
+This is a wire-format compatibility layer only. It is not yet connected to `Iap2CsmReceiveCoordinator` / `Iap2CsmPumpSender` or to the RFCOMM/TCP transport. Challenge length enforcement and the provider operation deadline remain in the provider/session layer. BAA provider material acquisition is still not implemented; these builders only encode already-supplied bytes. No real MFi hardware, iPhone, API 17 device, or vehicle was tested.
