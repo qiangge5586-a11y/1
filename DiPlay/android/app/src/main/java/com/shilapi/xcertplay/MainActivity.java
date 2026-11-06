@@ -103,7 +103,7 @@ public final class MainActivity extends Activity {
                 + "待完成：USB / 蓝牙 / CarPlay 功能逐项移植与实机测试");
 
         section(root, "USB 设备枚举（只读）",
-                "可手动读取系统 USB Host 设备描述信息。不会打开设备、申请通信权限、访问端点或传输数据。");
+                "可手动读取 USB Host 当前公开的接口与端点描述信息。不会打开设备、申请通信权限或传输数据。API 17 不公开 alternate setting 字段，相关值会标记为未知。");
         final TextView usbStatus = text("USB 状态：尚未扫描", 14, MUTED);
         root.addView(usbStatus);
         Button usbScan = new Button(this);
@@ -126,12 +126,12 @@ public final class MainActivity extends Activity {
                             .append(" 接口集合数=").append(d.getConfigurationCount());
                     for (int c = 0; c < d.getConfigurations().size(); c++) {
                         UsbConfigurationSnapshot configuration = d.getConfigurations().get(c);
-                        display.append("\\n  配置ID=").append(configuration.getId())
+                        display.append("\n  接口集合=").append(configuration.getId())
                                 .append(" 接口=").append(configuration.getInterfaceCount());
                         NcmInterfaceSelector.Selection ncm =
                                 UsbNcmReadOnlyMatcher.find(configuration);
                         if (ncm != null) {
-                            display.append("\\n  CDC-NCM接口形态候选：控制接口#")
+                            display.append("\n  CDC-NCM接口形态候选：控制接口#")
                                     .append(ncm.getControl().getId())
                                     .append(" 数据接口#").append(ncm.getData().getId())
                                     .append(" alt=").append(ncm.getData().getAlternateSetting() < 0
@@ -142,7 +142,7 @@ public final class MainActivity extends Activity {
                                             ? "（旧版API未公开alt信息，结果不完整）" : "");
                         }
                         for (UsbConfigurationSnapshot.InterfaceSnapshot iface : configuration.getInterfaces()) {
-                            display.append("\\n    IF#").append(iface.getId())
+                            display.append("\n    IF#").append(iface.getId())
                                     .append(" class=").append(iface.getInterfaceClass())
                                     .append("/").append(iface.getInterfaceSubclass())
                                     .append(" alt=").append(iface.getAlternateSetting() < 0 ? "未知" : String.valueOf(iface.getAlternateSetting()))
