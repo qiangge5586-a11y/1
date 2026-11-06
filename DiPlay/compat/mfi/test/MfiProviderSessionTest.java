@@ -1,5 +1,9 @@
 package com.shilapi.xcertplay.compat.mfi;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 public final class MfiProviderSessionTest {
     private static int checks;
 
@@ -8,12 +12,13 @@ public final class MfiProviderSessionTest {
         public long nanoTime() { return now; }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         sameContextSpansCertificateAndSignature();
         staleGenerationCannotAdvanceSession();
         providerCompletionAfterDeadlineIsRejected();
         cancelClosesAndCancelsContext();
         invalidChallengeFailsClosed();
+        cancelDoesNotWaitForBlockedProvider();
         System.out.println("MfiProviderSessionTest: PASS (" + checks + " checks)");
     }
 
@@ -86,6 +91,51 @@ public final class MfiProviderSessionTest {
         session.readCertificate(8L);
         expectIllegal(new Runnable() { public void run() { session.signChallenge(new byte[0], 8L); }});
         eq(MfiProviderSession.State.FAILED, session.state());
+    }
+
+    private static void cancelDoesNotWaitForBlockedProvider() throws Exception {
+        final Clock clock = new Clock();
+        final MfiOperationContext context = context(clock, 1000L, 22L);
+        final CountDownLatch entered = new CountDownLatch(1);
+        final CountDownLatch release = new CountDownLatch(1);
+        final AtomicReference<Throwable> providerFailure = new AtomicReference<Throwable>();
+        final MfiProviderSession session = new MfiProviderSession(new MfiProviderSession.Provider() {
+            public byte[] readCertificate(MfiOperationContext c) {
+                entered.countDown();
+                try {
+                    if (!release.await(2L, TimeUnit.SECONDS))
+                        throw new AssertionError("test provider release timed out");
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new MfiOperationContext.OperationCancelledException("test interrupted");
+                }
+                return new byte[] {1};
+            }
+            public byte[] signChallenge(byte[] b, MfiOperationContext c) { return new byte[] {2}; }
+        }, context, 22L);
+        Thread providerThread = new Thread(new Runnable() {
+            public void run() {
+                try { session.readCertificate(22L); }
+                catch (Throwable failure) { providerFailure.set(failure); }
+            }
+        }, "mfi-blocked-provider-test");
+        providerThread.start();
+        truth(entered.await(1L, TimeUnit.SECONDS));
+
+        Thread cancelThread = new Thread(new Runnable() {
+            public void run() { session.cancel(); }
+        }, "mfi-cancel-test");
+        cancelThread.start();
+        cancelThread.join(500L);
+        truth(!cancelThread.isAlive());
+        truth(context.isCancelled());
+        eq(MfiProviderSession.State.CLOSED, session.state());
+
+        release.countDown();
+        providerThread.join(1500L);
+        truth(!providerThread.isAlive());
+        truth(providerFailure.get() instanceof MfiOperationContext.OperationCancelledException);
+        eq(MfiProviderSession.State.CLOSED, session.state());
     }
 
     private static MfiOperationContext context(Clock c, long timeout, long generation) {
