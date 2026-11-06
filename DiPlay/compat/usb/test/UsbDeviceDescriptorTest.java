@@ -1,7 +1,5 @@
 import com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor;
 
-import com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor;
-
 public final class UsbDeviceDescriptorTest {
     public static void main(String[] args) {
         UsbDeviceDescriptor d = new UsbDeviceDescriptor(0x18D1, 0x4EE7, 0, 0, 0, 2);
