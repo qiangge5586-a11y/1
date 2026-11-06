@@ -59,6 +59,13 @@ jobs:
             echo "JADX returned $JADX_EXIT after producing partial output; continuing with APKTool."
           fi
           test -d DiPlay/decompiled/jadx
+      - name: Audit ROOT hotspot safety patterns
+        run: |
+          set -euo pipefail
+          python3 DiPlay/tools/audit-hotspot-safety.py \
+            --sources DiPlay/decompiled/jadx/sources \
+            --out DiPlay/decompiled/hotspot-safety-audit.md
+          test -s DiPlay/decompiled/hotspot-safety-audit.md
       - name: Decode manifest resources and Smali
         run: |
           set -euo pipefail
