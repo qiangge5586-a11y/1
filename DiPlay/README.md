@@ -186,3 +186,6 @@ CI [run #161](https://github.com/qiangge5586-a11y/1/actions/runs/42175067632) pa
 ### CSM framing source correction
 
 Recovered original Smali now confirms the exact `Iap2CsmChannel.recvControl() -> Iap2CsmFramer.offer()` path. CSM input is already-reassembled link-control data, not the 8 KiB raw stream read. The offline decoder's per-call guard is corrected to 65,525 bytes, matching the original `MAX_LINK_CHUNK_BYTES`; see [IAP2_CSM_FRAMER_SOURCE_AUDIT.md](analysis/IAP2_CSM_FRAMER_SOURCE_AUDIT.md). CI run [#163](https://github.com/qiangge5586-a11y/1/actions/runs/42175105245) passed **7,393 offline checks**. No real iPhone or vehicle handshake has been claimed.
+
+
+The CSM decoder was further aligned with the original framer's fixed-buffer append/drain loop: a single input array may contain multiple coalesced frames and exceed 65,535 bytes, while pending storage remains bounded to one maximum frame. The regression test covers two 40,006-byte frames supplied together.
