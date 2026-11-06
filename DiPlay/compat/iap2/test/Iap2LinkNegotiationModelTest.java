@@ -180,8 +180,12 @@ public final class Iap2LinkNegotiationModelTest {
             model.start(true, 0);
             model.takeOutput();
             model.feed(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, invalid[i]), 1);
-            eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
+            // A malformed SYN alone is ignored by processFrame(); the
+            // readiness failure occurs only when an ACK bit is also received.
+            eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
             truth(model.getPeerConfiguration() == null);
+            model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+            eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
         }
     }
 
