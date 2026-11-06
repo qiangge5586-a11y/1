@@ -87,3 +87,15 @@ Use `29`, not `BA`, as the trailing payload checksum in documentation and fixtur
 ## Safe next implementation boundary
 
 The next full model increment should port the source-backed cumulative ACK window and queue/retransmission behavior from `handleAcknowledgement`, `sendPacket`, `retransmitDuePacket`, and `advanceTime`. Preserve exact retry semantics: with peer maxRetransmissions=4, the original transmission is followed by at most three retransmissions; the fourth due timeout enters DEAD. Extended ACK must retransmit only outstanding sequence numbers explicitly listed in its payload. Keep all work offline until separately authorized hardware validation.
+
+
+## Readiness correction implementation and validation
+
+The offline negotiation model was corrected to match the exact `processFrame` bit test: only frames with control bit `0x40` enter `handleAcknowledgement`; a SYN-only `0x80` frame does not. Within that ACK handler, the source readiness gate checks peer synchronization and usable peer limits but does not require ACK number 99. The tests now distinguish the peer SYN from a later ACK, accept ACK numbers 98 and 100 for the readiness transition, and verify terminal failure for ACK-before-SYN and unusable peer maxLength.
+
+- Model correction commit: `473ab3df9596e160fdf576553978b63a8e050a10`
+- Regression test commit: `f8485d186831828178dbb5192e719cccd2ca8ab6`
+- Final validated iAP2 workflow: [run #75](https://github.com/qiangge5586-a11y/1/actions/runs/42168967851), commit `f00961b912f6fb652dc5e05c1b2ec756f315e5ab`, success.
+- Checks: 61 handshake lifecycle + 3,380 encrypted IAP frame/package + 2,330 CSM + 64 link codec + 1,050 link decoder + 108 negotiation model + 20 retransmission policy = **7,013 offline checks**.
+
+This is a Java 7 offline model validation only. It does not yet provide a full source-equivalent link engine: cumulative ACK queue/window processing, out-of-order packet delivery, delayed ACK scheduling, extended ACK selective retransmission, and retransmission timer integration remain separate work items.
