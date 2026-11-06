@@ -23,6 +23,10 @@ public final class Iap2LinkPump {
         long nextDeadlineMillis();
     }
 
+    /**
+     * Callbacks run on the pump worker. Implementations must return quickly and dispatch
+     * UI work to the main thread; blocking here stalls transport reads and timer progress.
+     */
     public interface Listener {
         void onReady();
         void onClosed(String reason);
@@ -34,6 +38,7 @@ public final class Iap2LinkPump {
     public static final int MAX_CONTROL_PAYLOAD = 65525;
     private static final int READ_BUFFER_BYTES = 8192;
     private static final int MAX_POLL_MILLIS = 100;
+    private static final int MAX_COMMANDS_PER_TURN = 8;
 
     private final Iap2DuplexByteStream stream;
     private final Driver driver;
@@ -233,7 +238,9 @@ public final class Iap2LinkPump {
     }
 
     private void deliverCommands(long nowMillis) throws IOException {
-        while (true) {
+        // Bound each outbound burst so a full producer queue cannot indefinitely postpone
+        // inbound ACK/data processing and timer advancement on this single-owner worker.
+        for (int delivered = 0; delivered < MAX_COMMANDS_PER_TURN; delivered++) {
             byte[] command;
             synchronized (lock) {
                 command = commands.pollFirst();
