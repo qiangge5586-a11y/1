@@ -82,7 +82,7 @@ public final class Iap2WirelessHandshake {
         if (startSessionSent) return Result.DUPLICATE;
         if (!carPlayAvailable || phase == Phase.FAILED) return Result.INVALID_ORDER;
         startSessionSent = true;
-        phase = Phase.HANDOFF_NEGOTIATING;
+        refreshPhase();
         return Result.ACCEPTED;
     }
 
