@@ -19,13 +19,15 @@ public final class Iap2LinkFrameCodecTest {
 
 
     private static void sourceConfirmedWirelessDefaultSynchronizationFrame() {
+        // Wireless source config uses zeroAcknowledgements=false, so its
+        // advertised acknowledgement timeout is 500 ms (not the wired zero).
         byte[] payload = Iap2LinkFrameCodec.encodeSynchronizationPayload(
-                4, 65535, 4000, 0, 4, 3,
+                4, 65535, 4000, 500, 4, 3,
                 new int[][] {{10, 0, 2}, {11, 2, 1}, {12, 1, 2}});
-        bytes(hex("01 04 FF FF 0F A0 00 00 04 03 0A 00 02 0B 02 01 0C 01 02"), payload);
+        bytes(hex("01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02"), payload);
         bytes(hex("FF 55 02 00 EE 10"), Iap2LinkFrameCodec.IAP2_MARKER);
         byte[] frame = Iap2LinkFrameCodec.encode(0x80, 99, 0, 0, payload);
-        bytes(hex("FF 5A 00 1D 80 63 00 00 A7 01 04 FF FF 0F A0 00 00 04 03 0A 00 02 0B 02 01 0C 01 02 1E"), frame);
+        bytes(hex("FF 5A 00 1D 80 63 00 00 A7 01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02 29"), frame);
         Iap2LinkFrameCodec.Header header = Iap2LinkFrameCodec.parseHeader(Arrays.copyOf(frame, 9));
         notNull(header);
         eq(29, header.length); eq(0x80, header.control); eq(99, header.sequence);
