@@ -1,6 +1,7 @@
 package com.shilapi.xcertplay.compat.ncm;
 
 import java.util.List;
+import java.util.Random;
 
 public final class Ntb16CodecTest {
     private Ntb16CodecTest() {
@@ -20,7 +21,8 @@ public final class Ntb16CodecTest {
         rejectsShortNdpTable();
         skipsDatagramOutsideDeclaredBlock();
         parsesBlockInsideLargerSourceBuffer();
-        System.out.println("Ntb16CodecTest: PASS (13 cases)");
+        malformedRandomBuffersNeverThrow();
+        System.out.println("Ntb16CodecTest: PASS (14 cases)");
     }
 
     private static void roundTrip() {
@@ -128,6 +130,17 @@ public final class Ntb16CodecTest {
         List<byte[]> frames = Ntb16Codec.parse(wrapped, 5, ntb.length);
         check(frames.size() == 1, "nonzero source offset");
         arrayEquals(new byte[] {5, 6, 7}, frames.get(0), "offset payload");
+    }
+
+    private static void malformedRandomBuffersNeverThrow() {
+        Random random = new Random(0x4E544231L);
+        for (int i = 0; i < 2000; i++) {
+            int length = random.nextInt(257);
+            byte[] source = new byte[length + 7];
+            random.nextBytes(source);
+            int offset = random.nextInt(8);
+            Ntb16Codec.parse(source, offset, length);
+        }
     }
 
     private static void nth(byte[] b, int blockLength, int ndpOffset) {
