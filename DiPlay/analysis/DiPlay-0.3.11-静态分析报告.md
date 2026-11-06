@@ -283,3 +283,18 @@ Manifest 还声明了启动 Activity、CarPlay Host Activity、USB 附件处理�
 - [ ] 在 API 17 实机加载各必要 JNI 库，记录 linker 输出。
 - [ ] 建立 Honda 专用 HotspotBackend，先只读探测，再实现备份/回滚。
 - [ ] 构建和签署适配 APK，并在 MY16ADA 车机进行安装与 CarPlay 实测。
+
+
+### 13.1 关键 JNI 加载点的风险分级
+
+结合 JADX 输出复核加载代码后，初步分级如下（仍需 API 17 设备运行验证）：
+
+- **高风险、静态初始化直接加载：** `LegacyNcmNative`、`LegacyUsbHostNative`、`NativeLinuxI2cBridge`。如果类在 API 17 上被触发且库因系统符号缺失无法加载，可能抛出 `UnsatisfiedLinkError` 并影响调用链。
+- **有显式降级捕获：** `LwipNcmNative` 的加载/创建/状态读取路径捕获 `UnsatisfiedLinkError`，但还需检查调用方是否正确处理“native unavailable”。
+- **TLS 特殊路径：** `LockdownTlsEngineFactory` 对 `conscrypt_jni` 显式加载失败有记录，并尝试 Conscrypt Provider；该库的 API note 为 16，与目标 API 17 相对接近，但仍需验证 Conscrypt 与系统 TLS provider 的组合。
+- **媒体可选性待确认：** Opus、Speex 类使用 API 19 note，需检查它们是否只在启用对应音频功能时加载，避免在主 Activity 或会话初始化时无条件触发。
+- **加密关键路径：** ChaCha 原生库为 API 19 note，不能仅为兼容而禁用。应验证替代 Java 实现或在目标 API 17 上成功加载；不可绕过加密或降低协议安全性。
+
+### 13.2 ROOT Shell 的 API 17 分支
+
+`RootShell.waitForProcess` 仅在 SDK >= 26 时调用 `Process.waitFor(timeout, TimeUnit)`；低于 API 26 使用 `exitValue()` 轮询和短暂 sleep 的分支。因此这处新 API 已有运行时版本保护，API 17 路径不会直接调用该方法。仍需检查 `ProcessBuilder`、文件路径、shell 命令和 root 授权本身在目标固件上的实际行为。
