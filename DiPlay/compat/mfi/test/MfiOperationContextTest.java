@@ -19,7 +19,7 @@ public final class MfiOperationContextTest {
     private static void oneBudgetSpansProviderPhases() {
         FakeClock c = new FakeClock(); c.now = 1000000L;
         MfiOperationContext.Cancellation cancel = new MfiOperationContext.Cancellation();
-        MfiOperationContext op = new MfiOperationContext(c, c.now, 30000L, 7L, cancel);
+        final MfiOperationContext op = new MfiOperationContext(c, c.now, 30000L, 7L, cancel);
         eq(30000L, op.remainingMillis());
         c.now += 12500000000L; // certificate provider consumed 12.5 seconds
         eq(17500L, op.remainingMillis());
@@ -32,8 +32,8 @@ public final class MfiOperationContextTest {
     }
 
     private static void timeoutBoundariesAndValidation() {
-        FakeClock c = new FakeClock();
-        MfiOperationContext zero = new MfiOperationContext(c, 0L, 0L, 1L,
+        final FakeClock c = new FakeClock();
+        final MfiOperationContext zero = new MfiOperationContext(c, 0L, 0L, 1L,
                 new MfiOperationContext.Cancellation());
         eq(0L, zero.remainingMillis());
         expectTimeout(new Runnable(){public void run(){zero.checkActive(1L);}});
@@ -50,7 +50,7 @@ public final class MfiOperationContextTest {
     private static void cancellationAndGenerationAreTerminal() {
         FakeClock c = new FakeClock();
         MfiOperationContext.Cancellation cancel = new MfiOperationContext.Cancellation();
-        MfiOperationContext op = new MfiOperationContext(c, 0L, 1000L, 9L, cancel);
+        final MfiOperationContext op = new MfiOperationContext(c, 0L, 1000L, 9L, cancel);
         expectCancelled(new Runnable(){public void run(){op.checkActive(10L);}});
         cancel.cancel();
         truth(op.isCancelled());
