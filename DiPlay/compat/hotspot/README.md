@@ -50,3 +50,11 @@ Run: https://github.com/qiangge5586-a11y/1/actions/runs/42144865377
 This is unit-test evidence for pure Java primitives only. No actual backup bytes, filesystem metadata, SELinux context, /proc files, su process, Wi-Fi service, hostapd or dnsmasq were accessed. The production `RootOps` adapter, durable journal/reboot recovery, original APK integration and real-device verification remain unimplemented.
 
 The coordinator self-test was expanded in commit `57b626cc943930f95d6d3e01ff61819b530d2f42` to verify that a missing/unverified backup blocks `apply()` and does not attempt restore, and that malformed transaction IDs are rejected. GitHub Actions run #8 passed; its log records `PASS: success, rollback, backup gate and transaction ID validation` plus the safety-primitives test pass: https://github.com/qiangge5586-a11y/1/actions/runs/42144965197.
+
+## Durable journal prototype (2026-11-06)
+
+`AppendOnlyHotspotJournal.java` adds an app-private append-only journal with SHA-256 hash chaining, OS file locking, UTF-8 detail encoding, a 1 MiB size ceiling, and `FileDescriptor.sync()` before returning. Reads validate the complete chain and fail closed on malformed, truncated, or tampered records. The constructor requires an existing writable private directory and rejects a journal path whose canonical parent escapes that directory.
+
+`AppendOnlyHotspotJournalTest.java` verifies empty state, multiple persisted transitions, UTF-8 round-trip, tamper detection, and refusal to append to a corrupted journal. GitHub Actions run #12 passed all three test suites, including `PASS: durable journal append, UTF-8 recovery and tamper fail-closed`: https://github.com/qiangge5586-a11y/1/actions/runs/42145390895.
+
+This is a durable journal primitive, not the complete recovery system. It does not yet implement boot-time recovery decisions, backup file byte storage/restoration, network-state restoration, Android process lifecycle integration, or production RootOps. The journal must be placed in DiPlay's app-private internal storage; do not place it on removable/shared storage. No car head-unit ROOT commands or system writes were run.
