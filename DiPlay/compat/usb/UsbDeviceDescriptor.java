@@ -1,5 +1,9 @@
 package com.shilapi.xcertplay.compat.usb;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Passive USB descriptor value object.
  * No USB permission, endpoint access or device I/O.
