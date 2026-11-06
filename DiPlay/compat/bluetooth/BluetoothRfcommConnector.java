@@ -35,7 +35,9 @@ public final class BluetoothRfcommConnector {
             throw new IllegalArgumentException("deviceAddress is empty");
         }
         if (serviceUuid == null) throw new NullPointerException("serviceUuid");
-        if (timeoutMillis <= 0L) throw new IllegalArgumentException("timeoutMillis <= 0");
+        if (timeoutMillis <= 0L || timeoutMillis > 300000L) {
+            throw new IllegalArgumentException("timeoutMillis must be in 1..300000");
+        }
         cancelled = false;
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if (adapter == null) throw new IOException("Bluetooth adapter unavailable");
