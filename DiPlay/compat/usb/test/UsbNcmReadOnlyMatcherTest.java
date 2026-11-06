@@ -15,7 +15,8 @@ public final class UsbNcmReadOnlyMatcherTest {
         findsFirstMatchingConfiguration();
         rejectsNonNcmAndAmbiguousSnapshots();
         descriptorCollectionsAreImmutable();
-        System.out.println("UsbNcmReadOnlyMatcherTest: PASS (4 cases)");
+        unknownAlternateSettingRemainsExplicit();
+        System.out.println("UsbNcmReadOnlyMatcherTest: PASS (5 cases)");
     }
 
     private static void mapsPassiveSnapshotToCdcNcmSelection() {
@@ -66,6 +67,21 @@ public final class UsbNcmReadOnlyMatcherTest {
         } catch (UnsupportedOperationException expected) {
             // expected
         }
+    }
+
+    private static void unknownAlternateSettingRemainsExplicit() {
+        UsbConfigurationSnapshot config = config(1,
+                iface(2, 2, 13, -1),
+                iface(4, 10, 0, -1, ep(0x82, 2, 128, 2, 512, 0),
+                        ep(0x03, 2, 0, 2, 512, 0)));
+        check(config.getInterfaces().get(0).isAlternateSettingKnown() == false,
+                "API17 unknown alternate setting represented explicitly");
+        NcmInterfaceSelector.Selection selection = UsbNcmReadOnlyMatcher.find(config);
+        check(selection != null, "descriptor shape may still be identified");
+        check(selection.getData().getAlternateSetting() == -1,
+                "matcher must not fabricate alternate setting zero");
+        check(selection.getDataClaim() == selection.getData(),
+                "without known alt-zero sibling, claim descriptor remains selected data");
     }
 
     private static UsbConfigurationSnapshot config(int id,
