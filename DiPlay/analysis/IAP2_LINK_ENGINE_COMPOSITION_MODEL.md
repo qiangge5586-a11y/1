@@ -107,3 +107,9 @@ Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/4217439646
 The composition now mirrors the original `handleAcknowledgement()` ordering for a readiness-triggering ACK frame: validate every pre-ready queued payload first; then apply the ACK field to the outbound window; then flush accepted queued packets; only afterward continue the same frame's Extended ACK/data path and end-of-frame ACK batching. This prevents queued packets from being sent before the readiness ACK watermark has been applied and ensures an oversized pending packet terminates before ACK-window mutation.
 
 Actions run [#156](https://github.com/qiangge5586-a11y/1/actions/runs/42174566575) passed **7,379 offline checks**, including 200 composition checks. This is source-ordered offline simulation only.
+
+## Extended ACK response wire fields
+
+A source check of `sendExtendedAcknowledgement()` confirms its response uses control `0x20`, the current send sequence, the current in-order receive ACK, and **session ID 0**; the payload is the raw missing-sequence byte list. The composition now emits that exact session field (the session descriptor ID 11 is not the frame session ID for this control packet). Regression coverage drives an inbound gap and decodes the generated Extended ACK frame, asserting control, session 0, acknowledgement watermark and raw missing sequence bytes.
+
+Actions run [#159](https://github.com/qiangge5586-a11y/1/actions/runs/42174678655) passed **7,384 offline checks**, including 205 composition checks.
