@@ -12,6 +12,7 @@ public final class Iap2OutboundWindowModelTest {
         cumulativeAckRemovesOnlyCoveredPackets();
         invalidAckDoesNotMutateWindow();
         timeoutRetransmitsSamePacketAndAdvancesRetry();
+        earliestDuePacketLeavesOtherDeadlineArmed();
         retryLimitTerminatesAtExactCount();
         extendedAckRetransmitsOnlyRequestedSequences();
         sequenceWrapWorksAcrossAckAndSend();
@@ -89,6 +90,21 @@ public final class Iap2OutboundWindowModelTest {
         bytes(first.payload, retry.payload);
         eq(1, retry.retryCount);
         eq(1100L, retry.deadlineMillis);
+        eq(Long.valueOf(1100), m.getNextDeadlineMillis());
+    }
+
+    private static void earliestDuePacketLeavesOtherDeadlineArmed() {
+        Iap2OutboundWindowModel m = model(99, 99, 8, 3, 10, 500, 4, 8);
+        m.send(10, new byte[] {1}, 100);
+        m.send(11, new byte[] {2}, 101);
+        eq(Long.valueOf(600), m.getNextDeadlineMillis());
+        Iap2OutboundWindowModel.Result first = m.advanceTime(600);
+        eq(1, first.retransmitted.size());
+        eq(100, first.retransmitted.get(0).sequence);
+        eq(Long.valueOf(601), m.getNextDeadlineMillis());
+        Iap2OutboundWindowModel.Result second = m.advanceTime(601);
+        eq(1, second.retransmitted.size());
+        eq(101, second.retransmitted.get(0).sequence);
         eq(Long.valueOf(1100), m.getNextDeadlineMillis());
     }
 
