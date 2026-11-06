@@ -239,3 +239,16 @@ Audited against the archived JADX source for `com.shilapi.xcertplay.transport.Ia
 - `BluetoothRfcommByteStream` uses a 1 MiB bounded receive ring and a dedicated blocking reader. Closing the socket is relied upon to release that reader; this must be verified on Android API 17/vendor Bluetooth stack. No head-unit test has yet established this behavior.
 
 No production behavior was changed by this audit. The ROOT hotspot configuration module remains untouched.
+
+## Retransmission timer ownership correction
+
+A deeper comparison of `nextDeadlineMillis()`, `advanceTime()`, `handleAcknowledgement()`, `handleExtendedAcknowledgement()` and `retransmitDuePacket()` found that the engine owns one explicit `receiveAcknowledgementDeadlineMillis`. It is not equivalent to the minimum deadline across every unacknowledged packet.
+
+- Every successfully transmitted retained packet assigns the timer to that packet's deadline; multiple sends therefore leave the last transmitted packet's deadline armed.
+- Cumulative ACK handling rearms from the first outstanding packet that remains inside the ACK-retention window, or clears the timer if none remains. If queued packets are drained afterward, their sends can replace that timer.
+- Extended ACK handling iterates the outstanding list; each requested packet replaces the timer with its preserved packet deadline. The last matching packet in outstanding-list order determines the timer.
+- When the timer fires, the engine selects the earliest-deadline outstanding packet, retransmits only that one, and rearms from the earliest deadline among the other outstanding packets (or the newly advanced deadline if no other packet remains). A subsequent already-due timer is handled on a later engine advance call.
+
+The offline `Iap2OutboundWindowModel` previously exposed the minimum packet deadline directly. That was an observable source-parity mismatch because the pump could wake and retransmit earlier than the original engine. The model now stores the source timer explicitly and its tests cover staggered sends, cumulative-ACK rearming, sequential due retries and multi-entry Extended ACK ordering. CI must pass on the resulting commit before this correction is considered verified.
+
+This is a source-derived model correction only. It does not establish production engine integration or device interoperability.
