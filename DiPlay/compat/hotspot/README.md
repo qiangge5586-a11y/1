@@ -23,3 +23,10 @@ If required metadata cannot be captured or restored, the adapter must fail close
 
 ## Verification and limits
 CoordinatorSelfTest covers success and post-launch verification failure with rollback. The workflow compiles with Java 7 language/API compatibility and executes the test. This does not execute su, Wi-Fi, hostapd, dnsmasq or vehicle commands. This is not yet a patch to the original APK, and no modified APK or vehicle-side test is claimed.
+
+
+## Current repository status (2026-11-06)
+
+The coordinator, self-test and GitHub Actions workflow are committed. The workflow uses JDK 8 to compile source/target 1.7, because newer JDK releases no longer accept Java 7 source/target flags. A local Java 8-bytecode smoke test passed in the available JDK 21 environment; the repository workflow is the authoritative Java 7 bytecode check.
+
+The next integration step is to implement a real RootOps adapter against the decompiled DiPlay APIs and test it against a disposable rooted filesystem. The adapter must treat partial failures inside apply() as its own rollback responsibility until it can return a ProcessIdentity. The current coordinator is a tested control-flow boundary, not yet a safe device driver.
