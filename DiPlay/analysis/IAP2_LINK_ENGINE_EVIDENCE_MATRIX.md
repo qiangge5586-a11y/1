@@ -146,7 +146,8 @@ Golden-vector tests were added in \`Iap2LinkFrameCodecTest.java\` for sync paylo
 - `DiPlay/compat/iap2/Iap2LinkNegotiationModel.java`: partial deterministic model of marker detection, SYN generation/retry, peer sync, source-accurate ACK readiness gate, invalid maxLength, and EOF. It does not yet model cumulative ACK windows, extended ACK retransmit selection, out-of-order delivery, or normal data retransmission.
 - `DiPlay/compat/iap2/Iap2RetransmissionPolicy.java`: isolated source-derived retry-count and extended-ACK missing-sequence selection policy; it is not yet wired into a full packet queue/timer engine.
 - `DiPlay/compat/iap2/Iap2ReceiveWindowModel.java`: source-derived receive-side ordering, out-of-order queue, duplicate/stale handling, missing-sequence extended ACK, and delayed/forced ACK policy.
-- Latest verified CI run [#80](https://github.com/qiangge5586-a11y/1/actions/runs/42169125240) passed 7,055 offline checks: 61 handshake lifecycle + 3,380 IAP framing/package + 2,330 CSM + 64 link codec + 1,050 link decoder + 108 negotiation model + 20 retransmission policy + 42 receive-window model.
+- `DiPlay/compat/iap2/Iap2AckWindowPolicy.java`: source-derived modulo-256 cumulative ACK removal predicate, strict new-send queue boundary, and strict queued-drain boundary. It does not yet mutate a real packet queue.
+- Latest verified CI run [#83](https://github.com/qiangge5586-a11y/1/actions/runs/42169304682) passed 7,072 offline checks: 61 handshake lifecycle + 3,380 IAP framing/package + 2,330 CSM + 64 link codec + 1,050 link decoder + 108 negotiation model + 20 retransmission policy + 42 receive-window model + 17 ACK-window policy.
 - The wireless synchronization golden vector advertises the source-confirmed 500 ms ACK timeout (`01 F4`) and its payload checksum is `29`; the previous `BA` documentation byte was corrected.
 - No real iPhone, Bluetooth, USB, AirPlay tunnel, or Honda head-unit session was attempted.
 
@@ -154,3 +155,8 @@ Golden-vector tests were added in \`Iap2LinkFrameCodecTest.java\` for sync paylo
 ## Readiness behavior correction (run #72)
 
 The original `Iap2LinkEngine.processFrame()` calls `handleAcknowledgement()` for every non-zero control frame, not only a frame with bit `0x40`. The peer SYN (`0x80`) first calls `handleSynchronization()` (records peer limits and emits an ACK), then enters `handleAcknowledgement()`; if the peer limit is usable and queued payloads fit, the engine becomes NORMAL on that same received SYN. The ACK field does not have to equal 99. The offline negotiation model and regression tests now mirror this order. The receive-window model separately covers sequence wrap, out-of-order queueing/draining, duplicate suppression, raw missing-sequence extended ACK payloads, stale ACK side effects, delayed ACK timers, and forced ACK threshold. Source method: `Iap2LinkEngine.processFrame()`; see `IAP2_NEGOTIATION_MODEL_SOURCE_VERIFICATION.md`.
+
+
+## Outbound ACK-window comparison milestone (CI run #83)
+
+`Iap2AckWindowPolicy.java` now captures the original source's distinct strict comparisons: retain an unacknowledged packet only when its modulo-256 distance from the cumulative ACK is greater than zero and at most `peerMaxAcknowledgements + 10`; queue a new packet only when current distance is strictly greater than `peerMaxOutgoing`; drain queued packets only while distance is strictly less than `peerMaxOutgoing`. These predicates are covered by 17 checks. The actual unacknowledged list mutation, queue scheduling, and retransmission deadline engine are still open. See `IAP2_ACK_WINDOW_SOURCE_VERIFICATION.md`.
