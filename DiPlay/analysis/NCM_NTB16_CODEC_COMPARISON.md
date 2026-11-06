@@ -40,12 +40,12 @@ These checks may reject malformed buffers that the original parser might partial
 
 The original bridge contains both an asynchronous `UsbRequest` read path and a synchronous `bulkTransfer` fallback. Smali cross-check confirms `CarPlayController.openNcm()` passes `RealSdkIntKt.realSdkInt() >= 24` as the async-read eligibility flag; `NcmUsbBridge.open$shared()` enables async reads only when that flag is true and `SharedUsbConnection.getSupportsAsyncRequests()` is also true. Therefore the documented Android 4.2.2 / API 17 target takes the synchronous `bulkTransfer` read path. `Iap2UsbSession.read()` independently uses its synchronous path when SDK <24 or async requests are unsupported.
 
-The compatibility app currently compiles the codec as an offline primitive only. It does not open USB devices, claim interfaces, send vendor control requests, call bulkTransfer, or connect this codec to the original NCM bridge. No MY16ADA/API 17 USB or iPhone test has been performed.
+The compatibility app currently compiles the codec and incremental stream decoder as offline primitives only. The decoder accepts arbitrarily fragmented input, processes concatenated complete NTBs, applies the optional short-packet pad rule without consuming a following NTH16 signature, caps buffering, and attempts to resynchronize after garbage while retaining an incomplete trailing header. Its 10 synthetic tests include cross-call resynchronization, a pad byte delivered in a later chunk, and a partial next NTH16 header after a 512-byte boundary block. It does not open USB devices, claim interfaces, send vendor control requests, call bulkTransfer, or connect to the original NCM bridge. No MY16ADA/API 17 USB or iPhone test has been performed.
 
 ## Next integration gates
 
 1. Inspect `SharedUsbConnection` implementations and raw usbfs async capability; the public framework connection reports async support, while the raw usbfs connection's capability flag defaults false.
 2. Audit legacy USB interface claim/alternate-setting behavior on API 17.
-3. Port a passive, deterministic NCM stream parser before enabling USB I/O.
-4. Test synthetic fragmented NTB input and short-packet padding.
+3. Fuzz the byte-array codec and stream decoder with malformed lengths, overlapping NDP pointers, repeated false NTH16 signatures and randomized chunk boundaries; record CPU and memory limits.
+4. Design a narrow adapter contract from synchronous API 17 bulk-IN chunks to the decoder, but keep USB opening, claiming and transfer disabled until compatibility gates pass.
 5. Only after API 17 emulator/static gates pass, perform explicitly authorized hardware tests with read-only diagnostics first.
