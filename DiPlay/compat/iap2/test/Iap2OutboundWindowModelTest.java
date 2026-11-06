@@ -10,6 +10,7 @@ public final class Iap2OutboundWindowModelTest {
         zeroRetryLimitDoesNotRetain();
         outgoingWindowQueuesAndAckDrains();
         cumulativeAckRemovesOnlyCoveredPackets();
+        cumulativeAckKeepsLaterDeadlinesArmed();
         invalidAckDoesNotMutateWindow();
         timeoutRetransmitsSamePacketAndAdvancesRetry();
         earliestDuePacketLeavesOtherDeadlineArmed();
@@ -66,6 +67,22 @@ public final class Iap2OutboundWindowModelTest {
         eq(100, r.acknowledged.get(0).intValue());
         eq(1, m.getUnacknowledgedCount());
         eq(101, m.getUnacknowledgedSnapshot().get(0).sequence);
+    }
+
+    private static void cumulativeAckKeepsLaterDeadlinesArmed() {
+        Iap2OutboundWindowModel m = model(99, 99, 10, 3, 10, 500, 4, 8);
+        m.send(10, new byte[] {1}, 100);
+        m.send(10, new byte[] {2}, 101);
+        m.send(10, new byte[] {3}, 102);
+        Iap2OutboundWindowModel.Result ack = m.acknowledge(100, 150);
+        eq(1, ack.acknowledged.size());
+        eq(100, ack.acknowledged.get(0).intValue());
+        eq(Long.valueOf(601), m.getNextDeadlineMillis());
+        Iap2OutboundWindowModel.Result due = m.advanceTime(601);
+        eq(1, due.retransmitted.size());
+        eq(101, due.retransmitted.get(0).sequence);
+        eq(1, due.retransmitted.get(0).retryCount);
+        eq(Long.valueOf(602), m.getNextDeadlineMillis());
     }
 
     private static void invalidAckDoesNotMutateWindow() {
@@ -127,6 +144,8 @@ public final class Iap2OutboundWindowModelTest {
         eq(101, r.retransmitted.get(0).sequence);
         eq(11, r.retransmitted.get(0).sessionId);
         eq(1, r.retransmitted.get(0).retryCount);
+        eq(120L, r.retransmitted.get(0).deadlineMillis);
+        eq(Long.valueOf(100), m.getNextDeadlineMillis());
     }
 
     private static void sequenceWrapWorksAcrossAckAndSend() {
