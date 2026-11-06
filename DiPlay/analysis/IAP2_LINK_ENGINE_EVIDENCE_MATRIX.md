@@ -166,3 +166,15 @@ The original `Iap2LinkEngine.processFrame()` calls `handleAcknowledgement()` for
 ## Outbound state model milestone (CI run #90)
 
 `Iap2OutboundWindowModel.java` composes source-audited send/queue boundaries, cumulative ACK acceptance/removal, queue drain, per-packet retransmission deadlines, retry exhaustion and Extended ACK sequence selection. `Iap2OutboundWindowModelTest` passed 57 checks, including two outstanding packets with staggered deadlines and correct earliest-deadline selection. The defensive queue-capacity bound belongs to this offline harness, not a claimed original source constant. Remaining validation includes comparing multiple simultaneous due-packet deadline re-arming against original Smali, plus concurrency and transport integration. See `IAP2_OUTBOUND_WINDOW_MODEL.md`.
+
+## Composition model checkpoint (2026-11-06)
+
+Added `compat/iap2/Iap2LinkEngineModel.java` as an offline lifecycle/readiness composition over the existing negotiation, outbound-window, and receive-window models. It rejects data-window calls before READY, delegates ACK and Extended ACK work, advances inbound delayed-ACK and outbound retransmission timers against one supplied clock, and closes on EOF.
+
+- CI run [#95](https://github.com/qiangge5586-a11y/1/actions/runs/42170649686): **7,145 offline checks passed**; new composition test: 16 checks.
+- The model deliberately does not parse live data packets or serialize outbound data frames.
+- Peer maxOutgoing/maxAcknowledgements/timeouts/retry settings remain explicit constructor inputs. The negotiation model does not yet expose the complete peer SYN configuration; automatic configuration handoff is a remaining task.
+- Run #94 failed on an initial test-fixture null reference; the fixture was fixed before run #95. Do not treat #94 as a passing run.
+- No iPhone/vehicle link, Android runtime, MFi, AirPlay encrypted tunnel, USB, Bluetooth or ROOT write test was performed.
+
+Next: extend negotiation to expose a validated immutable peer-configuration snapshot, then bind that snapshot into the composition model with tests for minimum/maximum peer limits. Keep the data plane abstract until source-grounded packet dispatch and exact bidirectional fixtures are complete.
