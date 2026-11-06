@@ -48,3 +48,9 @@ Run either from **Actions → workflow → Run workflow**. The original APK is a
 - [Decompilation workflow run #42140451737](https://github.com/qiangge5586-a11y/1/actions/runs/42142476134)
 
 No modified APK has been built or tested on the Honda head unit yet. Static findings are not a substitute for an on-device test.
+
+## Build-project separation check (2026-11-06)
+
+The repository's root `android/` Gradle project is **HondaHackRebuild**, with application ID `cn.autohack.rebuild`; `.github/workflows/android-build.yml` builds that project and asserts that package/minSdk/targetSdk. It is not the DiPlay 0.3.11 adaptation and must not be used as evidence that a DiPlay APK has been built. The DiPlay directory currently contains analysis, tools and standalone compatibility helpers, but no dedicated DiPlay Gradle application project or APK build workflow. A separate DiPlay build project must be established from the original package (`com.shihab.diplay`) and validated against the decompiled manifest/resources/Smali before claiming an APK build.
+
+Latest hotspot helper CI: [run #8 — success](https://github.com/qiangge5586-a11y/1/actions/runs/42144965197). The job log confirms both Java 7-targeted self-tests passed. This CI does not package or modify the original DiPlay APK.
