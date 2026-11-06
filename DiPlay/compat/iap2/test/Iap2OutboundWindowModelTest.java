@@ -124,7 +124,7 @@ public final class Iap2OutboundWindowModelTest {
     }
 
     private static void queueCapacityFailureIsTerminal() {
-        Iap2OutboundWindowModel m = model(103, 99, 4, 3, 10, 500, 4, 0);
+        Iap2OutboundWindowModel m = model(104, 99, 4, 3, 10, 500, 4, 0);
         Iap2OutboundWindowModel.Result r = m.send(10, new byte[] {1}, 0);
         truth(r.terminalReason != null);
         truth(m.getTerminalReason().contains("queue limit"));
