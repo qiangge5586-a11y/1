@@ -192,3 +192,6 @@ The CSM decoder was further aligned with the original framer's fixed-buffer appe
 
 
 Latest CSM fixed-buffer parity validation: GitHub Actions [#166](https://github.com/qiangge5586-a11y/1/actions/runs/42175369108) passed **7,397 offline checks** (2,334 CSM decoder checks), including one-call decoding of two coalesced frames whose combined size exceeds the fixed 65,535-byte receive buffer.
+
+
+The CSM channel's source-derived receive-queue bounds are now covered by the offline `Iap2CsmReceiveQueueModel`: 64 frames and 1 MiB of encoded frames, with FIFO byte accounting and fail-closed overflow. Actions run [#169](https://github.com/qiangge5586-a11y/1/actions/runs/42175597475) passed **7,705 offline checks** (308 queue-model checks included). The model is not connected to live transport.
