@@ -14,6 +14,8 @@ public final class Iap2LinkNegotiationModelTest {
         acknowledgementBeforePeerSyncIsTerminal();
         tooSmallPeerLimitIsTerminalOnAcknowledgement();
         exposesImmutablePeerSynchronizationSnapshot();
+        rejectsMalformedSynchronizationPayloads();
+        preservesPeerSynchronizationBoundaryValues();
         rejectsWrongStartupMarker();
         eofTerminatesSession();
         System.out.println("Iap2LinkNegotiationModelTest: PASS (" + checks + " checks)");
@@ -153,6 +155,61 @@ public final class Iap2LinkNegotiationModelTest {
         eq(10, control[0]); eq(0, control[1]); eq(2, control[2]);
         control[0] = 99;
         eq(10, peer.getSessionDescriptor(0)[0]);
+    }
+
+    private static void rejectsMalformedSynchronizationPayloads() {
+        byte[][] invalid = new byte[][] {
+            new byte[0],
+            new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9},
+            new byte[] {2, 0, 0, 11, 0, 1, 0, 1, 1, 1}
+        };
+        for (int i = 0; i < invalid.length; i++) {
+            Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
+            model.start(true, 0);
+            model.takeOutput();
+            model.feed(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, invalid[i]), 1);
+            eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
+            eq(null, model.getPeerConfiguration());
+        }
+    }
+
+    private static void preservesPeerSynchronizationBoundaryValues() {
+        int[][] values = new int[][] {
+            {0, 11, 0, 0, 0, 0},
+            {255, 65535, 65535, 65535, 255, 255}
+        };
+        for (int i = 0; i < values.length; i++) {
+            Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
+            model.start(true, 0);
+            model.takeOutput();
+            byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                    values[i][0], values[i][1], values[i][2], values[i][3],
+                    values[i][4], values[i][5], new int[0][3]);
+            model.feed(Iap2LinkFrameCodec.encode(0x80, 200 + i, 0, 0, sync), 1);
+            Iap2LinkNegotiationModel.PeerConfiguration peer = model.getPeerConfiguration();
+            notNull(peer);
+            eq(values[i][0], peer.maxOutgoing);
+            eq(values[i][1], peer.maxLength);
+            eq(values[i][2], peer.retransmissionTimeoutMillis);
+            eq(values[i][3], peer.acknowledgementTimeoutMillis);
+            eq(values[i][4], peer.maxRetransmissions);
+            eq(values[i][5], peer.maxAcknowledgements);
+            eq(0, peer.getSessionDescriptorCount());
+            eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+        }
+
+        Iap2LinkNegotiationModel partialDescriptor = new Iap2LinkNegotiationModel();
+        partialDescriptor.start(true, 0);
+        partialDescriptor.takeOutput();
+        byte[] complete = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                4, 4096, 1000, 500, 4, 3, new int[0][3]);
+        byte[] withTrailingPartial = new byte[complete.length + 2];
+        System.arraycopy(complete, 0, withTrailingPartial, 0, complete.length);
+        withTrailingPartial[complete.length] = 10;
+        withTrailingPartial[complete.length + 1] = 0;
+        partialDescriptor.feed(Iap2LinkFrameCodec.encode(0x80, 88, 0, 0,
+                withTrailingPartial), 1);
+        eq(0, partialDescriptor.getPeerConfiguration().getSessionDescriptorCount());
     }
 
     private static void rejectsWrongStartupMarker() {
