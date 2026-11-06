@@ -5,6 +5,7 @@ import com.shilapi.xcertplay.compat.iap2.Iap2CsmReceiveCoordinator;
 import com.shilapi.xcertplay.compat.iap2.Iap2LinkPump;
 import com.shilapi.xcertplay.compat.iap2.Iap2ReceiveWindowModel;
 import com.shilapi.xcertplay.compat.iap2.Iap2StreamDuplexAdapter;
+import com.shilapi.xcertplay.compat.iap2.Iap2ParameterCodec;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,12 +23,13 @@ public final class MfiIap2CsmPumpBridgeTest {
         final CountDownLatch driverEntered = new CountDownLatch(1);
         final CountDownLatch releaseDriver = new CountDownLatch(1);
         final CountDownLatch pumpClosed = new CountDownLatch(1);
+        final CountDownLatch authenticationSucceeded = new CountDownLatch(1);
         final ByteArrayOutputStream outbound = new ByteArrayOutputStream();
         Iap2LinkPump.Driver base = new Iap2LinkPump.Driver() {
             public void start(long now) throws IOException {
                 driverEntered.countDown();
                 try {
-                    if (!releaseDriver.await(2, TimeUnit.SECONDS))
+                    if (!releaseDriver.await(3, TimeUnit.SECONDS))
                         throw new IOException("driver release timeout");
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -59,7 +61,7 @@ public final class MfiIap2CsmPumpBridgeTest {
         final long generation = 81L;
         MfiOperationContext context = MfiOperationContext.start(5000L, generation,
                 new MfiOperationContext.Cancellation());
-        MfiProviderSession provider = new MfiProviderSession(new MfiProviderSession.Provider() {
+        final MfiProviderSession provider = new MfiProviderSession(new MfiProviderSession.Provider() {
             public byte[] readCertificate(MfiOperationContext c) { return new byte[] { 0x31, 0x32 }; }
             public byte[] signChallenge(byte[] challenge, MfiOperationContext c) {
                 truth(Arrays.equals(new byte[] { 0x41, 0x42 }, challenge), "challenge reaches provider");
@@ -68,31 +70,40 @@ public final class MfiIap2CsmPumpBridgeTest {
         }, context, generation);
         MfiIap2CsmAdapter adapter = new MfiIap2CsmAdapter(
                 new MfiIap2ExchangeCoordinator(provider, generation));
+        Iap2CsmReceiveCoordinator receive = new Iap2CsmReceiveCoordinator();
+        MfiIap2CsmPumpBridge bridge = new MfiIap2CsmPumpBridge(receive, adapter, pump, 64, 1000L);
+        MfiIap2CsmWorker worker = new MfiIap2CsmWorker(bridge, new MfiIap2CsmWorker.Listener() {
+            public void onAuthenticationSucceeded() { authenticationSucceeded.countDown(); }
+            public void onAuthenticationFailed() { throw new AssertionError("unexpected auth failure"); }
+            public void onFailure(IOException failure) { throw new AssertionError(failure); }
+        });
+        worker.start();
 
         byte[] requestCert = Iap2CsmFrameCodec.encode(0xAA00, new byte[0]);
         byte[] requestChallenge = Iap2CsmFrameCodec.encode(0xAA02,
-                com.shilapi.xcertplay.compat.iap2.Iap2ParameterCodec.encode(0,
-                        new byte[] { 0x41, 0x42 }));
+                Iap2ParameterCodec.encode(0, new byte[] { 0x41, 0x42 }));
         byte[] success = Iap2CsmFrameCodec.encode(0xAA05, new byte[0]);
         byte[] inboundBytes = concat(requestCert, requestChallenge, success);
-        Iap2CsmReceiveCoordinator receive = new Iap2CsmReceiveCoordinator();
         List<Iap2ReceiveWindowModel.Packet> delivered =
                 new ArrayList<Iap2ReceiveWindowModel.Packet>();
         delivered.add(new Iap2ReceiveWindowModel.Packet(1, 10, inboundBytes));
-        truth(receive.acceptDeliveredPackets(delivered) == 3, "receive coordinator admits three CSM frames");
+        truth(receive.acceptDeliveredPackets(delivered) == 3,
+                "receive coordinator admits three CSM frames");
 
-        MfiIap2CsmPumpBridge bridge = new MfiIap2CsmPumpBridge(receive, adapter, pump, 64, 1000L);
-        truth(bridge.processAvailable(8) == 3, "bridge processes certificate, challenge and success");
+        truth(authenticationSucceeded.await(2, TimeUnit.SECONDS),
+                "dedicated worker reports authentication success");
         truth(bridge.state() == MfiIap2ExchangeCoordinator.State.SUCCEEDED,
                 "peer success is terminal");
+        truth(provider.state() == MfiProviderSession.State.CLOSED && context.isCancelled(),
+                "provider context released after peer success");
+
         releaseDriver.countDown();
-        truth(pumpClosed.await(2, TimeUnit.SECONDS), "pump closes after queued replies and EOF");
-
+        truth(pumpClosed.await(2, TimeUnit.SECONDS), "pump drains replies then observes EOF");
         byte[] expected = concat(
-                MfiIap2CsmFrameCodecForTest.certificate(new byte[] { 0x31, 0x32 }),
-                MfiIap2CsmFrameCodecForTest.signature(new byte[] { 0x51, 0x52, 0x53 }));
-        truth(Arrays.equals(expected, outbound.toByteArray()), "AA01 and AA03 sent in order through pump");
-
+                Iap2CsmFrameCodec.encode(0xAA01, Iap2ParameterCodec.encode(0, new byte[] { 0x31, 0x32 })),
+                Iap2CsmFrameCodec.encode(0xAA03, Iap2ParameterCodec.encode(0, new byte[] { 0x51, 0x52, 0x53 })));
+        truth(Arrays.equals(expected, outbound.toByteArray()),
+                "AA01 and AA03 sent in order through pump");
         System.out.println("MfiIap2CsmPumpBridgeTest: " + checks + " checks passed");
     }
 
@@ -123,15 +134,5 @@ public final class MfiIap2CsmPumpBridgeTest {
         public String terminalReason() { return delegate.terminalReason(); }
         public long nextDeadlineMillis() { return delegate.nextDeadlineMillis(); }
         public void sendControl(byte[] payload, long now) throws IOException { sink.sendControl(payload, now); }
-    }
-    private static final class MfiIap2CsmFrameCodecForTest {
-        static byte[] certificate(byte[] bytes) {
-            return Iap2CsmFrameCodec.encode(0xAA01,
-                    com.shilapi.xcertplay.compat.iap2.Iap2ParameterCodec.encode(0, bytes));
-        }
-        static byte[] signature(byte[] bytes) {
-            return Iap2CsmFrameCodec.encode(0xAA03,
-                    com.shilapi.xcertplay.compat.iap2.Iap2ParameterCodec.encode(0, bytes));
-        }
     }
 }
