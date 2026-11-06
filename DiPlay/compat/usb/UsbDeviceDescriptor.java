@@ -1,6 +1,8 @@
+package com.shilapi.xcertplay.compat.usb;
+
 /**
  * Passive USB descriptor value object.
- * No Android USB APIs, permissions, endpoint access or device I/O.
+ * No USB permission, endpoint access or device I/O.
  */
 public final class UsbDeviceDescriptor {
     private final int vendorId;
@@ -27,17 +29,11 @@ public final class UsbDeviceDescriptor {
     }
 
     private static void requireUnsigned16(String name, int value) {
-        if (value < 0 || value > 65535) {
-            throw new IllegalArgumentException(name + " out of range");
-        }
+        if (value < 0 || value > 65535) throw new IllegalArgumentException(name + " out of range");
     }
-
     private static void requireUnsigned8(String name, int value) {
-        if (value < 0 || value > 255) {
-            throw new IllegalArgumentException(name + " out of range");
-        }
+        if (value < 0 || value > 255) throw new IllegalArgumentException(name + " out of range");
     }
-
     public int getVendorId() { return vendorId; }
     public int getProductId() { return productId; }
     public int getDeviceClass() { return deviceClass; }
@@ -45,18 +41,15 @@ public final class UsbDeviceDescriptor {
     public int getDeviceProtocol() { return deviceProtocol; }
     public int getInterfaceCount() { return interfaceCount; }
 
-    /** Stable non-unique descriptor key; deliberately excludes serial numbers. */
     public String getDescriptorKey() {
         return hex4(vendorId) + ":" + hex4(productId) + ":"
                 + hex2(deviceClass) + ":" + hex2(deviceSubclass) + ":"
                 + hex2(deviceProtocol) + ":" + interfaceCount;
     }
-
     private static String hex4(int value) {
         String s = Integer.toHexString(value).toUpperCase();
         return "0000".substring(s.length()) + s;
     }
-
     private static String hex2(int value) {
         String s = Integer.toHexString(value).toUpperCase();
         return "00".substring(s.length()) + s;
