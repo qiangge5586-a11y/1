@@ -55,6 +55,8 @@ pub struct AirplayParams {
     pub identity_path: String,
     pub enable_audio: bool,
     pub wait_for_control: bool,
+    /// Use AirPlay DataStream type-130 for DiPlay 0.3.11 outbound iAP.
+    pub diplay_0311: bool,
     pub media_readiness: Arc<crate::media_start::MediaReadiness>,
     pub keep_alive_stats: bool,
     /// 设置里的 CarLife 编码分辨率（仅作 `/info` 无显示器信息时的兜底）。
@@ -302,6 +304,17 @@ async fn negotiate_media(
     let MediaSession { info, timing, event_channel, event_rx, keep_alive_port } =
         setup_media_session(&channel, p, info, shared_secret.as_ref(), &*factory, stop.clone()).await?;
 
+    // DiPlay 0.3.11 uses the encrypted AirPlay DataStream type-130 tunnel for
+    // phone-to-head-unit iAP. Other receiver profiles retain RTSP /command.
+    let mut diplay_iap_tunnel = if p.diplay_0311 {
+        let secret = shared_secret.as_ref().ok_or_else(|| {
+            "DiPlay 0.3.11 type-130 requires an established AirPlay shared secret; refusing plaintext tunnel".to_string()
+        })?;
+        Some(crate::iap_tunnel::connect(&channel, &p.car_ip, secret, &*factory).await?)
+    } else {
+        None
+    };
+
     // ---- 2.6 用 /info 结果校准显示尺寸与能力（上面拿不到就全用兜底）----
     let keep_alive_stats = p.keep_alive_stats
         || info
@@ -446,7 +459,11 @@ async fn negotiate_media(
 
 
     // MIB3 虚拟 iAP2：控制通道出站、事件通道入站；与当前引擎一起取消。
-    spawn_iap_sender(channel.clone(), iap_rx, stop.clone(), p.media_readiness.clone());
+    if let Some(tunnel) = diplay_iap_tunnel.take() {
+        spawn_diplay_iap_sender(channel.clone(), tunnel, iap_rx, stop.clone(), p.media_readiness.clone());
+    } else {
+        spawn_iap_sender(channel.clone(), iap_rx, stop.clone(), p.media_readiness.clone());
+    }
     emit_state("iap_ready", "主屏 SETUP 已完成，可启动虚拟 iAP2 控制链路");
 
     // Activate the video session first. The caller can start its pump as soon as
@@ -1033,6 +1050,60 @@ fn spawn_diplay_iap_sender(
                         continue;
                     }
                     readiness.control_ready();
+                    emit_log("IAP-TUNNEL: control_ready prior_commands_acknowledged=true transport=type130");
+                }
+                crate::media_start::IapCommand::Packet(bytes) => {
+                    if failed { continue; }
+                    match tunnel.send(&bytes).await {
+                        Ok(()) => {
+                            sent += 1;
+                            if sent <= 8 || sent % 30 == 0 {
+                                emit_log(&format!("IAP-TUNNEL: type130 packet_sent count={sent} bytes={}", bytes.len()));
+                            }
+                        }
+                        Err(error) => {
+                            failed = true;
+                            emit_log(&format!("IAP-TUNNEL: outbound iAP send failed; stop further tunnel writes while retaining media: {error}"));
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+fn spawn_diplay_iap_sender(
+    control: Arc<RtspChannel>,
+    mut tunnel: crate::iap_tunnel::IapTunnelWriter,
+    mut packets: mpsc::Receiver<crate::media_start::IapCommand>,
+    stop: Arc<SessionStop>,
+    readiness: Arc<crate::media_start::MediaReadiness>,
+) {
+    spawn_scoped(stop.clone(), async move {
+        let mut sent = 0u64;
+        let mut failed = false;
+        let mut reclaim_started = false;
+        while let Some(command) = packets.recv().await {
+            match command {
+                crate::media_start::IapCommand::ControlReady => {
+                    if failed {
+                        emit_log("IAP-TUNNEL: control_ready deferred because type-130 tunnel previously failed");
+                        continue;
+                    }
+                    readiness.control_ready();
+                    if !reclaim_started {
+                        reclaim_started = true;
+                        let reclaim_channel = control.clone();
+                        spawn_scoped(stop.clone(), async move {
+                            for delay in [1500, 2500, 8000, 18000] {
+                                tokio::time::sleep(Duration::from_millis(delay)).await;
+                                match assert_modes(&reclaim_channel).await {
+                                    Ok(()) => emit_log("IAP-TUNNEL: resource reclaim acknowledged; display not verified"),
+                                    Err(error) => emit_log(&format!("IAP-TUNNEL: resource reclaim failed: {error}; media retained")),
+                                }
+                            }
+                        });
+                    }
                     emit_log("IAP-TUNNEL: control_ready prior_commands_acknowledged=true transport=type130");
                 }
                 crate::media_start::IapCommand::Packet(bytes) => {
