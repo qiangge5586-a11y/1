@@ -148,7 +148,20 @@ Source methods:
 
 ## 8. Next engineering steps
 
-1. Add a streaming frame decoder that mirrors the original receive-buffer/parser behavior and tests every fragmentation/coalescing boundary.
-2. Build an offline link-state model against source-derived transitions: sync negotiation, cumulative ACK, extended ACK missing-list retransmission, reorder buffer, retry deadlines, peer limits and EOF.
-3. Test sequence wrap, duplicate ACK/data, invalid checksum, malformed length, retry exhaustion and queue/window boundaries.
-4. Integrate only behind a disabled-by-default gate after model parity; hardware validation remains a separate explicitly authorized stage.
+1. DONE: `Iap2LinkFrameDecoder` mirrors the original 9-byte header / payload checksum parser, bytewise resynchronization, partial-frame retention and 8,192-byte receive chunk bound. Its tests cover fragmentation, coalescing, bad checksums, resynchronization and maximum-size frames.
+2. PARTIAL: `Iap2LinkNegotiationModel` now models startup-marker detection, wireless sync fallback entry, synchronization emission/retry, peer synchronization, ACK readiness gate, invalid peer limits and EOF. It is not yet the complete engine: cumulative ACK windows, extended ACK retransmit selection, out-of-order receive, queue/window release and packet retransmission remain to be modeled.
+3. DONE FOR CURRENT LAYERS: deterministic tests cover sequence wrap, invalid checksum, malformed header, sync retry exhaustion, peer maxLength readiness gate and EOF. Full queue/window and retransmit state tests remain open.
+4. Keep integration disabled until full model parity; hardware validation remains a separate explicitly authorized stage.
+
+
+## Latest offline verification (2026-11-06)
+
+CI run [#52](https://github.com/qiangge5586-a11y/1/actions/runs/42167556922) passed 6,980 checks:
+- 61 wireless handshake lifecycle checks
+- 3,380 AirPlay IAP frame/package checks
+- 2,330 CSM frame checks
+- 59 link-frame codec checks
+- 1,050 incremental link-frame decoder checks
+- 100 link negotiation model checks
+
+The model is intentionally partial. It verifies the marker/SYN/ACK startup sequence and readiness gate, not full cumulative ACK, extended ACK, reorder, retransmission, or hardware interoperability.
