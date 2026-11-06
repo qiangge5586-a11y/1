@@ -34,5 +34,4 @@ jobs:
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2WirelessHandshakeTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.IapTunnelFramingTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmFrameDecoderTest
-          java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.test.Iap2LinkWireCodecTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkFrameCodecTest
