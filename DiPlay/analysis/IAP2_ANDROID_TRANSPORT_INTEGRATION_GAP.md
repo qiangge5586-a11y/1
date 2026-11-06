@@ -155,3 +155,10 @@ The original `Iap2CsmChannel` was rechecked against the archived JADX and Smali 
 The offline `Iap2CsmReceiveCoordinator` now adds a monotonic blocking receive API with FIFO dequeue, bounded timeout validation, producer wake-up, malformed-input terminal state, and queue-overflow terminal state. `Iap2LinkModelPumpDriver` propagates receive failure by terminating its offline link model and surfacing an I/O failure to the pump. The CI test covers timeout, wake-up, split/coalesced frames, non-control session filtering, and queue overflow.
 
 Parity boundary: the coordinator is still an offline adapter fed by already ordered `Iap2ReceiveWindowModel` deliveries. It does not implement the original link channel's independently blocking `recvControl`, Kotlin exception/suppressed-exception behavior, or a live production `Iap2CsmChannel`. Physical RFCOMM/iPhone tests remain outstanding.
+
+
+## Wireless session deadline budget model (2026-11-06)
+
+Added `Iap2WirelessDeadlineBudget` as a caller-configured offline utility. It supports one overall session budget plus phase-specific budgets (for example RFCOMM, bootstrap authentication, type-130 stream arrival, tunnel authentication). Each phase deadline is capped by the original overall session deadline, expiry is sticky, and no default timeout values are imposed. This is intended to prevent controller retries and phase waits from multiplying into an unbounded total connection time while preserving protocol-owned retransmission timers.
+
+The new test covers phase transitions, total-deadline capping, sticky expiry, invalid budgets and arithmetic saturation. CI compiles/runs the test. The class is not yet connected to the real RFCOMM controller or type-130 tunnel lifecycle.
