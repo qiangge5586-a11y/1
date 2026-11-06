@@ -229,3 +229,9 @@ Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/4217281430
 Direct Smali inspection of `handleAcknowledgement()` confirms the readiness gate requires peer synchronization, `peerLimitsAreUsable()`, and that no already queued packet fails `peerPayloadIsAcceptable()`. The latter is exactly `payload.length <= peer.maxLength - 10`. If any pending packet is too large, the original engine dies with `peer iAP2 maxLength cannot carry pending control packets`; otherwise it enters NORMAL and sets writable, which drains the queue. This check is applied to the pre-ready queue; `sendPacket()` in NORMAL does not repeat the payload-size check.
 
 The offline composition now mirrors this with `queueBeforeReady()`, a whole-queue validation before flush, and the source-derived maxLength-minus-ten boundary. Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/42174129287) passed **7,297 offline checks**.
+
+## ACK batching and write reset
+
+Smali `processFrame()` increments `accumulatedAcknowledgements` for ACK-bit frames. After Extended ACK/data handling, if peer maxAcknowledgements is positive and the count reaches that limit, the engine resets the count, advances `lastAcknowledgedReceived` to `lastReceivedInOrder`, and emits an ACK. Independently, `writePacket()` resets `accumulatedAcknowledgements` on every outgoing frame. The offline composition now models both rules and emits the resulting ACK-only frame into its drainable offline output queue.
+
+Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 200 composition checks.
