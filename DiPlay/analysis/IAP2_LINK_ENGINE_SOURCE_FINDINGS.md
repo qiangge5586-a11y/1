@@ -175,3 +175,12 @@ This codec/test layer is offline only. It is not a Bluetooth session, real iPhon
 ## Configuration mask correction
 
 The wireless synthetic constructor mask 494 includes the default-argument bit for acknowledgementTimeoutMillis. The default resolves to LwipNcmBridge.WRITE_TIMEOUT_MILLIS = 500 ms. Therefore the wireless local synchronization advertises ACK timeout 500 ms, not 0 ms; the payload contains `01 F4` at offsets 6..7. The canonical offline implementation and tests are `Iap2LinkFrameCodec.java` and `Iap2LinkFrameCodecTest.java`.
+
+
+## Source verification refresh (2026-11-06, decompile run #8)
+
+- Latest recovered artifact: [run #8](https://github.com/qiangge5586-a11y/1/actions/runs/42166522659), artifact ID `13479216859`.
+- Downloaded ZIP SHA-256: `232b6cc66c22cd4f2815dc75a6978a46398e3cac8a46f6bd2cd621b3237299dc`.
+- Confirmed exact Smali method offsets are indexed in [IAP2_NEGOTIATION_MODEL_SOURCE_VERIFICATION.md](IAP2_NEGOTIATION_MODEL_SOURCE_VERIFICATION.md).
+- Checksum correction: the complete 29-byte wireless SYN frame ends in payload checksum `29`; any earlier `BA` transcription is incorrect.
+- Readiness correction: original `handleAcknowledgement` does not require ACK number 99. While NEGOTIATING, any ACK triggers the peer-sync / peer maxLength / queued-payload readiness checks. ACK before peer sync or with unusable peer maxLength is terminal. The offline model and tests were corrected in commits `74d9d017` and `75b329da` respectively.
