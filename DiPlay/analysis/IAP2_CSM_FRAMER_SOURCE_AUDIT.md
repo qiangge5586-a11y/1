@@ -82,3 +82,10 @@ Added `Iap2CsmReceiveQueueModel` as a separate Java 7 offline model of the origi
 - Tests cover FIFO order, 64-frame cap, exact 1 MiB boundary, overflow, payload defensive copy and post-close rejection.
 
 Actions run [#169](https://github.com/qiangge5586-a11y/1/actions/runs/42175597475) passed **7,705 offline checks**, including 308 receive-queue checks. This model is not yet wired into a live CSM channel.
+
+
+## CSM outbound link-chunk plan model (2026-11-06)
+
+Added `Iap2CsmSendPlan` as an offline mirror of the source `splitForLink()` chunking contract. It partitions an already encoded CSM frame into independent chunks no larger than the peer-advertised control-payload maximum, constrained to 1..65,525 bytes. Tests cover a 1,000-byte frame with a 127-byte peer limit, exact and partial final chunks, one-byte and maximum peer limits, 65,535-byte aggregate input, invalid peer limits, empty input and defensive copies.
+
+Actions run [#176](https://github.com/qiangge5586-a11y/1/actions/runs/42176152126) passed **8,002 Java 7 offline checks**, including 297 send-plan checks. This model only validates chunk planning. It does not simulate `sendControlAwaitCapacity()` blocking, queue pressure, deadline expiration, channel close or live transport writes; those require a separate source-derived model before integration.
