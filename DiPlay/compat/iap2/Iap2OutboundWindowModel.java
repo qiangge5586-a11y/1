@@ -135,7 +135,7 @@ public final class Iap2OutboundWindowModel {
         int nextRetry = earliest.retryCount + 1;
         if (nextRetry > 255) nextRetry = 255;
         Packet updated = new Packet(earliest.sequence, earliest.sessionId, earliest.payload,
-                nextRetry, nowMillis + retransmissionTimeoutMillis);
+                nextRetry, p.deadlineMillis);
         replace(earliest, updated);
         if (nextRetry == peerMaxRetransmissions) {
             terminalReason = "iAP2 packet retransmission limit reached";
