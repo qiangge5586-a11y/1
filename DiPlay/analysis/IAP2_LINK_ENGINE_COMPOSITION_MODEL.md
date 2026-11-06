@@ -51,3 +51,16 @@ Earlier run #102 failed because Java boxed an `int` and `long` into unequal wrap
 ## Peer SYN malformed-input and boundary checkpoint
 
 Negotiation tests now cover invalid version, too-short fixed synchronization payloads, the smallest accepted peer maxLength (11), zero-valued peer windows/timeouts/retry limits, maximum u8/u16 values, and the source-compatible behavior of ignoring a trailing incomplete 3-byte session descriptor. Actions run [#107](https://github.com/qiangge5586-a11y/1/actions/runs/42172506528) passed **7,199 offline checks**; negotiation suite: 146 checks; composition suite: 32 checks. Run #106 failed because a null/null assertion called an equals helper that dereferenced null; it was replaced with an explicit null predicate before #107.
+
+## Post-SYN frame dispatch
+
+The negotiation decoder now retains every complete frame that arrives after the peer SYN has moved the link to NORMAL, including frames later in the same input chunk. The composition drains those frames in wire order and applies the source-audited dispatch rules:
+
+- Every non-zero control frame advances the cumulative-ACK handler using its header acknowledgement field.
+- Extended ACK frames pass their raw payload byte list to the outbound retransmission model.
+- Data frames are recognized only when control is exactly ACK (0x40) and payload is present; they are passed to the receive-window model with sequence/session/payload.
+- Header-only ACK frames do not become empty data packets.
+
+Results are exposed as bounded, drainable `DispatchEvent` objects. This layer does not serialize ACK/Extended ACK responses or write bytes to a transport; callers receive model actions and must not mistake them for transmitted frames. The pending dispatch-event cap is 256.
+
+Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. The integration test covers SYN and data arriving in the same read, ordered data delivery, raw Extended ACK retransmission selection, and ACK-only dispatch. Runs #109–#112 exposed implementation/test wiring defects while this dispatcher was being introduced; those were fixed before #113.
