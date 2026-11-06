@@ -217,3 +217,9 @@ Verification: Actions run [#105](https://github.com/qiangge5586-a11y/1/actions/r
 ## SYN boundary regression tests
 
 The peer synchronization snapshot now has regression coverage for malformed version/fixed payloads, minimum usable maxLength 11, maximum u16/u8 values, zero-valued window/timer/retry fields, and trailing incomplete session descriptor handling. Actions run [#107](https://github.com/qiangge5586-a11y/1/actions/runs/42172506528) passed **7,199 offline checks**. Run #106 failed on a null-assertion test helper defect, corrected before the successful run.
+
+## Post-readiness frame dispatch checkpoint
+
+The offline negotiation parser now retains frames parsed after the peer SYN completes readiness. The composition dispatches cumulative ACK fields for non-zero control frames, raw Extended ACK missing-sequence lists, and data frames only when the control byte is exactly 0x40 and a payload exists. Header-only ACKs are kept separate from data. Dispatch results are returned as bounded events; they are not serialized or transmitted.
+
+Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. This validates offline dispatch semantics only, not a live link pump or vehicle session.
