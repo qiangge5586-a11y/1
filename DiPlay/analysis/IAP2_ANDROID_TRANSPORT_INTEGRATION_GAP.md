@@ -114,3 +114,15 @@ This composes the offline CSM send plan with the transport pump. It is not yet a
 
 
 The CSM sender's multi-chunk admission now uses a single monotonic nanosecond deadline end-to-end (rather than rounding the remaining time to milliseconds for every chunk). The pump retains a millisecond convenience API for ordinary producers and exposes a package-private nanosecond wait for this shared-deadline coordinator. The timeout check still admits immediately if queue capacity is available at the deadline boundary, consistent with the offline admission model.
+
+
+## RFCOMM byte-stream adapter scaffold (2026-11-06)
+
+Added `compat/bluetooth/BluetoothRfcommByteStream.java`, an API-17-compatible adapter for an already-connected `BluetoothSocket`. It uses a dedicated blocking reader thread and a 1 MiB bounded ring buffer so the iAP2 pump can request 1–100 ms reads without relying on a nonexistent per-read timeout method on BluetoothSocket/InputStream. It preserves queued bytes before EOF or read failure, serializes writes, and closes the socket to unblock the reader.
+
+Scope limits:
+- It does not discover, pair, or connect a Bluetooth device; caller must supply a connected socket.
+- It does not implement the RFCOMM UUID bootstrap, secure/insecure fallback, or session startup messages.
+- It has not been tested against a physical Bluetooth controller or iPhone.
+- Android build CI is required to confirm compilation; runtime behavior and queue-pressure tests remain open.
+- The iAP2 link Driver is still a separate missing production component. This adapter alone does not establish an iAP2 session.
