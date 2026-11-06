@@ -10,7 +10,8 @@ public final class Iap2LinkPumpContractTest {
     public static void main(String[] args) throws Exception {
         testCommandBoundsAndEofShutdown();
         testRejectsOversizedPayload();
-        System.out.println("Iap2LinkPumpContractTest: 4 checks passed");
+        testProducerWaitsForCapacityAndHonorsTimeout();
+        System.out.println("Iap2LinkPumpContractTest: 7 checks passed");
     }
 
     private static void testCommandBoundsAndEofShutdown() throws Exception {
@@ -43,11 +44,56 @@ public final class Iap2LinkPumpContractTest {
         truth(rejected, "payload above 65525 rejected");
     }
 
+
+    private static void testProducerWaitsForCapacityAndHonorsTimeout() throws Exception {
+        final CountDownLatch driverEntered = new CountDownLatch(1);
+        final CountDownLatch releaseDriver = new CountDownLatch(1);
+        final CountDownLatch closed = new CountDownLatch(1);
+        final boolean[] admitted = new boolean[1];
+        Iap2LinkPump.Driver driver = new DriverStub() {
+            public void start(long now) throws IOException {
+                driverEntered.countDown();
+                try {
+                    if (!releaseDriver.await(2, TimeUnit.SECONDS)) {
+                        throw new IOException("test driver release timed out");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("test driver interrupted");
+                }
+            }
+        };
+        Iap2LinkPump.Listener listener = new ListenerStub() {
+            public void onClosed(String reason) { closed.countDown(); }
+        };
+        Iap2LinkPump pump = new Iap2LinkPump(
+                new Iap2StreamDuplexAdapter(new ByteArrayInputStream(new byte[0]),
+                        new ByteArrayOutputStream()), driver, listener);
+        pump.start();
+        truth(driverEntered.await(2, TimeUnit.SECONDS), "pump driver entered blocking start");
+        for (int i = 0; i < Iap2LinkPump.MAX_COMMANDS; i++) {
+            truth(pump.sendControl(new byte[] { (byte) i }), "fill bounded command queue " + i);
+        }
+        truth(!pump.sendControlAwaitCapacity(new byte[] { 99 }, 20L),
+                "capacity wait honors timeout while queue remains full");
+        Thread producer = new Thread(new Runnable() {
+            public void run() {
+                admitted[0] = pump.sendControlAwaitCapacity(new byte[] { 100 }, 1500L);
+            }
+        }, "iAP2-capacity-test-producer");
+        producer.start();
+        releaseDriver.countDown();
+        producer.join(2000L);
+        truth(!producer.isAlive(), "capacity waiter wakes after worker dequeue");
+        truth(admitted[0], "capacity waiter admitted after dequeue");
+        truth(closed.await(2, TimeUnit.SECONDS), "pump closes after test stream EOF");
+    }
+
     private static void truth(boolean value, String label) {
         if (!value) throw new AssertionError(label);
     }
 
-    private static final class DriverStub implements Iap2LinkPump.Driver, Iap2LinkPump.CommandSink {
+    private static class DriverStub implements Iap2LinkPump.Driver, Iap2LinkPump.CommandSink {
         public void start(long now) {}
         public void onBytes(byte[] bytes, int length, long now) {}
         public void onTimer(long now) {}
@@ -58,7 +104,7 @@ public final class Iap2LinkPumpContractTest {
         public void sendControl(byte[] payload, long now) {}
     }
 
-    private static final class ListenerStub implements Iap2LinkPump.Listener {
+    private static class ListenerStub implements Iap2LinkPump.Listener {
         public void onReady() {}
         public void onClosed(String reason) {}
         public void onFailure(IOException failure) {}
