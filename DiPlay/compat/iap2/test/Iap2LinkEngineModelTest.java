@@ -9,6 +9,7 @@ public final class Iap2LinkEngineModelTest {
         receiveAndExtendedAckRemainDistinctEvents();
         bothTimersAdvanceOnSameClock();
         terminalWindowFailureClosesComposition();
+        negotiatedPeerParametersBuildBothWindows();
         eofClosesBeforeAndAfterReadiness();
         System.out.println("Iap2LinkEngineModelTest: PASS (" + checks + " checks)");
     }
@@ -76,6 +77,38 @@ public final class Iap2LinkEngineModelTest {
         truth(due.outbound.terminalReason != null);
         eq(Iap2LinkEngineModel.State.CLOSED, m.state());
         truth(m.getTerminalReason().contains("retransmission"));
+    }
+
+    private static void negotiatedPeerParametersBuildBothWindows() {
+        Iap2LinkNegotiationModel negotiation = new Iap2LinkNegotiationModel();
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(negotiation);
+        m.start(true, 0);
+        m.takeNegotiationOutput();
+        byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                2, 4096, 1500, 250, 3, 5,
+                new int[][] {{10, 0, 2}, {11, 2, 1}});
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, sync), 1);
+        m.takeNegotiationOutput();
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+        eq(Iap2LinkEngineModel.State.READY, m.state());
+        Iap2LinkNegotiationModel.PeerConfiguration peer = m.getNegotiatedPeerConfiguration();
+        eq(2, peer.maxOutgoing);
+        eq(5, peer.maxAcknowledgements);
+        Iap2OutboundWindowModel.Result sent = m.send(10, new byte[] {9}, 100);
+        eq(1, sent.transmitted.size());
+        eq(100, sent.transmitted.get(0).sequence);
+        Iap2ReceiveWindowModel.Result received = m.receive(packet(78), 100);
+        eq(1, received.delivered.size());
+        eq(350, received.acknowledgementDeadlineMillis.longValue());
+        Iap2LinkEngineModel.TimerResult beforeAck = m.advanceTimers(349);
+        truth(!beforeAck.inbound.acknowledgementNow);
+        eq(0, beforeAck.outbound.retransmitted.size());
+        Iap2LinkEngineModel.TimerResult ackDue = m.advanceTimers(350);
+        truth(ackDue.inbound.acknowledgementNow);
+        eq(0, ackDue.outbound.retransmitted.size());
+        Iap2LinkEngineModel.TimerResult retryDue = m.advanceTimers(1600);
+        eq(1, retryDue.outbound.retransmitted.size());
+        eq(1500, retryDue.outbound.retransmitted.get(0).deadlineMillis - 1600);
     }
 
     private static void eofClosesBeforeAndAfterReadiness() {
