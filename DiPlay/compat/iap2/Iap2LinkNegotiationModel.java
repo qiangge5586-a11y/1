@@ -177,6 +177,14 @@ public final class Iap2LinkNegotiationModel {
             }
             state = State.NORMAL;
             synchronizationDeadline = null;
+            // The original processFrame() continues processing this same
+            // ACK-bearing frame after the readiness transition (including
+            // optional Extended ACK or data payload handling).
+            if (postReadyFrames.size() >= 256) {
+                die("iAP2 pending ready-frame queue limit exceeded");
+                return;
+            }
+            postReadyFrames.addLast(frame);
         }
     }
 
