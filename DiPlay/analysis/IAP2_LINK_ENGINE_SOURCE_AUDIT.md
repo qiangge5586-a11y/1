@@ -210,3 +210,13 @@ A direct comparison with the original `Iap2LinkEngine.handleExtendedAcknowledgem
 - Timer-triggered retransmission changes the selected earliest-due packet deadline to `nowMillis + peerRetransmissionTimeoutMillis`; after sending, the receive-ACK timer is set to the next remaining packet deadline, or the retried packet's new deadline when no other packet remains.
 
 The offline outbound model now keeps these paths separate. Regression expectation for an Extended ACK at t=20 against a packet originally due at t=101 is that its deadline remains t=101, not t=120. This correction is covered by `Iap2OutboundWindowModelTest.extendedAckRetransmitsOnlyRequestedSequences()`.
+
+
+## Startup marker versus frame sync bytes (clarification, 2026-11-06)
+
+The original source contains two different byte sequences with different roles; they must not be conflated:
+
+- Startup marker used by the detecting state: `FF 55 02 00 EE 10` (six bytes, retransmitted on the marker timer).
+- Start bytes of each encoded iAP2 link frame: `FF 5A` (the frame header's two-byte sync word).
+
+Both values are directly present in the archived original `Iap2LinkEngine` source/Smali: `IAP2_MARKER = {-1, 85, 2, 0, -18, 16}`, while `LINK_START_HIGH = -1` and `LINK_START_LOW = 90`. The model's `IAP2_MARKER` and frame codec constants intentionally represent these separate protocol layers. Earlier shorthand describing `FF 5A` as the startup marker was imprecise; `FF 5A` is the per-frame sync word.
