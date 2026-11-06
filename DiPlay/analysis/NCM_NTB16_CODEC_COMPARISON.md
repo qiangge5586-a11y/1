@@ -38,13 +38,13 @@ These checks may reject malformed buffers that the original parser might partial
 
 ## API 17 and integration status
 
-The original bridge contains both an asynchronous `UsbRequest` read path and a synchronous `bulkTransfer` fallback. The synchronous method is present as a separate implementation. The exact async-selection decision is supplied to `NcmUsbBridge.open$shared(..., useAsyncRead, ...)`; do not infer runtime behavior from the existence of the branch alone.
+The original bridge contains both an asynchronous `UsbRequest` read path and a synchronous `bulkTransfer` fallback. Smali cross-check confirms `CarPlayController.openNcm()` passes `RealSdkIntKt.realSdkInt() >= 24` as the async-read eligibility flag; `NcmUsbBridge.open$shared()` enables async reads only when that flag is true and `SharedUsbConnection.getSupportsAsyncRequests()` is also true. Therefore the documented Android 4.2.2 / API 17 target takes the synchronous `bulkTransfer` read path. `Iap2UsbSession.read()` independently uses its synchronous path when SDK <24 or async requests are unsupported.
 
 The compatibility app currently compiles the codec as an offline primitive only. It does not open USB devices, claim interfaces, send vendor control requests, call bulkTransfer, or connect this codec to the original NCM bridge. No MY16ADA/API 17 USB or iPhone test has been performed.
 
 ## Next integration gates
 
-1. Inspect the caller that chooses `useAsyncRead` and the `SharedUsbConnection` implementation.
+1. Inspect `SharedUsbConnection` implementations and raw usbfs async capability; the public framework connection reports async support, while the raw usbfs connection's capability flag defaults false.
 2. Audit legacy USB interface claim/alternate-setting behavior on API 17.
 3. Port a passive, deterministic NCM stream parser before enabling USB I/O.
 4. Test synthetic fragmented NTB input and short-packet padding.
