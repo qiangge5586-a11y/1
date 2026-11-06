@@ -18,12 +18,14 @@ public final class Iap2LinkEngineModel {
     private static final int WIRELESS_MAX_OUT_OF_ORDER = 64;
     private static final int WIRELESS_MAX_QUEUED_PACKETS = 64;
     private static final int WIRELESS_MAX_OUTGOING_DELTA = 0;
+    private static final int MAX_PENDING_OUTPUT_BYTES = 1024 * 1024;
 
     private final Iap2LinkNegotiationModel negotiation;
     private Iap2OutboundWindowModel outbound;
     private Iap2ReceiveWindowModel inbound;
     private final ArrayList<DispatchEvent> pendingEvents = new ArrayList<DispatchEvent>();
     private final ArrayList<byte[]> pendingWireFrames = new ArrayList<byte[]>();
+    private int pendingWireBytes;
     private final ArrayList<PreReadyPacket> preReadyPackets = new ArrayList<PreReadyPacket>();
     private String localTerminalReason;
     private int accumulatedAcknowledgements;
@@ -241,6 +243,7 @@ public final class Iap2LinkEngineModel {
             frames.add(copy);
         }
         pendingWireFrames.clear();
+        pendingWireBytes = 0;
         return Collections.unmodifiableList(frames);
     }
 
@@ -270,12 +273,13 @@ public final class Iap2LinkEngineModel {
         // Original writePacket() resets the ACK batch counter on every emitted frame.
         accumulatedAcknowledgements = 0;
         if (closed) return;
-        if (pendingWireFrames.size() >= 256) {
-            localTerminalReason = "iAP2 pending wire-frame queue limit exceeded";
+        if (frame.length > MAX_PENDING_OUTPUT_BYTES - pendingWireBytes) {
+            localTerminalReason = "iAP2 pending output limit exceeded";
             closeAndClearPending();
             return;
         }
         pendingWireFrames.add(frame);
+        pendingWireBytes += frame.length;
     }
 
     /**
@@ -303,6 +307,7 @@ public final class Iap2LinkEngineModel {
         }
         closed = true;
         pendingWireFrames.clear();
+        pendingWireBytes = 0;
         pendingEvents.clear();
         preReadyPackets.clear();
         accumulatedAcknowledgements = 0;
