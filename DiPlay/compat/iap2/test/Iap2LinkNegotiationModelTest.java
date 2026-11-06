@@ -10,7 +10,9 @@ public final class Iap2LinkNegotiationModelTest {
         initiatorStartsSyncImmediately();
         markerResendsWhileDetecting();
         synchronizationRetriesAndTerminatesAtSourceBoundary();
-        rejectsAckBeforeUsablePeerSynchronization();
+        rejectsStaleAndFutureAcknowledgements();
+        acceptsSynchronizationAckBeforePeerSync();
+        holdsReadyGateForTooSmallPeerLimit();
         rejectsWrongStartupMarker();
         eofTerminatesSession();
         System.out.println("Iap2LinkNegotiationModelTest: PASS (" + checks + " checks)");
@@ -95,21 +97,39 @@ public final class Iap2LinkNegotiationModelTest {
         truth(model.getTerminalReason().contains("after 21 attempts"));
     }
 
-    private static void rejectsAckBeforeUsablePeerSynchronization() {
-        Iap2LinkNegotiationModel missingSync = new Iap2LinkNegotiationModel();
-        missingSync.start(true, 0);
-        missingSync.takeOutput();
-        missingSync.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 1);
-        eq(Iap2LinkNegotiationModel.State.DEAD, missingSync.getState());
+    private static void rejectsStaleAndFutureAcknowledgements() {
+        Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
+        model.start(true, 0);
+        model.takeOutput();
+        model.feed(peerSyncFrame(77, 65535), 1);
+        model.takeOutput();
+        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 98, 0, null), 2);
+        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 100, 0, null), 3);
+        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 4);
+        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+    }
 
-        Iap2LinkNegotiationModel tooSmall = new Iap2LinkNegotiationModel();
-        tooSmall.start(true, 0);
-        tooSmall.takeOutput();
-        tooSmall.feed(peerSyncFrame(77, 10), 1);
-        tooSmall.takeOutput(); // local ACK of peer SYN
-        tooSmall.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
-        eq(Iap2LinkNegotiationModel.State.DEAD, tooSmall.getState());
-        truth(tooSmall.getTerminalReason().contains("maxLength"));
+    private static void acceptsSynchronizationAckBeforePeerSync() {
+        Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
+        model.start(true, 0);
+        model.takeOutput();
+        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 1);
+        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        model.feed(peerSyncFrame(77, 65535), 2);
+        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+    }
+
+    private static void holdsReadyGateForTooSmallPeerLimit() {
+        Iap2LinkNegotiationModel model = new Iap2LinkNegotiationModel();
+        model.start(true, 0);
+        model.takeOutput();
+        model.feed(peerSyncFrame(77, 10), 1);
+        model.takeOutput();
+        model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        falsity(model.isReady());
     }
 
     private static void rejectsWrongStartupMarker() {
@@ -158,4 +178,5 @@ public final class Iap2LinkNegotiationModelTest {
     private static void eq(Object a, Object b) { checks++; if (!a.equals(b)) throw new AssertionError(a + " != " + b); }
     private static void truth(boolean b) { checks++; if (!b) throw new AssertionError("expected true"); }
     private static void notNull(Object o) { checks++; if (o == null) throw new AssertionError("expected non-null"); }
+    private static void falsity(boolean b) { checks++; if (b) throw new AssertionError("expected false"); }
 }
