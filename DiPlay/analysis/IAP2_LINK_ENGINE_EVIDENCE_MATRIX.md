@@ -213,3 +213,14 @@ Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/4217412928
 The offline composition now verifies pre-ready queue defensive copying and its 64-packet bound; validates every queued payload against peer maxLength minus 10 before flush; and preserves the source distinction that the size predicate is not repeated by post-ready `sendPacket()`. ACK-batch counting follows the Smali `processFrame()`/ `writePacket()` behavior: ACK-bit frames accumulate to peer maxAcknowledgements, while every emitted link frame resets the counter; threshold emits an ACK-only frame and advances the receive watermark.
 
 Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks** (158 negotiation, 200 composition).
+
+
+## Pre-ready queue and ACK-batch integration
+
+- The offline composition now has a bounded pre-ready packet queue and flushes it only after the ACK-bearing readiness transition.
+- Original `peerPayloadIsAcceptable()` is applied to queued packets before any flush: payload length <= peer maxLength - 10.
+- The check is not repeated for post-ready NORMAL sends, matching the source path.
+- `processFrame()` ACK batching is modeled with the peer maxAcknowledgements count; emitted frames reset the counter as original `writePacket()` does.
+- The ACK counter is incremented before readiness queue flushing, so a queued write can reset it before the final per-frame batch threshold check.
+
+Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks** (200 composition checks). The queue cap of 64 is explicitly defensive, not source-derived. The model remains disconnected from live transport and hardware.
