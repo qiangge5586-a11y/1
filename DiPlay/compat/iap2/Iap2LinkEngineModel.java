@@ -295,6 +295,12 @@ public final class Iap2LinkEngineModel {
     }
 
     private void closeAndClearPending() {
+        if (closed) return;
+        String reason = getTerminalReason();
+        if (reason == null) reason = "iAP2 link closed";
+        if (negotiation.getState() != Iap2LinkNegotiationModel.State.DEAD) {
+            negotiation.terminate(reason);
+        }
         closed = true;
         pendingWireFrames.clear();
         pendingEvents.clear();
