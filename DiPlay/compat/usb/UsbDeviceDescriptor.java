@@ -59,6 +59,8 @@ public final class UsbDeviceDescriptor {
     public int getDeviceProtocol() { return deviceProtocol; }
     public int getInterfaceCount() { return interfaceCount; }
     public List<UsbConfigurationSnapshot> getConfigurations() { return configurations; }
+    public int getInterfaceGroupCount() { return configurations.size(); }
+    /** Compatibility alias; this counts snapshot groups, not USB configurations. */
     public int getConfigurationCount() { return configurations.size(); }
 
     public String getDescriptorKey() {
