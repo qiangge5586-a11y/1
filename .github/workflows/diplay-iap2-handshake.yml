@@ -28,6 +28,7 @@ jobs:
           java -cp build/iap2-test com.shilapi.xcertplay.compat.bluetooth.RfcommConnectDeadlineTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiOperationContextTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiI2cCertificateReaderTest
+          java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiBackendSelectionPolicyTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2DuplexByteStreamTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkPumpContractTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmPumpSenderTest
