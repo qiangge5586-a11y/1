@@ -5,12 +5,13 @@ import java.util.List;
 
 /**
  * Bounded incremental iAP2 link-frame decoder matching the original
- * Iap2LinkEngine.parseAvailable()/ReceiveBuffer behavior.
+ * Iap2LinkEngine parseAvailable()/ReceiveBuffer behavior.
  * It consumes bytes after the six-byte startup marker has been handled.
  */
 public final class Iap2LinkFrameDecoder {
     public static final int MAX_INPUT_CHUNK_BYTES = 8192;
-    private byte[] pending = new byte[0];
+    private final byte[] pending = new byte[Iap2LinkFrameCodec.MAX_WIRE_FRAME_BYTES];
+    private int pendingSize;
     private long discardedBytes;
     private long invalidHeaders;
     private long invalidPayloadChecksums;
@@ -38,21 +39,44 @@ public final class Iap2LinkFrameDecoder {
             reset();
             throw new IllegalArgumentException("link input chunk exceeds original 8192-byte read bound");
         }
-        if (chunk.length == 0) return new ArrayList<Frame>();
-        byte[] joined = concat(pending, chunk);
         List<Frame> frames = new ArrayList<Frame>();
+        int inputOffset = 0;
+        do {
+            drainPending(frames);
+            if (inputOffset >= chunk.length) break;
+
+            int capacity = pending.length - pendingSize;
+            if (capacity == 0) {
+                // A full receive buffer must always contain a complete maximum-size
+                // frame or a malformed candidate that drainPending() can consume.
+                reset();
+                throw new IllegalStateException("iAP2 link receive buffer made no parsing progress");
+            }
+            int count = Math.min(capacity, chunk.length - inputOffset);
+            System.arraycopy(chunk, inputOffset, pending, pendingSize, count);
+            pendingSize += count;
+            inputOffset += count;
+        } while (inputOffset < chunk.length);
+
+        drainPending(frames);
+        return frames;
+    }
+
+    /** Parses complete frames in-place and compacts the bounded receive buffer. */
+    private void drainPending(List<Frame> frames) {
         int offset = 0;
-        while (offset < joined.length) {
-            int available = joined.length - offset;
+        while (offset < pendingSize) {
+            int available = pendingSize - offset;
             while (available >= 2
-                    && ((joined[offset] & 0xff) != 0xff || (joined[offset + 1] & 0xff) != 0x5a)) {
+                    && ((pending[offset] & 0xff) != 0xff
+                    || (pending[offset + 1] & 0xff) != 0x5a)) {
                 offset++;
                 discardedBytes++;
                 available--;
             }
             if (available < Iap2LinkFrameCodec.HEADER_BYTES) break;
 
-            byte[] rawHeader = copy(joined, offset, offset + Iap2LinkFrameCodec.HEADER_BYTES);
+            byte[] rawHeader = copy(pending, offset, offset + Iap2LinkFrameCodec.HEADER_BYTES);
             Iap2LinkFrameCodec.Header header = Iap2LinkFrameCodec.parseHeader(rawHeader);
             if (header == null || header.length < Iap2LinkFrameCodec.HEADER_BYTES) {
                 // Original parser consumes the complete 9-byte candidate header on failure.
@@ -66,9 +90,8 @@ public final class Iap2LinkFrameDecoder {
                 continue;
             }
 
-            int payloadAndChecksumLength = header.length - Iap2LinkFrameCodec.HEADER_BYTES;
             if (available < header.length) break;
-            byte[] payloadAndChecksum = copy(joined,
+            byte[] payloadAndChecksum = copy(pending,
                     offset + Iap2LinkFrameCodec.HEADER_BYTES, offset + header.length);
             if (!Iap2LinkFrameCodec.payloadChecksumValid(payloadAndChecksum)) {
                 invalidPayloadChecksums++;
@@ -76,35 +99,26 @@ public final class Iap2LinkFrameDecoder {
                 byte[] payload = copy(payloadAndChecksum, 0, payloadAndChecksum.length - 1);
                 frames.add(new Frame(header, payload));
             }
-            offset += Iap2LinkFrameCodec.HEADER_BYTES + payloadAndChecksumLength;
+            offset += header.length;
         }
 
-        int remaining = joined.length - offset;
-        if (remaining > Iap2LinkFrameCodec.MAX_WIRE_FRAME_BYTES) {
-            reset();
-            throw new IllegalStateException("iAP2 link receive buffer exceeded 65535 bytes");
+        if (offset > 0) {
+            int remaining = pendingSize - offset;
+            if (remaining > 0) System.arraycopy(pending, offset, pending, 0, remaining);
+            pendingSize = remaining;
         }
-        pending = copy(joined, offset, joined.length);
-        return frames;
     }
 
-    public synchronized int pendingBytes() { return pending.length; }
+    public synchronized int pendingBytes() { return pendingSize; }
     public synchronized long getDiscardedBytes() { return discardedBytes; }
     public synchronized long getInvalidHeaders() { return invalidHeaders; }
     public synchronized long getInvalidPayloadChecksums() { return invalidPayloadChecksums; }
 
     public synchronized void reset() {
-        pending = new byte[0];
+        pendingSize = 0;
         discardedBytes = 0;
         invalidHeaders = 0;
         invalidPayloadChecksums = 0;
-    }
-
-    private static byte[] concat(byte[] a, byte[] b) {
-        byte[] out = new byte[a.length + b.length];
-        System.arraycopy(a, 0, out, 0, a.length);
-        System.arraycopy(b, 0, out, a.length, b.length);
-        return out;
     }
 
     private static byte[] copy(byte[] source, int from, int to) {
