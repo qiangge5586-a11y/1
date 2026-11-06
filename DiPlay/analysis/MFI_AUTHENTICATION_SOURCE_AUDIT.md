@@ -176,3 +176,10 @@ A second pass traced the persisted backend selection path rather than relying on
 ### Current implementation boundary
 
 These classes are isolated compatibility primitives, not yet wired to the original app's real I2C/CH341/remote provider or the iAP2 MFi message exchange. The fake transport proves the bounded reader's behavior against the source-derived register-window contract; it does not prove the target car's I2C device, bus timing, retry semantics or authentication success. The original APK's persisted LOCAL fallback is documented as a finding, not modified by this compatibility-layer work.
+
+
+### API 17 compatibility checkpoint
+
+The new compatibility primitives use only Java language level 7 and core APIs available well before Android API 17 (`System.nanoTime`, `AtomicBoolean`, thread interruption state, `Locale.US`, arrays and synchronization). They compile in the Java 7 CI job and are included in the isolated Android module whose manifest/build metadata declares minSdk 17.
+
+This is a source/build compatibility checkpoint, not an API 17 runtime certification. The original AirPlay SAP path still requires runtime verification for its X25519 implementation, AES/CTR and hash providers; the original local identity provider references BouncyCastle. No API 17 emulator/device test, real MFi coprocessor test, or legitimate-provider/iPhone authentication was performed. Keep production MFi enablement gated until those checks are run on the actual Android 4.2.2 target with authorized hardware/credentials.
