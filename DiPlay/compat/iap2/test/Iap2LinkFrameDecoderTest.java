@@ -171,6 +171,7 @@ public final class Iap2LinkFrameDecoderTest {
     }
     private static void eq(long a, long b) { checks++; if (a != b) throw new AssertionError(a + " != " + b); }
     private static void isNull(Object value) { checks++; if (value != null) throw new AssertionError("expected null"); }
+    private static void truth(boolean value) { checks++; if (!value) throw new AssertionError("expected true"); }
     private static void expectIllegalArgument(Runnable r) {
         checks++; try { r.run(); } catch (IllegalArgumentException expected) { return; }
         throw new AssertionError("expected IllegalArgumentException");
