@@ -189,3 +189,8 @@ The wireless synthetic constructor mask 494 includes the default-argument bit fo
 ## Receive-window model milestone (CI run #80)
 
 `Iap2ReceiveWindowModel.java` now mirrors the source `handleData()` receive path for out-of-order packets, duplicate suppression, extended-ACK missing-sequence lists, in-order event delivery, delayed ACKs and forced ACK threshold. It intentionally remains separate from the incomplete outbound queue/retransmission engine. The 42 new receive-window checks passed in [CI run #80](https://github.com/qiangge5586-a11y/1/actions/runs/42169125240); total offline checks: 7,055.
+
+
+## Outbound ACK-window policy milestone (CI run #83)
+
+`Iap2AckWindowPolicy.java` isolates the original modulo-256 ACK/window predicates from `handleAcknowledgement()` and `sendPacket()`: outstanding packet retention uses `distance > 0 && distance <= peerMaxAcknowledgements + 10`; new packet queueing uses `distance > peerMaxOutgoing`; queued drain uses `distance < peerMaxOutgoing`. The strict boundaries are intentionally separate. All 17 ACK-window policy checks passed in [CI run #83](https://github.com/qiangge5586-a11y/1/actions/runs/42169304682), bringing the offline suite to 7,072 checks. This remains a policy helper, not the complete outbound packet queue or retransmission engine. See `IAP2_ACK_WINDOW_SOURCE_VERIFICATION.md`.
