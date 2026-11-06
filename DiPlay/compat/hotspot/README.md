@@ -68,3 +68,14 @@ The policy is only a decision primitive. A production startup recovery coordinat
 Recovery-policy CI note: run #17 exposed a test-fixture issue (the test attempted to call the journal Entry constructor outside its package); this was a test-only visibility problem, not a production compile/runtime failure. The test was corrected to persist and reload real journal entries. Run #19 then completed successfully and the log confirms all four suites passed, including `PASS: startup recovery classification fails closed`: https://github.com/qiangge5586-a11y/1/actions/runs/42145618880.
 
 Security limitation: the SHA-256 chain detects accidental corruption and edits that do not recompute the chain; it is not an authenticated log. An attacker able to rewrite the entire app-private journal can recompute the hashes. Before production use, consider an app-keystore-backed MAC/signature where supported by the actual API 17 environment, and define key-loss/recovery behavior. `FileDescriptor.sync()` syncs the file contents but this prototype does not fsync the containing directory after first creation. Treat it as a tested persistence primitive, not a tamper-proof audit log or complete power-loss guarantee.
+
+
+## Fixed read-only operation catalog (2026-11-06)
+
+`HotspotReadOnlyOperation.java` introduces a small API-17-friendly catalog of fixed diagnostic operations: ROOT identity, Wi-Fi/connectivity service state, network interface counters, and metadata checks for the known Wi-Fi configuration and hostapd/dnsmasq binary paths. Each plan uses a fixed absolute executable and a fixed argument array; callers cannot supply an executable, arbitrary path, or shell fragment.
+
+The catalog is descriptive only. It does not execute a process, invoke a shell, access the filesystem, or modify device state. It intentionally contains no process termination, file write/restore, interface configuration, or daemon launch operation. `HotspotReadOnlyOperationTest.java` checks fixed mappings and per-instance argument-array isolation.
+
+The test was added to the Java 7 CI workflow. Run #24 was triggered by commit `43368bb2aa1fb7577e66a13a53d2f4662037e8cc`; its result must be checked before treating this addition as CI-verified.
+
+This catalog is not yet a production ROOT adapter. The next implementation gate is a fake executor with fixture outputs, strict output parsing, timeout/error handling, and tests proving that no arbitrary command or path can be introduced. Only after those tests should an actual read-only process executor be considered.
