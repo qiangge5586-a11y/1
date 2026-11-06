@@ -46,6 +46,7 @@ public final class Iap2LinkNegotiationModel {
     private int syncAttempts;
     private int peerMaxLength = -1;
     private boolean peerSynchronizationReceived;
+    private boolean localSynchronizationAcknowledged;
     private Long markerDeadline;
     private Long synchronizationDeadline;
     private String terminalReason;
@@ -120,12 +121,19 @@ public final class Iap2LinkNegotiationModel {
         }
         if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0
                 && state == State.NEGOTIATING) {
-            if (peerSynchronizationReceived && peerMaxLength > 10) {
-                state = State.NORMAL;
-                synchronizationDeadline = null;
-            } else {
-                die("peer iAP2 maxLength cannot carry pending control packets");
+            // Only a cumulative ACK of the local SYN (sequence 99) can satisfy this gate.
+            if (frame.acknowledgement == Iap2LinkFrameCodec.INITIAL_SEQUENCE) {
+                localSynchronizationAcknowledged = true;
             }
+            updateReadyState();
+        }
+    }
+
+    private void updateReadyState() {
+        if (state == State.NEGOTIATING && peerSynchronizationReceived
+                && localSynchronizationAcknowledged && peerMaxLength > 10) {
+            state = State.NORMAL;
+            synchronizationDeadline = null;
         }
     }
 
