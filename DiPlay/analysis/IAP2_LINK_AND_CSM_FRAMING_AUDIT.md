@@ -107,3 +107,10 @@ This restores reproducibility for packet primitives, but not full state-machine 
 ## Link-frame codec CI verification
 
 The Java 7 offline workflow now compiles and runs `Iap2LinkFrameCodecTest`. CI run (`42164770173`, commit `df94e5f74d94bc8c98a75d9429a83fbedf3c040d`) succeeded. Results: handshake lifecycle 61 checks; AirPlay IAP frame/package 3,380; CSM decoder 2,330; link-frame codec 27. Total: 5,798 offline checks. This validates framing primitives only; link state transitions and a real iPhone/vehicle handshake remain unverified.
+
+
+## Source-grounded link engine details
+
+The original APKTool Smali was retrieved from successful decompile artifact run #7 (Actions run `42166504575`, artifact ID `13478968581`). The exact synchronization payload and link-frame behavior, ACK semantics, out-of-order receive handling, extended ACK sequence list, retransmission retry boundary, and wireless worker timers are documented in [IAP2_LINK_ENGINE_SOURCE_FINDINGS.md](IAP2_LINK_ENGINE_SOURCE_FINDINGS.md).
+
+A source-derived wireless synchronization golden vector is now tested in `Iap2LinkWireCodecTest`. This closes the previous evidence gap for the local sync bytes, but it does not yet implement or validate the complete link state machine.
