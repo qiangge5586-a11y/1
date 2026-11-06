@@ -38,7 +38,7 @@ The protocol state machine includes DETECTING, NEGOTIATING, NORMAL and DEAD. Its
 
 The production composition must be a single owner of each mutable protocol object:
 
-1. RFCOMM bootstrap connector establishes the UUID stream. The connector's secure / insecure / reflective fallback is already ported, but its timeout currently applies per attempt, not to one aggregate connection deadline.
+1. RFCOMM bootstrap connector establishes the UUID stream. The secure / insecure / reflective fallback is already ported and shares one monotonic overall connection deadline across all three attempts. The deadline arithmetic has pure-Java tests; the actual Android BluetoothSocket fallback and cancellation sequence still needs an API 17 instrumentation or injectable-adapter test.
 2. The connected BluetoothSocket is wrapped by `BluetoothRfcommByteStream`. Its reader thread feeds a bounded ring; the link pump is the sole owner of engine calls.
 3. The bootstrap iAP2 engine and CSM channel complete accessory identification / authentication and wireless control messages. CSM receive and send queues must preserve the original 64-frame / 1 MiB bounds and one monotonic deadline per operation.
 4. Wireless control notifications and the source-confirmed AirPlay DataStream SETUP type 130 negotiate the IAP tunnel. The TCP listener, peer connect deadline, encryption/read-key derivation, stream ID and data port belong to this phase, not to the RFCOMM engine.
