@@ -199,3 +199,9 @@ The wireless synthetic constructor mask 494 includes the default-argument bit fo
 ## Outbound state model milestone (CI run #90)
 
 `Iap2OutboundWindowModel.java` now composes the source-derived send window, cumulative ACK packet retention/removal, queued packet drain, per-packet retransmission deadline, same-sequence retransmission and Extended ACK requested-sequence retry behavior. The 57-check regression suite passed in [CI run #91](https://github.com/qiangge5586-a11y/1/actions/runs/42169773435), total 7,129 offline checks. A two-packet staggered-deadline test confirms that retransmitting the earliest due packet leaves the next packet's earlier deadline armed, and that the next call selects that packet. The model remains transport-free; source-golden verification of multiple simultaneous due-packet deadline re-arming and production link-pump integration remain open. See `IAP2_OUTBOUND_WINDOW_MODEL.md`.
+
+## Offline composition checkpoint (2026-11-06)
+
+The repository now includes `compat/iap2/Iap2LinkEngineModel.java`, an orchestration harness over the independently tested negotiation, outbound-window, and receive-window models. It supplies a single READY gate, delegates send/ACK/Extended-ACK and receive operations, advances both timer domains at one deterministic timestamp, and models EOF closure. Its test suite passed 16 checks in Actions run [#95](https://github.com/qiangge5586-a11y/1/actions/runs/42170649686); the complete workflow passed 7,145 offline checks.
+
+This composition is intentionally incomplete: peer window limits are constructor inputs rather than being extracted and validated from the peer SYN by the composition layer; there is no unified live frame dispatch, socket/USB/Bluetooth transport, or output writer. It is not evidence of an actual iPhone or Honda head-unit session. The initial composition CI run #94 failed due to a null test fixture; the fixture was corrected and #95 passed.
