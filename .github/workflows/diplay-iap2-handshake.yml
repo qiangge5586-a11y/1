@@ -24,7 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/iap2-test build/airplay-test
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/airplay-test DiPlay/compat/airplay/TunnelPackageAccumulator.java DiPlay/compat/airplay/test/TunnelPackageAccumulatorTest.java
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/airplay-test DiPlay/compat/airplay/TunnelPackageAccumulator.java DiPlay/compat/airplay/test/IapTunnel.java DiPlay/compat/airplay/test/TunnelPackageAccumulatorTest.java
           java -cp build/airplay-test com.shilapi.xcertplay.airplay.TunnelPackageAccumulatorTest
           javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test $(find DiPlay/compat/iap2 -maxdepth 2 -name '*.java' -print) DiPlay/compat/bluetooth/BoundedByteRingBuffer.java DiPlay/compat/bluetooth/RfcommConnectDeadline.java DiPlay/compat/bluetooth/test/BoundedByteRingBufferTest.java DiPlay/compat/bluetooth/test/RfcommConnectDeadlineTest.java $(find DiPlay/compat/mfi -maxdepth 2 -name '*.java' -print)
           java -cp build/iap2-test com.shilapi.xcertplay.compat.bluetooth.BoundedByteRingBufferTest
