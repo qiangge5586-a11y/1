@@ -8,6 +8,8 @@ public final class Iap2CsmFrameDecoder {
     public static final int START = 0x4040;
     public static final int HEADER_BYTES = 6;
     public static final int MAX_FRAME_BYTES = 65535;
+    /** Original Iap2LinkChannel.runPump() reads at most 8192 bytes per recv call. */
+    public static final int MAX_INPUT_CHUNK_BYTES = 8192;
     private byte[] pending = new byte[0];
 
     public static final class Frame {
@@ -22,6 +24,14 @@ public final class Iap2CsmFrameDecoder {
     public synchronized List<Frame> feed(byte[] chunk) {
         if (chunk == null) throw new NullPointerException("chunk");
         if (chunk.length == 0) return new ArrayList<Frame>();
+        if (chunk.length > MAX_INPUT_CHUNK_BYTES) {
+            reset();
+            throw new IllegalArgumentException("CSM input chunk exceeds original 8192-byte read bound");
+        }
+        if (pending.length > MAX_FRAME_BYTES) {
+            reset();
+            throw new IllegalStateException("CSM pending buffer is already invalid");
+        }
         byte[] joined = concat(pending, chunk);
         List<Frame> frames = new ArrayList<Frame>();
         int offset = 0;
