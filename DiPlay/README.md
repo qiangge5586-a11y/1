@@ -200,3 +200,5 @@ The CSM channel's source-derived receive-queue bounds are now covered by the off
 ### iAP2 CSM outbound chunk planning
 
 `compat/iap2/Iap2CsmSendPlan.java` mirrors source-derived peer-sized CSM-to-link chunk splitting (1..65,525 bytes). It is an offline-only helper; queue-capacity waiting, shared send-deadline behavior and live channel writes are not implemented. Java 7 CI run [#176](https://github.com/qiangge5586-a11y/1/actions/runs/42176152126) passed 8,002 offline checks.
+
+The unified offline iAP2 Link Engine now serializes outbound data/retransmissions and receive-side ACK/Extended ACK responses into a bounded queue readable via `drainWireFrames()`. It does not send these frames over any real transport. Actions run [#207](https://github.com/qiangge5586-a11y/1/actions/runs/42181647104) passed **2,323,738 offline checks**, including 238 Link Engine checks. The failed #206 test was corrected by restoring the existing ACK-bit readiness expectation; no live iPhone or vehicle test has been claimed.
