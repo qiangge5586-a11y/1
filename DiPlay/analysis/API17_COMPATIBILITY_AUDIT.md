@@ -86,3 +86,12 @@ The original decompiled artifact was retrieved and inspected, so the following o
 A pure Java 7 NTB16 byte-array codec was added at `DiPlay/compat/ncm/Ntb16Codec.java`. It is a fixture-only port of the original NTH16/NDP16 framing shape; it does not open USB, send frames, use ROOT, or start a network interface. The self-test passed in GitHub Actions run #48, including round-trip, little-endian sequence, 512-byte boundary/ZLP marker, invalid signature/range/header, maximum u16 NTB length and invalid arguments. See [NCM module README](../compat/ncm/README.md).
 
 The Android compatibility build now includes this pure-Java primitive as an offline component. This does not constitute a functional NCM USB driver or a completed API17 NCM hardware test.
+
+
+## Legacy USB claim and VPN/lwIP findings (2026-11-06)
+
+See [API 17 legacy USB claim, raw usbfs and VPN/lwIP review](API17_LEGACY_USB_NCM_AND_VPN_REVIEW.md). Important correction to the generic compatibility summary:
+
+- The original special NCM driver-disconnect gate is hard-coded to API 23 + ARMv7 + Apple VID 1452 + CDC-NCM interfaces + an MTK/8227L board/hardware match. It is not eligible for the report's API 17 baseline.
+- General legacy force-claim/configuration/alternate-setting fallbacks call JNI in `libusb_host_compat.so`; raw usbfs transfer uses JNI in `liblegacy_ncm_claim.so`. Both extracted ELF files carry Android platform 19 notes, so API 17 runtime compatibility remains unresolved.
+- The userspace lwIP bridge is a native JNI stack with separate NCM RX/TX threads. The VPN TUN establish path is separate from the userspace attach path; neither has been tested on the target.
