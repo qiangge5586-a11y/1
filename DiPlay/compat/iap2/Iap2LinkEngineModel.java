@@ -10,12 +10,24 @@ package com.shilapi.xcertplay.compat.iap2;
 public final class Iap2LinkEngineModel {
     public enum State { IDLE, NEGOTIATING, READY, CLOSED }
 
+    private static final int SOURCE_ACK_SLACK = 10;
+    private static final int WIRELESS_MAX_OUT_OF_ORDER = 64;
+    private static final int WIRELESS_MAX_QUEUED_PACKETS = 64;
+    private static final int WIRELESS_MAX_OUTGOING_DELTA = 0;
+
     private final Iap2LinkNegotiationModel negotiation;
-    private final Iap2OutboundWindowModel outbound;
-    private final Iap2ReceiveWindowModel inbound;
+    private Iap2OutboundWindowModel outbound;
+    private Iap2ReceiveWindowModel inbound;
     private boolean started;
     private boolean closed;
 
+    /** Creates a composition that builds both windows from the peer SYN after readiness. */
+    public Iap2LinkEngineModel(Iap2LinkNegotiationModel negotiation) {
+        if (negotiation == null) throw new NullPointerException("negotiation");
+        this.negotiation = negotiation;
+    }
+
+    /** Injection constructor retained for focused deterministic tests. */
     public Iap2LinkEngineModel(Iap2LinkNegotiationModel negotiation,
             Iap2OutboundWindowModel outbound, Iap2ReceiveWindowModel inbound) {
         if (negotiation == null || outbound == null || inbound == null) {
@@ -94,8 +106,8 @@ public final class Iap2LinkEngineModel {
 
     public synchronized State state() {
         if (closed || negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD
-                || outbound.getTerminalReason() != null
-                || inbound.getTerminalReason() != null) {
+                || (outbound != null && outbound.getTerminalReason() != null)
+                || (inbound != null && inbound.getTerminalReason() != null)) {
             return State.CLOSED;
         }
         if (negotiation.isReady()) return State.READY;
@@ -108,9 +120,29 @@ public final class Iap2LinkEngineModel {
     }
 
     public synchronized String getTerminalReason() {
-        if (outbound.getTerminalReason() != null) return outbound.getTerminalReason();
-        if (inbound.getTerminalReason() != null) return inbound.getTerminalReason();
+        if (outbound != null && outbound.getTerminalReason() != null) return outbound.getTerminalReason();
+        if (inbound != null && inbound.getTerminalReason() != null) return inbound.getTerminalReason();
         return negotiation.getTerminalReason();
+    }
+
+    public synchronized Iap2LinkNegotiationModel.PeerConfiguration
+            getNegotiatedPeerConfiguration() {
+        return negotiation.getPeerConfiguration();
+    }
+
+    private void ensureWindowModels() {
+        if (outbound != null && inbound != null) return;
+        Iap2LinkNegotiationModel.PeerConfiguration peer = negotiation.getPeerConfiguration();
+        if (peer == null) throw new IllegalStateException("peer SYN configuration is unavailable");
+        int receiveSequence = peer.synchronizationSequence;
+        outbound = new Iap2OutboundWindowModel(Iap2LinkFrameCodec.INITIAL_SEQUENCE,
+                Integer.valueOf(Iap2LinkFrameCodec.INITIAL_SEQUENCE), peer.maxOutgoing,
+                peer.maxAcknowledgements, SOURCE_ACK_SLACK, peer.retransmissionTimeoutMillis,
+                peer.maxRetransmissions, WIRELESS_MAX_QUEUED_PACKETS);
+        inbound = new Iap2ReceiveWindowModel(receiveSequence, receiveSequence,
+                peer.maxOutgoing, peer.maxAcknowledgements,
+                peer.acknowledgementTimeoutMillis, WIRELESS_MAX_OUTGOING_DELTA,
+                WIRELESS_MAX_OUT_OF_ORDER);
     }
 
     private void requireStarted() {
@@ -121,6 +153,7 @@ public final class Iap2LinkEngineModel {
         if (state() != State.READY) {
             throw new IllegalStateException("iAP2 link is not ready: " + state());
         }
+        ensureWindowModels();
     }
 
     public static final class TimerResult {
