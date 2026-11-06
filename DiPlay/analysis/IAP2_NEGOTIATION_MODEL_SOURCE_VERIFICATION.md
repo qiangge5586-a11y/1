@@ -116,3 +116,10 @@ The actual source tests the bits independently:
 The offline negotiation model now stays NEGOTIATING after a SYN-only frame and queues the ACK-bearing frame that completes readiness for composition dispatch. The composition model applies cumulative ACK only when bit `0x40` is set, handles Extended ACK independently, and accepts both `0x00` and `0x40` data frames.
 
 This correction is based on the original Smali, not a protocol convention. Regression tests cover SYN-only versus ACK readiness, Extended ACK not being treated as cumulative ACK, data-only frames, and combined ACK/data frames.
+
+
+## Control-bit correction regression result
+
+Actions run [#133](https://github.com/qiangge5586-a11y/1/actions/runs/42173519353) passed **7,257 offline checks**, including 152 negotiation checks and 84 link-engine composition checks. The tests now explicitly verify that SYN-only `0x80` remains NEGOTIATING, ACK bit `0x40` is required for readiness, invalid or too-small peer SYN data is not treated as an ACK event, and the ACK-bearing frame that completes readiness is passed into the post-ready dispatcher. The composition tests cover `0x00` data-only and `0x40` data-plus-ACK frames, plus Extended ACK separation and ACK timer behavior.
+
+This CI result is Java 7 offline-model verification only; it is not a live iPhone or MY16ADA handshake.
