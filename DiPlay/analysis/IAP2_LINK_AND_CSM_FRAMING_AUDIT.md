@@ -106,4 +106,4 @@ This restores reproducibility for packet primitives, but not full state-machine 
 
 ## Link-frame codec CI verification
 
-The Java 7 offline workflow now compiles and runs `Iap2LinkFrameCodecTest`. CI run #34 (`42164770173`, commit `df94e5f74d94bc8c98a75d9429a83fbedf3c040d`) succeeded. Results: handshake lifecycle 61 checks; AirPlay IAP frame/package 3,380; CSM decoder 2,330; link-frame codec 27. Total: 5,798 offline checks. This validates framing primitives only; link state transitions and a real iPhone/vehicle handshake remain unverified.
+The Java 7 offline workflow now compiles and runs `Iap2LinkFrameCodecTest`. CI run (`42164770173`, commit `df94e5f74d94bc8c98a75d9429a83fbedf3c040d`) succeeded. Results: handshake lifecycle 61 checks; AirPlay IAP frame/package 3,380; CSM decoder 2,330; link-frame codec 27. Total: 5,798 offline checks. This validates framing primitives only; link state transitions and a real iPhone/vehicle handshake remain unverified.
