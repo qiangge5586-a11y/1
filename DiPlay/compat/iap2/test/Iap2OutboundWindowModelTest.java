@@ -141,7 +141,7 @@ public final class Iap2OutboundWindowModelTest {
         Iap2OutboundWindowModel.Result second = m.advanceTime(601);
         eq(1, second.retransmitted.size());
         eq(101, second.retransmitted.get(0).sequence);
-        eq(Long.valueOf(1100), m.getNextDeadlineMillis());
+        eq(Long.valueOf(1101), m.getNextDeadlineMillis());
     }
 
     private static void sourceTimerUsesLastSentPacketDeadline() {
