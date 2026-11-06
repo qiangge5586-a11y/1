@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'com.shilapi.xcertplay.compat.overlay'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 17
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    sourceSets {
+        main {
+            // Compile every production compatibility module as one overlay DEX.
+            // Tests remain in the dedicated Java 7 CI workflow and are not shipped.
+            java {
+                srcDirs = [
+                    '../../compat/hotspot',
+                    '../../compat/usb',
+                    '../../compat/bluetooth',
+                    '../../compat/ncm',
+                    '../../compat/iap2',
+                    '../../compat/cluster',
+                    '../../compat/mfi'
+                ]
+                exclude '**/test/**'
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
