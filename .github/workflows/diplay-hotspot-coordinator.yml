@@ -34,6 +34,7 @@ jobs:
           javac -source 1.7 -target 1.7 -Xlint:-options -d build/usb-test DiPlay/compat/usb/UsbDeviceDescriptor.java DiPlay/compat/usb/test/UsbDeviceDescriptorTest.java
           java -cp build/usb-test UsbDeviceDescriptorTest
           mkdir -p build/ncm-test
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/ncm-test DiPlay/compat/ncm/Ntb16Codec.java DiPlay/compat/ncm/Ntb16StreamDecoder.java DiPlay/compat/ncm/test/Ntb16CodecTest.java DiPlay/compat/ncm/test/Ntb16StreamDecoderTest.java
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/ncm-test DiPlay/compat/ncm/Ntb16Codec.java DiPlay/compat/ncm/Ntb16StreamDecoder.java DiPlay/compat/ncm/NcmInterfaceSelector.java DiPlay/compat/ncm/test/Ntb16CodecTest.java DiPlay/compat/ncm/test/Ntb16StreamDecoderTest.java DiPlay/compat/ncm/test/NcmInterfaceSelectorTest.java
           java -cp build/ncm-test com.shilapi.xcertplay.compat.ncm.Ntb16CodecTest
           java -cp build/ncm-test com.shilapi.xcertplay.compat.ncm.Ntb16StreamDecoderTest
+          java -cp build/ncm-test com.shilapi.xcertplay.compat.ncm.NcmInterfaceSelectorTest
