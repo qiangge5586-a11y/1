@@ -79,3 +79,10 @@ The original decompiled artifact was retrieved and inspected, so the following o
 5. Validate Bluetooth RFCOMM fallback behavior on API17 without enabling or changing system Bluetooth state automatically.
 6. Audit/replace native lwIP and NCM dependencies before attempting VPN integration.
 7. Only then consider wireless iAP2 bootstrap and hotspot handoff. ROOT hotspot configuration writes remain disabled until transactional backup/rollback and process ownership checks are independently verified.
+
+
+## Offline NCM codec milestone (2026-11-06)
+
+A pure Java 7 NTB16 byte-array codec was added at `DiPlay/compat/ncm/Ntb16Codec.java`. It is a fixture-only port of the original NTH16/NDP16 framing shape; it does not open USB, send frames, use ROOT, or start a network interface. The self-test passed in GitHub Actions run #48, including round-trip, little-endian sequence, 512-byte boundary/ZLP marker, invalid signature/range/header, maximum u16 NTB length and invalid arguments. See [NCM module README](../compat/ncm/README.md).
+
+The Android compatibility build now includes this pure-Java primitive as an offline component. This does not constitute a functional NCM USB driver or a completed API17 NCM hardware test.
