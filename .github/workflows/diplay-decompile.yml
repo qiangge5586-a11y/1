@@ -114,6 +114,32 @@ jobs:
               raise SystemExit("No focused iAP2 Smali files found; refusing to upload an empty evidence bundle.")
           print("Preserved %d focused iAP2 Smali files." % len(selected))
           PY
+      - name: Index iAP2 link and CSM Smali evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="DiPlay/decompiled/iap2-source-index.md"
+          {
+            echo "# iAP2 source index"
+            echo
+            echo "APK SHA-256: $(sha256sum diplay0.3.11.apk | awk '{print $1}')"
+            echo
+            for CLASS in Iap2LinkEngine Iap2LinkChannel Iap2CsmFramer Iap2CsmChannel Iap2Session; do
+              echo "## $CLASS"
+              echo
+              MATCHES=$(grep -R -l --include='*.smali' "$CLASS" DiPlay/decompiled/apktool/smali* || true)
+              if [ -z "$MATCHES" ]; then
+                echo "No matching Smali file found."
+              else
+                while IFS= read -r FILE; do
+                  echo "- `$FILE`"
+                  grep -n -E '^\\.class|^\\.method|sync|ack|retrans|sequence|ready|payload|timeout|runPump' "$FILE" | head -n 160 || true
+                done <<< "$MATCHES"
+              fi
+              echo
+            done
+          } > "$OUT"
+          test -s "$OUT"
       - name: Write report
         run: |
           {
