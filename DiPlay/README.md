@@ -207,3 +207,10 @@ The unified offline iAP2 Link Engine now serializes outbound data/retransmission
 ### iAP2 Android transport integration audit
 
 The original `Iap2LinkChannel` worker pump and `Iap2CsmChannel` call edges have now been rechecked against recovered Smali. The audit records the single-owner pump, 8 KiB raw receive chunks, separate 64-entry / 1 MiB command and control queues, 65,525-byte control payload bound, and the current Android APK source-set gap. See [IAP2 Android transport integration gap](analysis/IAP2_ANDROID_TRANSPORT_INTEGRATION_GAP.md). The production RFCOMM/tunnel adapters and production link/CSM port are still absent; the offline model remains disconnected from live I/O.
+
+
+### iAP2 Link Engine follow-up — 2026-11-06
+
+- CI Run #210 passed after adding wire-frame decoder round-trip coverage for outbound retransmission and Extended ACK responses: `Iap2LinkEngineModelTest` 264 checks; all 16 offline suites passed.
+- Evidence: [GitHub Actions #210](https://github.com/qiangge5586-a11y/1/actions/runs/42183299341), tested commit `db67b97002bf5ad9797ead2397b08d80418d1b66`.
+- Scope remains offline model/codec validation; no live transport or vehicle handshake is claimed.
