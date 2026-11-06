@@ -30,7 +30,7 @@ public final class HotspotReadOnlyExecutorTest {
     public static void main(String[] args) {
         final FakeRunner fake = new FakeRunner();
         fake.next = new RunResult(0, false, "uid=0(root) gid=0(root)\n", "");
-        HotspotReadOnlyExecutor executor = new HotspotReadOnlyExecutor(fake, 3000L, 4096);
+        final HotspotReadOnlyExecutor executor = new HotspotReadOnlyExecutor(fake, 3000L, 4096);
         Result result = executor.execute(Kind.ROOT_IDENTITY);
         check(result.output.contains("uid=0"), "fixture output returned");
         check("/system/bin/id".equals(fake.executable), "only fixed executable passed");
