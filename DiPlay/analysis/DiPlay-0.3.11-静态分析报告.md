@@ -156,7 +156,7 @@ Manifest 还声明了启动 Activity、CarPlay Host Activity、USB 附件处理�
 - [x] 完成 Java-like 源码和 Smali 反编译。
 - [x] 上传完整反编译 Artifact。
 - [x] 完成首轮模块与兼容性静态分析。
-- [ ] 将本报告提交到仓库并继续补充类级调用关系。
+- [x] 将本报告提交到仓库并继续补充类级调用关系。
 - [ ] 生成 API 17 不兼容 API 清单（按调用点、所在类、保护条件分类）。
 - [ ] 检查 9 个原生库的 ELF 依赖、导出符号和最低系统要求。
 - [ ] 完成本田专用热点只读探测器。
@@ -172,3 +172,18 @@ Manifest 还声明了启动 Activity、CarPlay Host Activity、USB 附件处理�
 - GitHub Actions Run #4： https://github.com/qiangge5586-a11y/1/actions/runs/42140451737
 
 > 本报告基于 APK 静态反编译，不代表已在本田车机完成安装、热点启动或 CarPlay 实测。所有涉及 ROOT 的后续修改都必须先完成只读探测和备份恢复机制。
+
+
+## 10. API 17 调用点复核（第二轮）
+
+对应用主命名空间进行源码级搜索后，发现项目并非完全没有旧系统兼容逻辑：
+
+- `LocalOnlyHotspotManager` 使用 API 26+ 的 LocalOnlyHotspot 能力，并在较新系统上读取 `SoftApConfiguration`；API 17 不具备这些类/方法，必须确认控制流不会提前解析或调用它们。
+- `ManualHotspotManager` 对 API 21 以下存在单独分支；读取现代 SoftApConfiguration 的逻辑被版本判断包围。
+- `CarHotspotTethering` 在 API 23 以上才使用 `getSystemService(Class)`，旧系统使用字符串服务名；热点开启还保留旧版 `setWifiApEnabled(WifiConfiguration, boolean)` 反射回退。
+- `RootShell` 对 API 26+ 使用带超时的 `Process.waitFor(timeout, unit)`，较旧系统使用轮询 `exitValue()` 的替代实现。
+- `CarPlayController` 对 API 21+ 使用 `getNoBackupFilesDir()`，较旧系统回退到 `getFilesDir()`。
+- 源码使用的 `StandardCharsets` 映射为 desugar 的 `p006j$.nio.charset.StandardCharsets`，不能简单按 Android 原生 API 版本判断为缺失；仍需验证 desugar runtime 是否完整。
+- Manifest 声明了 `BLUETOOTH_CONNECT`、`BLUETOOTH_SCAN`、`NEARBY_WIFI_DEVICES`、通知和前台服务类型等新权限/属性。API 17 不认识的 Manifest 属性通常会被旧系统忽略，但代码中的运行时权限请求和新 API 调用仍必须有版本分支。
+
+因此当前的 API 17 风险重点不是单纯的 minSdk 数值，而是**类验证/类加载、未加版本保护的新 API 调用、AndroidX 依赖最低版本、旧固件 Binder/隐藏 API 差异**。下一轮应以目标车机启动日志和类加载错误为依据，按调用点逐项修复，而不是整体降低 targetSdk 后盲目重打包。
