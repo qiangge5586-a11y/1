@@ -67,7 +67,7 @@ public final class Iap2CsmSendPlanTest {
             Iap2CsmSendPlan.chunkCount(1, 65526);
         }});
         byte[] input = new byte[] {1,2,3};
-        List<byte[]> chunks = Iap2CsmSendPlan.splitForLink(input, 2);
+        final List<byte[]> chunks = Iap2CsmSendPlan.splitForLink(input, 2);
         input[0] = 99;
         eq(1, chunks.get(0)[0] & 255);
         chunks.get(0)[0] = 88;
