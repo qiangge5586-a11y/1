@@ -8,11 +8,6 @@ public final class Iap2CsmFrameDecoder {
     public static final int START = 0x4040;
     public static final int HEADER_BYTES = 6;
     public static final int MAX_FRAME_BYTES = 65535;
-    /**
-     * CSM offer() receives link-control payload chunks, not raw stream recv() buffers.
-     * The source framer permits link chunks up to MAX_LINK_CHUNK_BYTES (65525).
-     */
-    public static final int MAX_INPUT_CHUNK_BYTES = 65525;
     private byte[] pending = new byte[0];
     private long discardedBytes;
     private long invalidLengthCandidates;
@@ -28,27 +23,45 @@ public final class Iap2CsmFrameDecoder {
 
     public synchronized List<Frame> feed(byte[] chunk) {
         if (chunk == null) throw new NullPointerException("chunk");
-        if (chunk.length == 0) return new ArrayList<Frame>();
-        if (chunk.length > MAX_INPUT_CHUNK_BYTES) {
-            reset();
-            throw new IllegalArgumentException("CSM input chunk exceeds original 8192-byte read bound");
-        }
+        List<Frame> frames = new ArrayList<Frame>();
+        if (chunk.length == 0) return frames;
         if (pending.length > MAX_FRAME_BYTES) {
             reset();
             throw new IllegalStateException("CSM pending buffer is already invalid");
         }
-        byte[] joined = concat(pending, chunk);
-        List<Frame> frames = new ArrayList<Frame>();
+
+        // Mirror original Iap2CsmFramer.offer(): drain, append only available
+        // capacity in the fixed 65,535-byte receive buffer, then drain again.
+        int inputOffset = 0;
+        while (inputOffset < chunk.length) {
+            drainPending(frames);
+            int capacity = MAX_FRAME_BYTES - pending.length;
+            if (capacity <= 0) {
+                reset();
+                throw new IllegalStateException("CSM receive buffer could not make progress");
+            }
+            int count = Math.min(chunk.length - inputOffset, capacity);
+            byte[] joined = new byte[pending.length + count];
+            System.arraycopy(pending, 0, joined, 0, pending.length);
+            System.arraycopy(chunk, inputOffset, joined, pending.length, count);
+            pending = joined;
+            inputOffset += count;
+        }
+        drainPending(frames);
+        return frames;
+    }
+
+    private void drainPending(List<Frame> frames) {
         int offset = 0;
-        while (offset < joined.length) {
-            int available = joined.length - offset;
-            if (available >= 2 && readU16(joined, offset) != START) {
+        while (offset < pending.length) {
+            int available = pending.length - offset;
+            if (available >= 2 && readU16(pending, offset) != START) {
                 offset++;
                 discardedBytes++;
                 continue;
             }
             if (available < HEADER_BYTES) break;
-            int length = readU16(joined, offset + 2);
+            int length = readU16(pending, offset + 2);
             if (length < HEADER_BYTES) {
                 offset++;
                 discardedBytes++;
@@ -56,18 +69,16 @@ public final class Iap2CsmFrameDecoder {
                 continue;
             }
             if (available < length) break;
-            int messageId = readU16(joined, offset + 4);
-            byte[] payload = copy(joined, offset + HEADER_BYTES, offset + length);
+            int messageId = readU16(pending, offset + 4);
+            byte[] payload = copy(pending, offset + HEADER_BYTES, offset + length);
             frames.add(new Frame(messageId, payload));
             offset += length;
         }
-        int remaining = joined.length - offset;
-        if (remaining > MAX_FRAME_BYTES) {
+        if (offset > 0) pending = copy(pending, offset, pending.length);
+        if (pending.length > MAX_FRAME_BYTES) {
             reset();
             throw new IllegalStateException("CSM receive buffer exceeded maximum frame size");
         }
-        pending = copy(joined, offset, joined.length);
-        return frames;
     }
 
     public synchronized int pendingBytes() { return pending.length; }
