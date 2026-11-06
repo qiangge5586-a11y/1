@@ -113,3 +113,21 @@ Only transaction-owned temporary files may be removed (for example the transacti
 - [ ] Run bench and in-vehicle parked tests.
 
 No live ROOT command has been issued to the user's vehicle, and no modified DiPlay APK has yet been built.
+
+
+## 2026-11-06 transaction hardening update
+
+The compatibility-side transaction coordinator has been hardened in the following ways:
+
+- An exclusive lock is now a required RootOps contract. The adapter must acquire an OS-backed lock (not merely a Java object monitor) before preflight and hold it through rollback/commit; failure to acquire it aborts before device changes.
+- apply() now receives a ProcessStartedListener. A production adapter must report each newly created owned process immediately after capturing PID, /proc/<pid>/stat start-time and command identity, before any later fallible startup step. If startup then throws, the coordinator can still attempt ownership-checked cleanup.
+- The returned primary process identity is compared with the identity registered during launch. A mismatch fails closed.
+- The append-only journal calculates the complete encoded record size before writing and rejects an append that would exceed its 1 MiB cap. It never auto-truncates or compacts the evidence log.
+
+New coordinator self-tests cover lock release, failure after process launch, process cleanup and verified rollback. Existing backup metadata checks continue to enforce backup size, SHA-256, owner/group/mode and required SELinux context.
+
+### Important integration boundary
+
+These are safety contracts and pure-Java transaction tests, not a production ROOT executor. No implementation currently binds these contracts to the Honda device su, filesystem, Wi-Fi framework or hostapd/dnsmasq services. Before enabling real writes, the adapter still must implement and test: cross-process lock ownership; durable backup file creation and restore; atomic staging/rename; metadata and SELinux restoration; process identity capture and re-check before TERM/KILL; Wi-Fi/interface state restoration; command timeout/exit-code handling; and crash/reboot recovery. The adapter must probe actual MY16ADA paths and utilities instead of assuming standard Linux behavior.
+
+No live vehicle command or hotspot configuration write was performed by this update.
