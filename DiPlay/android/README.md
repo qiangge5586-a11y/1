@@ -45,3 +45,22 @@ https://github.com/qiangge5586-a11y/1/actions/runs/42147789283
 Artifact: `diplay-honda-compat-debug` (artifact ID `13471180642`, 22,314 bytes; expires 2026-11-20). Reported artifact archive digest: `sha256:92f5e32a09694ab618db75b25b3a24562f585c1ba9043c8fded3b4fa48cf9b01`.
 
 The dashboard displays the MY16ADA report baseline and clearly labels live ROOT, Wi-Fi, interface, config-file and daemon checks as not yet measured. It performs no device probing and does not invoke su. The APK build and artifact upload steps succeeded; this is still not an on-device API-17 or vehicle test.
+
+
+## APK metadata verification build (2026-11-06)
+
+Android workflow run #8 completed successfully:
+https://github.com/qiangge5586-a11y/1/actions/runs/42147908587
+
+The workflow assembled the debug APK, then used AAPT to verify:
+- application ID: `com.shilapi.xcertplay.compat`
+- minimum SDK: 17
+- target SDK: 28
+
+Artifact: `diplay-honda-compat-debug` (artifact ID `13470558794`, 22,305 bytes; expires 2026-11-20). Reported archive digest: `sha256:fa363cd1986aff1adb4d96c50726cd7ab48c364e8a1ccdc74119cfc6696463b6`.
+
+The successful metadata check confirms the package identity and declared SDK levels. It does not establish installation, launch, rendering, API-17 runtime behavior or compatibility with the MY16ADA head unit.
+
+## API 17 static review
+
+A source-level review of the current manifest and dashboard Activity is recorded in [API 17 compatibility audit](../analysis/API17_COMPATIBILITY_AUDIT.md). The current screen uses basic framework UI APIs and has no ROOT, Wi-Fi, USB or Bluetooth side effects. Runtime compatibility is still unverified; an API 17 emulator/device and the actual head unit are required for that gate.
