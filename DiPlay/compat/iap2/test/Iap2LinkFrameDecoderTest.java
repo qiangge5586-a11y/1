@@ -13,6 +13,7 @@ public final class Iap2LinkFrameDecoderTest {
         rejectsPayloadChecksumAndContinues();
         randomizedFragmentationAndCoalescing();
         decodesMaximumFrameInBoundedChunks();
+        drainsMaximumFrameAndFollowingControlFrameAtBufferBoundary();
         enforcesOriginalReadChunkBound();
         resetsSessionStateAndDiagnostics();
         System.out.println("Iap2LinkFrameDecoderTest: PASS (" + checks + " checks)");
@@ -109,6 +110,32 @@ public final class Iap2LinkFrameDecoderTest {
             if (offset < encoded.length) eq(0, out.size());
         }
         eq(1, out.size()); eq(77, out.get(0).sequence); bytes(payload, out.get(0).payload);
+        eq(0, d.pendingBytes());
+    }
+
+
+    private static void drainsMaximumFrameAndFollowingControlFrameAtBufferBoundary() {
+        Iap2LinkFrameDecoder d = new Iap2LinkFrameDecoder();
+        byte[] payload = new byte[Iap2LinkFrameCodec.MAX_PAYLOAD_BYTES];
+        for (int i = 0; i < payload.length; i++) payload[i] = (byte)(i * 7 + 3);
+        byte[] maximum = Iap2LinkFrameCodec.encode(0x40, 88, 87, 10, payload);
+        byte[] following = Iap2LinkFrameCodec.encode(0x40, 89, 88, 0, null);
+        byte[] stream = concat(maximum, following);
+        java.util.ArrayList<Iap2LinkFrameDecoder.Frame> decoded =
+                new java.util.ArrayList<Iap2LinkFrameDecoder.Frame>();
+        int offset = 0;
+        while (offset < stream.length) {
+            int count = Math.min(Iap2LinkFrameDecoder.MAX_INPUT_CHUNK_BYTES,
+                    stream.length - offset);
+            decoded.addAll(d.feed(slice(stream, offset, offset + count)));
+            offset += count;
+            truth(d.pendingBytes() <= Iap2LinkFrameCodec.MAX_WIRE_FRAME_BYTES);
+        }
+        eq(2, decoded.size());
+        eq(88, decoded.get(0).sequence);
+        bytes(payload, decoded.get(0).payload);
+        eq(89, decoded.get(1).sequence);
+        isNull(decoded.get(1).payload);
         eq(0, d.pendingBytes());
     }
 
