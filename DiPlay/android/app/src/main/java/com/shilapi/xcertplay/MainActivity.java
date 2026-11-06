@@ -112,7 +112,6 @@ public final class MainActivity extends Activity {
                 rootProbeStatus.setText("正在执行固定白名单只读命令，请等待……");
                 Thread worker = new Thread(new Runnable() {
                     public void run() {
-                        final String report;
                         StringBuilder out = new StringBuilder();
                         try {
                             com.shilapi.xcertplay.network.safety.HotspotReadOnlyExecutor executor =
@@ -136,12 +135,12 @@ public final class MainActivity extends Activity {
                                 }
                                 out.append("\n");
                             }
-                            report = out.toString();
                         } catch (Throwable failure) {
-                            report = "ROOT 只读诊断失败："
-                                    + failure.getClass().getSimpleName() + ": "
-                                    + failure.getMessage();
+                            out.append("ROOT 只读诊断失败：")
+                                    .append(failure.getClass().getSimpleName()).append(": ")
+                                    .append(failure.getMessage());
                         }
+                        final String report = out.toString();
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             public void run() {
                                 rootProbeStatus.setText(report);
