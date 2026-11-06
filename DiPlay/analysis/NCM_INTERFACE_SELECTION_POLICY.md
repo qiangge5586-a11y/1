@@ -18,8 +18,8 @@ The source was recovered from JADX Java-like output. The original APK reports 10
 
 - `DiPlay/compat/ncm/NcmInterfaceSelector.java` models the descriptor data using plain Java objects.
 - It has no Android USB imports and performs no USB permission request, open, claim, alternate-setting change, transfer, or ROOT operation.
-- `NcmInterfaceSelectorTest.java` covers nine deterministic fixtures for the selection rules above.
-- The model is compiled into the isolated Android compatibility app, but is not connected to the read-only USB scanner or any USB I/O path.
+- `NcmInterfaceSelectorTest.java` covers nine deterministic fixtures for the selection rules above. The selected endpoint model also preserves descriptor address and maximum packet size.
+- The model is compiled into the isolated Android compatibility app and fed by the passive USB snapshot matcher. Selected endpoint address and maximum packet size are retained, but the result is not connected to any USB I/O path.
 
 ## Remaining integration gates
 
