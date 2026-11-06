@@ -11,7 +11,8 @@ public final class Iap2OutboundWindowModelTest {
         outgoingWindowQueuesAndAckDrains();
         cumulativeAckRemovesOnlyCoveredPackets();
         cumulativeAckKeepsLaterDeadlinesArmed();
-        invalidAckDoesNotMutateWindow();
+        sourceAcceptsReceivedAckWatermarkWithoutForwardValidation();
+        sourceAckStopsAtFirstPacketInsideRetentionWindow();
         timeoutRetransmitsSamePacketAndAdvancesRetry();
         earliestDuePacketLeavesOtherDeadlineArmed();
         retryLimitTerminatesAtExactCount();
@@ -85,13 +86,26 @@ public final class Iap2OutboundWindowModelTest {
         eq(Long.valueOf(602), m.getNextDeadlineMillis());
     }
 
-    private static void invalidAckDoesNotMutateWindow() {
+    private static void sourceAcceptsReceivedAckWatermarkWithoutForwardValidation() {
         Iap2OutboundWindowModel m = model(99, 99, 4, 3, 10, 500, 4, 8);
         m.send(10, new byte[] {1}, 0);
         Iap2OutboundWindowModel.Result r = m.acknowledge(120, 1);
-        falsity(r.acknowledgementAccepted);
-        eq(99, m.getLastSentAcknowledged().intValue());
-        eq(1, m.getUnacknowledgedCount());
+        truth(r.acknowledgementAccepted);
+        eq(120, m.getLastSentAcknowledged().intValue());
+        eq(0, m.getUnacknowledgedCount());
+    }
+
+    private static void sourceAckStopsAtFirstPacketInsideRetentionWindow() {
+        Iap2OutboundWindowModel m = model(99, 99, 10, 0, 10, 500, 4, 8);
+        m.send(10, new byte[] {1}, 0);
+        m.send(10, new byte[] {2}, 1);
+        m.send(10, new byte[] {3}, 2);
+        Iap2OutboundWindowModel.Result r = m.acknowledge(90, 3);
+        truth(r.acknowledgementAccepted);
+        // Sequence 100 is at the edge of the source's 10-packet slack window;
+        // the original loop stops there and leaves all later packets untouched.
+        eq(0, r.acknowledged.size());
+        eq(3, m.getUnacknowledgedCount());
     }
 
     private static void timeoutRetransmitsSamePacketAndAdvancesRetry() {
