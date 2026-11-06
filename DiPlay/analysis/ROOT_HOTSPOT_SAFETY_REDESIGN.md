@@ -95,6 +95,13 @@ Only transaction-owned temporary files may be removed (for example the transacti
 4. On the Honda device, run the read-only probe first and archive output.
 5. Only after code review and a separately confirmed recovery plan should a user-triggered backup/restore test occur while parked and with no dependency on the hotspot for recovery.
 
+## Automated verification result
+
+- GitHub Actions run #42142476134 completed successfully: [decompile + ROOT hotspot safety audit](https://github.com/qiangge5586-a11y/1/actions/runs/42142476134).
+- Artifact: `diplay-0.3.11-decompiled` (55.6 MB, retained until 2026-12-06).
+- The generated `hotspot-safety-audit.md` independently reported all six configured findings: three CRITICAL and three HIGH (including legacy kill, config deletion/overwrite, Wi-Fi state toggling and shell path concatenation).
+- The workflow success means the audit completed and the artifact was uploaded; it does not mean the original hotspot implementation passed the safety audit.
+
 ## Current implementation status
 
 - [x] Static findings confirmed in decompiled source.
