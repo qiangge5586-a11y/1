@@ -216,6 +216,18 @@ public final class Iap2OutboundWindowModel {
         return Collections.unmodifiableList(new ArrayList<Packet>(packets));
     }
 
+    /** Earliest outstanding retransmission deadline, or null when none remain. */
+    public synchronized Long getNextDeadlineMillis() {
+        if (unacknowledged.isEmpty()) return null;
+        long earliest = Long.MAX_VALUE;
+        for (int i = 0; i < unacknowledged.size(); i++) {
+            if (unacknowledged.get(i).deadlineMillis < earliest) {
+                earliest = unacknowledged.get(i).deadlineMillis;
+            }
+        }
+        return Long.valueOf(earliest);
+    }
+
     public synchronized int getSentSequence() { return sentSequence; }
     public synchronized Integer getLastSentAcknowledged() { return lastSentAcknowledged; }
     public synchronized int getUnacknowledgedCount() { return unacknowledged.size(); }
