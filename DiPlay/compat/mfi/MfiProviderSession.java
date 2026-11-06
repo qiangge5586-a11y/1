@@ -3,10 +3,9 @@ package com.shilapi.xcertplay.compat.mfi;
 /**
  * Generation-safe adapter boundary for the two synchronous MFi provider phases.
  *
- * The same operation context is passed to certificate retrieval and challenge signing.
- * Provider implementations MUST check it before/after every blocking I/O or crypto phase
- * and use remainingMillis() for bounded waits. This wrapper detects late completion but
- * cannot forcibly preempt a provider that ignores the context.
+ * The same operation context is passed to both provider methods. Provider work is
+ * deliberately performed outside this object's monitor so cancel() can signal a
+ * blocked provider immediately. Providers MUST still honor the shared context.
  */
 public final class MfiProviderSession {
     public static final int MIN_CHALLENGE_BYTES = 1;
@@ -18,13 +17,14 @@ public final class MfiProviderSession {
     }
 
     public enum State {
-        NEW, CERTIFICATE_READY, CHALLENGE_SIGNED, FAILED, CLOSED
+        NEW, CERTIFICATE_READING, CERTIFICATE_READY, SIGNING,
+        CHALLENGE_SIGNED, FAILED, CLOSED
     }
 
     private final Provider provider;
     private final MfiOperationContext context;
     private final long generation;
-    private State state = State.NEW;
+    private volatile State state = State.NEW;
 
     public MfiProviderSession(Provider provider, MfiOperationContext context,
             long generation) {
@@ -37,8 +37,11 @@ public final class MfiProviderSession {
         this.generation = generation;
     }
 
-    public synchronized byte[] readCertificate(long activeGeneration) {
-        requireState(State.NEW);
+    public byte[] readCertificate(long activeGeneration) {
+        synchronized (this) {
+            requireState(State.NEW);
+            state = State.CERTIFICATE_READING;
+        }
         try {
             context.checkActive(activeGeneration);
             byte[] certificate = provider.readCertificate(context);
@@ -47,20 +50,26 @@ public final class MfiProviderSession {
                     || certificate.length > MfiI2cCertificateReader.MAX_CERTIFICATE_BYTES)
                 throw new MfiI2cCertificateReader.TransportDataException(
                         "provider returned an invalid certificate length");
-            state = State.CERTIFICATE_READY;
+            synchronized (this) {
+                requireState(State.CERTIFICATE_READING);
+                state = State.CERTIFICATE_READY;
+            }
             return certificate.clone();
         } catch (RuntimeException failure) {
-            state = State.FAILED;
+            failUnlessClosed();
             throw failure;
         }
     }
 
-    public synchronized byte[] signChallenge(byte[] challenge, long activeGeneration) {
-        requireState(State.CERTIFICATE_READY);
-        if (challenge == null || challenge.length < MIN_CHALLENGE_BYTES
-                || challenge.length > MAX_CHALLENGE_BYTES) {
-            state = State.FAILED;
-            throw new IllegalArgumentException("challenge length outside 1..128");
+    public byte[] signChallenge(byte[] challenge, long activeGeneration) {
+        synchronized (this) {
+            requireState(State.CERTIFICATE_READY);
+            if (challenge == null || challenge.length < MIN_CHALLENGE_BYTES
+                    || challenge.length > MAX_CHALLENGE_BYTES) {
+                state = State.FAILED;
+                throw new IllegalArgumentException("challenge length outside 1..128");
+            }
+            state = State.SIGNING;
         }
         try {
             context.checkActive(activeGeneration);
@@ -69,20 +78,35 @@ public final class MfiProviderSession {
             if (signature == null || signature.length == 0)
                 throw new MfiI2cCertificateReader.TransportDataException(
                         "provider returned an empty challenge signature");
-            state = State.CHALLENGE_SIGNED;
+            synchronized (this) {
+                requireState(State.SIGNING);
+                state = State.CHALLENGE_SIGNED;
+            }
             return signature.clone();
         } catch (RuntimeException failure) {
-            state = State.FAILED;
+            failUnlessClosed();
             throw failure;
         }
     }
 
-    public synchronized void cancel() {
+    /**
+     * Cancellation is published before taking the short state-transition monitor.
+     * A provider call that ignores cancellation may still run until it returns, but
+     * cancel() itself never waits for that provider call to release a session lock.
+     */
+    public void cancel() {
+        synchronized (this) {
+            if (state == State.CHALLENGE_SIGNED || state == State.CLOSED) return;
+            state = State.CLOSED;
+        }
         context.cancel();
-        if (state != State.CHALLENGE_SIGNED) state = State.CLOSED;
     }
 
-    public synchronized State state() { return state; }
+    public State state() { return state; }
+
+    private synchronized void failUnlessClosed() {
+        if (state != State.CLOSED) state = State.FAILED;
+    }
 
     private void requireState(State expected) {
         if (state != expected)
