@@ -195,3 +195,8 @@ Latest CSM fixed-buffer parity validation: GitHub Actions [#166](https://github.
 
 
 The CSM channel's source-derived receive-queue bounds are now covered by the offline `Iap2CsmReceiveQueueModel`: 64 frames and 1 MiB of encoded frames, with FIFO byte accounting and fail-closed overflow. Actions run [#169](https://github.com/qiangge5586-a11y/1/actions/runs/42175597475) passed **7,705 offline checks** (308 queue-model checks included). The model is not connected to live transport.
+
+
+### iAP2 CSM outbound chunk planning
+
+`compat/iap2/Iap2CsmSendPlan.java` mirrors source-derived peer-sized CSM-to-link chunk splitting (1..65,525 bytes). It is an offline-only helper; queue-capacity waiting, shared send-deadline behavior and live channel writes are not implemented. Java 7 CI run [#176](https://github.com/qiangge5586-a11y/1/actions/runs/42176152126) passed 8,002 offline checks.
