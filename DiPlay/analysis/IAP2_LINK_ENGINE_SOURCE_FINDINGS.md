@@ -213,3 +213,7 @@ The offline negotiation model now exports an immutable peer configuration snapsh
 A source-consistency correction was also made: the original `processFrame()` calls its ACK/readiness handler for every non-zero control byte, including the SYN control frame. Therefore the peer SYN can complete READY immediately after its limits are recorded and the local ACK is queued; the model no longer requires a separate ACK-only frame for that transition.
 
 Verification: Actions run [#105](https://github.com/qiangge5586-a11y/1/actions/runs/42172333952) passed **7,174 offline checks**, including 121 negotiation checks and 32 composition checks. This remains an offline model, not a live iPhone/vehicle handshake.
+
+## SYN boundary regression tests
+
+The peer synchronization snapshot now has regression coverage for malformed version/fixed payloads, minimum usable maxLength 11, maximum u16/u8 values, zero-valued window/timer/retry fields, and trailing incomplete session descriptor handling. Actions run [#107](https://github.com/qiangge5586-a11y/1/actions/runs/42172506528) passed **7,199 offline checks**. Run #106 failed on a null-assertion test helper defect, corrected before the successful run.
