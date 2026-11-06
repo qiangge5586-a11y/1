@@ -117,7 +117,7 @@ public final class MfiIap2CsmPumpBridge {
         MfiIap2ExchangeCoordinator.State current = adapter.state();
         return current == MfiIap2ExchangeCoordinator.State.FAILED
                 || current == MfiIap2ExchangeCoordinator.State.CLOSED
-                || current == MfiI2ExchangeCoordinator.State.SUCCEEDED;
+                || current == MfiIap2ExchangeCoordinator.State.SUCCEEDED;
     }
 
     /** Explicit teardown/reconnect invalidates provider work and closes the old link pump. */
