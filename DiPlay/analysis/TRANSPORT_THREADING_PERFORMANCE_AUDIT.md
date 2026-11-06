@@ -65,3 +65,10 @@ Conclusion: do not remove these copies based only on source inspection. The next
 ## Aggregate pump instrumentation
 
 Added Iap2PumpMetrics, an API-17-compatible aggregate snapshot exposed by Iap2LinkPump.metricsSnapshot(). It records read calls/bytes/time, driver input bytes/time, timer calls/time, write calls/bytes/time, delivered commands, and maximum queued command count/bytes. Updates use AtomicLong counters and max high-water marks; there is no per-packet logcat output and no allocation per metric event. Snapshot allocation occurs only when a caller explicitly requests metricsSnapshot(). These counters measure pump-level stream and driver costs; they do not yet measure the RFCOMM reader thread's socket.read duration or ring occupancy. Device-side sampling is still required before selecting further optimizations.
+
+
+## RFCOMM flush and carrier metrics (2026-11-06)
+
+The target baseline is Android 4.2.2 / API 17. The AOSP `android-4.2.2_r1` implementation of `BluetoothOutputStream` overrides `write()` and `close()` but does not override `flush()`; therefore `OutputStream.flush()` resolves to the base no-op implementation on this platform. The compatibility RFCOMM adapter no longer calls `output.flush()` after every write. This removes a redundant call only; it does not batch writes, change RFCOMM framing, or claim a throughput gain. Evidence: AOSP BluetoothOutputStream.java, https://android.googlesource.com/platform/frameworks/base/+/android-4.2.2_r1/core/java/android/bluetooth/BluetoothOutputStream.java.
+
+Added `BluetoothRfcommMetrics` and `BluetoothRfcommByteStream.metricsSnapshot()` to aggregate socket read calls/bytes/time, socket write calls/bytes/time, receive-ring high-water bytes, and socket close duration. The counters allocate no per-event objects and emit no per-packet logs. A standalone Java 7 regression test covers counter totals and monotonic high-water behavior. These metrics belong to the compatibility RFCOMM adapter; they do not prove that the adapter has replaced the original DiPlay production Bluetooth path.
