@@ -489,7 +489,11 @@ public final class Iap2LinkEngineModelTest {
 
 
     private static void retransmissionWireFramePreservesOriginalPacket() {
-        Iap2LinkEngineModel m = model();
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(
+                new Iap2LinkNegotiationModel(),
+                new Iap2OutboundWindowModel(99, Integer.valueOf(99), 4, 3,
+                        10, 500, 4, 8),
+                new Iap2ReceiveWindowModel(10, 10, 4, 3, 500, 0, 64));
         m.start(true, 0);
         becomeReady(m);
         m.drainEvents();
