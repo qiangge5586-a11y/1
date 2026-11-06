@@ -144,5 +144,6 @@ Golden-vector tests were added in \`Iap2LinkFrameCodecTest.java\` for sync paylo
 
 - `DiPlay/compat/iap2/Iap2LinkFrameDecoder.java`: bounded incremental parser mirroring original header/payload checksum handling, bytewise FF 5A resynchronization, partial-frame retention, and 8,192-byte input chunks.
 - `DiPlay/compat/iap2/Iap2LinkNegotiationModel.java`: partial deterministic model of marker detection, SYN generation/retry, peer sync, ACK readiness gate, invalid maxLength, and EOF. It does not yet model cumulative ACK windows, extended ACK retransmit selection, out-of-order delivery, or normal data retransmission.
-- Latest CI run [#52](https://github.com/qiangge5586-a11y/1/actions/runs/42167556922) passed 6,980 offline checks: 61 handshake lifecycle + 3,380 IAP framing/package + 2,330 CSM + 59 link codec + 1,050 link decoder + 100 negotiation model.
+- Latest CI run [#58](https://github.com/qiangge5586-a11y/1/actions/runs/42168368167) passed 6,980 offline checks: 61 handshake lifecycle + 3,380 IAP framing/package + 2,330 CSM + 59 link codec + 1,050 link decoder + 100 negotiation model.
+- The wireless synchronization golden vector was corrected to advertise the source-confirmed 500 ms ACK timeout (`01 F4`); CI run #58 passed after the correction.
 - No real iPhone, Bluetooth, USB, AirPlay tunnel, or Honda head-unit session was attempted.
