@@ -29,6 +29,7 @@ jobs:
           java -cp build/hotspot-test HotspotRecoveryPolicyTest
           java -cp build/hotspot-test HotspotReadOnlyOperationTest
           java -cp build/hotspot-test HotspotReadOnlyExecutorTest
+          java -cp build/hotspot-test HotspotApi17SuRunnerTest
           java -cp build/hotspot-test HotspotDiagnosticParsersTest
           java -cp build/hotspot-test HotspotConfigBackupRecordTest
           mkdir -p build/ncm-test
