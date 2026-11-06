@@ -23,9 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/iap2-test
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test \
-            DiPlay/compat/bluetooth/BoundedByteRingBuffer.java \
-            DiPlay/compat/bluetooth/RfcommConnectDeadline.java \
+          javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test DiPlay/compat/mfi/MfiOperationContext.java DiPlay/compat/mfi/test/MfiOperationContextTest.java
             DiPlay/compat/bluetooth/test/BoundedByteRingBufferTest.java \
             DiPlay/compat/bluetooth/test/RfcommConnectDeadlineTest.java \
             DiPlay/compat/mfi/MfiOperationContext.java \
