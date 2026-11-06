@@ -47,6 +47,11 @@ sed -i 's/package="com.shihab.diplay"/package="com.shihab.diplay.honda"/g' \
 sed -i 's/^  versionCode: .*/  versionCode: 132/; s/^  versionName: .*/  versionName: 0.3.11-honda1/' \
   "$DECODED/apktool.yml"
 
+# Remove any stale original JAR-signature metadata before rebuilding and apply
+# the reviewed hardware-backed MFi defaults (I2C / USB-CH341 only).
+rm -rf "$DECODED/unknown/META-INF" "$DECODED/original/META-INF"
+python3 "$ROOT/tools/patch-diplay-original.py" "$DECODED"
+
 # Compile only the optimized production compatibility classes. The original
 # DiPlay DEX files remain untouched; the overlay is appended as classes5.dex.
 unzip -p "$AAR" classes.jar > "$BUILD_ROOT/compat-classes.jar"
@@ -75,9 +80,10 @@ if [[ ! -f "$KEYSTORE" ]]; then
     -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1
 fi
 "$BT/apksigner" sign --ks "$KEYSTORE" --ks-pass pass:android --key-pass pass:android \
-  --v1-signing-enabled true --v2-signing-enabled false --v3-signing-enabled false \
+  --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled false \
   --out "$OUT" "$ALIGNED"
 "$BT/apksigner" verify --verbose "$OUT"
+python3 "$ROOT/tools/check-mfi-release-hygiene.py" "$OUT"
 
 "$BT/aapt" dump badging "$OUT" > "$BUILD_ROOT/badging.txt"
 grep -F "name='com.shihab.diplay.honda'" "$BUILD_ROOT/badging.txt"
