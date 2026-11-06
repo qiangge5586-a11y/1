@@ -115,15 +115,20 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
         }
     }
 
+    /**
+     * Closes the carrier without waiting for writeLock. A blocked OutputStream.write()
+     * owns writeLock; waiting for that lock here would prevent socket.close() from
+     * interrupting the blocked write and could stall pump shutdown indefinitely.
+     */
     public void close() throws IOException {
-        synchronized (writeLock) {
-            synchronized (readLock) {
-                if (closed) return;
-                closed = true;
-                readLock.notifyAll();
-            }
-            socket.close();
+        synchronized (readLock) {
+            if (closed) return;
+            closed = true;
+            readLock.notifyAll();
         }
+        // BluetoothSocket.close() is the cancellation mechanism for a blocked read/write.
+        // It must be invoked outside writeLock so it can unblock an in-flight writer.
+        socket.close();
     }
 
     public int bufferedBytes() {
