@@ -29,7 +29,7 @@ It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and 
 
 ## Tests
 
-- Existing deterministic tests cover fragmented/coalesced frames, garbage resynchronization, invalid short lengths and incomplete tail retention.
+- Existing deterministic tests cover fragmented/coalesced frames, every possible two-part split boundary, byte-at-a-time delivery, garbage resynchronization, invalid short lengths and incomplete tail retention.
 - Randomized test covers 100 frames with varying payload sizes, IDs and chunk boundaries.
 - Resynchronization diagnostics are checked against a malformed short-length candidate followed by a valid frame; reset clears diagnostics.
 - Boundary tests reject 8,193-byte input chunks and decode a maximum 65,535-byte CSM frame in bounded 8 KiB reads.
