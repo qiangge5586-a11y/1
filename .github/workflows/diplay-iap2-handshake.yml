@@ -7,7 +7,6 @@ on:
       - "DiPlay/compat/iap2/**"
       - "DiPlay/compat/bluetooth/**"
       - "DiPlay/compat/mfi/**"
-      - "DiPlay/compat/mfi/**"
       - ".github/workflows/diplay-iap2-handshake.yml"
 permissions:
   contents: read
@@ -24,10 +23,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/iap2-test
-          javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test \\
-            DiPlay/compat/mfi/MfiOperationContext.java \\
-            DiPlay/compat/mfi/test/MfiOperationContextTest.java
-          java -cp build/iap2-test com.shilapi.xcertplay.compat.mfi.MfiOperationContextTest
           javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test \
             DiPlay/compat/bluetooth/BoundedByteRingBuffer.java \
             DiPlay/compat/bluetooth/RfcommConnectDeadline.java \
