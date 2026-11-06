@@ -25,6 +25,7 @@ public final class Iap2LinkEngineModel {
     private final ArrayList<DispatchEvent> pendingEvents = new ArrayList<DispatchEvent>();
     private final ArrayList<byte[]> pendingWireFrames = new ArrayList<byte[]>();
     private String localTerminalReason;
+    private int accumulatedAcknowledgements;
     private boolean started;
     private boolean closed;
 
@@ -184,7 +185,16 @@ public final class Iap2LinkEngineModel {
                         frame.sequence, frame.sessionId, frame.payload), nowMillis);
                 enqueueInboundResponse(received);
             }
-            pendingEvents.add(new DispatchEvent(frame, cumulativeAck, extendedAck, received));
+            Iap2LinkNegotiationModel.PeerConfiguration peer =
+                    negotiation.getPeerConfiguration();
+            if (peer != null && peer.maxAcknowledgements > 0
+                    && accumulatedAcknowledgements >= peer.maxAcknowledgements) {
+                accumulatedAcknowledgements = 0;
+                acknowledgementBatch = inbound.forceAcknowledgement();
+                enqueueInboundResponse(acknowledgementBatch);
+            }
+            pendingEvents.add(new DispatchEvent(frame, cumulativeAck, extendedAck,
+                    received, acknowledgementBatch));
         }
     }
 
@@ -243,14 +253,17 @@ public final class Iap2LinkEngineModel {
         public final Iap2OutboundWindowModel.Result cumulativeAcknowledgement;
         public final Iap2OutboundWindowModel.Result extendedAcknowledgement;
         public final Iap2ReceiveWindowModel.Result receivedData;
+        public final Iap2ReceiveWindowModel.Result acknowledgementBatch;
         private DispatchEvent(Iap2LinkFrameDecoder.Frame frame,
                 Iap2OutboundWindowModel.Result cumulativeAcknowledgement,
                 Iap2OutboundWindowModel.Result extendedAcknowledgement,
-                Iap2ReceiveWindowModel.Result receivedData) {
+                Iap2ReceiveWindowModel.Result receivedData,
+                Iap2ReceiveWindowModel.Result acknowledgementBatch) {
             this.frame = frame;
             this.cumulativeAcknowledgement = cumulativeAcknowledgement;
             this.extendedAcknowledgement = extendedAcknowledgement;
             this.receivedData = receivedData;
+            this.acknowledgementBatch = acknowledgementBatch;
         }
     }
 
