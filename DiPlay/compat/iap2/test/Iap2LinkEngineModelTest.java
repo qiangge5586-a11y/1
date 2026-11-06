@@ -15,6 +15,7 @@ public final class Iap2LinkEngineModelTest {
         preReadyQueueUsesPeerPayloadLimit();
         postSyncFramesDispatchIntoWindows();
         acknowledgementBatchingAndWriteReset();
+        preReadyQueueFlushAndPeerPayloadBounds();
         eofClosesBeforeAndAfterReadiness();
         System.out.println("Iap2LinkEngineModelTest: PASS (" + checks + " checks)");
     }
@@ -302,6 +303,66 @@ public final class Iap2LinkEngineModelTest {
         eq(0, m.drainWireFrames().size());
     }
 
+    private static void preReadyQueueFlushAndPeerPayloadBounds() {
+        Iap2LinkEngineModel queued = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        queued.start(true, 0);
+        queued.takeNegotiationOutput();
+        byte[] original = new byte[] {1, 2, 3};
+        truth(queued.queueBeforeReady(10, original));
+        original[0] = 99;
+        feedPeerSyncAndAck(queued, 13, 1);
+        eq(Iap2LinkEngineModel.State.READY, queued.state());
+        List<Iap2LinkEngineModel.DispatchEvent> events = queued.drainEvents();
+        eq(1, events.size());
+        // The readiness ACK increments the batch count, then queued data
+        // writes reset it before processFrame() evaluates the batch threshold.
+        truth(events.get(0).acknowledgementBatch == null);
+        List<byte[]> wire = queued.drainWireFrames();
+        eq(1, wire.size());
+        List<Iap2LinkFrameDecoder.Frame> frames =
+                new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, frames.size());
+        eq(0x40, frames.get(0).control);
+        eq(100, frames.get(0).sequence);
+        eq(10, frames.get(0).sessionId);
+        bytes(new byte[] {1, 2, 3}, frames.get(0).payload);
+
+        Iap2LinkEngineModel oversizedQueued =
+                new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        oversizedQueued.start(true, 0);
+        oversizedQueued.takeNegotiationOutput();
+        truth(oversizedQueued.queueBeforeReady(10, new byte[] {1, 2, 3, 4}));
+        feedPeerSyncAndAck(oversizedQueued, 13, 1);
+        eq(Iap2LinkEngineModel.State.CLOSED, oversizedQueued.state());
+        truth(oversizedQueued.getTerminalReason().contains("maxLength"));
+        eq(0, oversizedQueued.drainWireFrames().size());
+
+        Iap2LinkEngineModel oversizedReady =
+                new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        oversizedReady.start(true, 0);
+        oversizedReady.takeNegotiationOutput();
+        feedPeerSyncAndAck(oversizedReady, 13, 5);
+        throwsIllegalArgument(new Runnable() {
+            public void run() { oversizedReady.send(10, new byte[] {1, 2, 3, 4}, 3); }
+        });
+
+        Iap2LinkEngineModel capped = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        capped.start(true, 0);
+        for (int i = 0; i < 64; i++) truth(capped.queueBeforeReady(10, new byte[] {(byte) i}));
+        falsity(capped.queueBeforeReady(10, new byte[] {65}));
+        eq(Iap2LinkEngineModel.State.CLOSED, capped.state());
+    }
+
+    private static void feedPeerSyncAndAck(Iap2LinkEngineModel model, int maxLength,
+            int maxAcknowledgements) {
+        byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                4, maxLength, 1500, 250, 3, maxAcknowledgements,
+                new int[][] {{10, 0, 2}, {11, 2, 1}});
+        model.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, sync), 1);
+        model.takeNegotiationOutput();
+        model.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+    }
+
     private static void eofClosesBeforeAndAfterReadiness() {
         Iap2LinkEngineModel before = model();
         before.start(true, 0);
@@ -340,6 +401,12 @@ public final class Iap2LinkEngineModelTest {
         System.arraycopy(b, 0, out, a.length, b.length);
         return out;
     }
+    private static void throwsIllegalArgument(Runnable r) {
+        checks++;
+        try { r.run(); throw new AssertionError("expected IllegalArgumentException"); }
+        catch (IllegalArgumentException expected) { }
+    }
+
     private static void throwsState(Runnable r) {
         checks++;
         try { r.run(); throw new AssertionError("expected readiness rejection"); }
