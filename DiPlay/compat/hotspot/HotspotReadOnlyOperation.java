@@ -2,29 +2,26 @@ package com.shilapi.xcertplay.network.safety;
 
 /**
  * Read-only operation catalog for the future API-17 adapter.
- * This class creates descriptions only. It does not execute commands,
- * access files, start processes, or change device state.
+ * Creates fixed descriptions only; it never executes commands or accesses device state.
  */
 public final class HotspotReadOnlyOperation {
     public enum Kind {
-        ROOT_IDENTITY,
-        WIFI_SERVICE_STATE,
-        CONNECTIVITY_SERVICE_STATE,
-        NETWORK_INTERFACE_TABLE,
-        WIFI_CONFIG_FILE_METADATA,
-        HOSTAPD_BINARY_METADATA,
-        DNSMASQ_BINARY_METADATA
+        ROOT_IDENTITY, WIFI_SERVICE_STATE, CONNECTIVITY_SERVICE_STATE,
+        NETWORK_INTERFACE_TABLE, WIFI_CONFIG_FILE_METADATA,
+        HOSTAPD_BINARY_METADATA, DNSMASQ_BINARY_METADATA
     }
 
     public final Kind kind;
     public final String executable;
-    public final String[] arguments;
+    private final String[] arguments;
 
     private HotspotReadOnlyOperation(Kind kind, String executable, String[] arguments) {
         this.kind = kind;
         this.executable = executable;
         this.arguments = arguments.clone();
     }
+
+    public String[] getArguments() { return arguments.clone(); }
 
     public static HotspotReadOnlyOperation forKind(Kind kind) {
         if (kind == null) throw new IllegalArgumentException("kind required");
