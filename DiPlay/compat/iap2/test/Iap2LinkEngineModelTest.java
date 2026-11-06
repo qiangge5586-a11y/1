@@ -128,7 +128,7 @@ public final class Iap2LinkEngineModelTest {
         eq(Iap2LinkEngineModel.State.READY, m.state());
         List<Iap2LinkEngineModel.DispatchEvent> events = m.drainEvents();
         eq(1, events.size());
-        notNull(events.get(0).receivedData);
+        truth(events.get(0).receivedData != null);
         eq(1, events.get(0).receivedData.delivered.size());
         eq(78, events.get(0).receivedData.delivered.get(0).sequence);
 
@@ -140,7 +140,7 @@ public final class Iap2LinkEngineModelTest {
         m.feedNegotiation(extendedAck, 30);
         events = m.drainEvents();
         eq(1, events.size());
-        notNull(events.get(0).extendedAcknowledgement);
+        truth(events.get(0).extendedAcknowledgement != null);
         eq(1, events.get(0).extendedAcknowledgement.retransmitted.size());
         eq(100, events.get(0).extendedAcknowledgement.retransmitted.get(0).sequence);
 
@@ -149,7 +149,7 @@ public final class Iap2LinkEngineModelTest {
         events = m.drainEvents();
         eq(1, events.size());
         truth(events.get(0).receivedData == null);
-        truth(events.get(0).cumulativeAcknowledgement.accepted);
+        truth(events.get(0).cumulativeAcknowledgement.acknowledgementAccepted);
         eq(Iap2LinkEngineModel.State.READY, m.state());
     }
 
@@ -182,6 +182,12 @@ public final class Iap2LinkEngineModelTest {
     private static Iap2ReceiveWindowModel.Packet packet(int sequence) {
         return new Iap2ReceiveWindowModel.Packet(sequence, 10,
                 new byte[] {(byte) sequence});
+    }
+    private static byte[] concat(byte[] a, byte[] b) {
+        byte[] out = new byte[a.length + b.length];
+        System.arraycopy(a, 0, out, 0, a.length);
+        System.arraycopy(b, 0, out, a.length, b.length);
+        return out;
     }
     private static void throwsState(Runnable r) {
         checks++;
