@@ -1,10 +1,32 @@
 package com.shilapi.xcertplay.compat.iap2.test;
 
 import com.shilapi.xcertplay.compat.iap2.Iap2LinkWireCodec;
+import com.shilapi.xcertplay.compat.iap2.Iap2LinkFrameCodec;
 import java.util.Arrays;
 
 public final class Iap2LinkWireCodecTest {
     private static int checks;
+
+
+    private static void sourceConfirmedWirelessDefaultGoldenVector() {
+        byte[] sync = Iap2LinkWireCodec.encodeSynchronizationPayload(
+                4, 65535, 4000, 0, 4, 3,
+                new int[][] {{10, 0, 2}, {11, 2, 1}, {12, 1, 2}});
+        check(Arrays.equals(sync, hex("01 04 ff ff 0f a0 00 00 04 03 0a 00 02 0b 02 01 0c 01 02")),
+                "wireless local sync payload from original WIRELESS_LINK_CONFIG");
+        byte[] marker = Iap2LinkWireCodec.MARKER;
+        check(Arrays.equals(marker, hex("ff 55 02 00 ee 10")),
+                "original six-byte link start marker");
+        byte[] frame = Iap2LinkFrameCodec.encode(0x80, 99, 0, 0, sync);
+        check(Arrays.equals(frame, hex("ff 5a 00 1d 80 63 00 00 a7 01 04 ff ff 0f a0 00 00 04 03 0a 00 02 0b 02 01 0c 01 02 1e")),
+                "wireless synchronization frame source-derived golden vector");
+        Iap2LinkFrameCodec.Header header = Iap2LinkFrameCodec.parseHeader(Arrays.copyOf(frame, 9));
+        check(header != null && header.length == 29 && header.control == 0x80
+                && header.sequence == 99 && header.acknowledgement == 0
+                && header.sessionId == 0, "wireless sync header fields");
+        check(Iap2LinkFrameCodec.payloadChecksumValid(Arrays.copyOfRange(frame, 9, frame.length)),
+                "wireless sync payload checksum");
+    }
 
     private static void check(boolean value, String label) {
         checks++;
@@ -19,6 +41,7 @@ public final class Iap2LinkWireCodecTest {
     }
 
     public static void main(String[] args) {
+        sourceConfirmedWirelessDefaultGoldenVector();
         byte[] sync = Iap2LinkWireCodec.encodeSynchronizationPayload(
                 4, 65535, 4000, 100, 4, 3,
                 new int[][] {{10, 0, 2}, {11, 2, 1}, {12, 1, 2}});
