@@ -72,3 +72,11 @@ Actions run [#137](https://github.com/qiangge5586-a11y/1/actions/runs/4217380812
 Recovered Smali confirms the independent control-bit paths in `processFrame()`: reset `0x10`; SYN `0x80`; cumulative ACK/readiness `0x40`; Extended ACK `0x20`; data when all bits except `0x40` are clear and payload is present. A SYN-only frame records peer limits and sends the local ACK but remains NEGOTIATING. An ACK-bearing frame alone runs the readiness gate. The offline model now preserves that ACK-bearing frame for subsequent ACK, Extended ACK and data dispatch.
 
 This is source-derived offline verification only. It does not exercise Bluetooth, USB, TCP, AirPlay encryption, MFi authentication, Android 4.2.2 runtime, or a real iPhone/Honda session.
+
+## Pre-readiness packet queue and peer payload bound
+
+The recovered Smali shows that readiness checks every already queued packet with `peerPayloadIsAcceptable()`: peer maxLength must be usable (>10), and each queued payload length must be at most `peer.maxLength - 10`. If any queued packet fails, the original engine terminates before becoming writable. The offline composition now exposes `queueBeforeReady(sessionId, payload)`; after the ACK-bearing readiness frame, it validates the entire pending queue before flushing it through the outbound window. The local defensive queue cap is 64.
+
+The same payload-length predicate is exposed as `PeerConfiguration.acceptsPayload()`. It is intentionally applied to pre-readiness queued packets only: source `sendPacket()` does not repeat this check for packets submitted after the link is already NORMAL. The normal `send()` path therefore retains the source behavior rather than imposing a new post-ready payload rejection.
+
+Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/42174129287) passed **7,297 offline checks**, including 118 composition checks and 158 negotiation checks. New tests verify the exact maxLength=11 boundary: one-byte queued payload is accepted and two-byte payload causes a terminal readiness failure with no packet emitted.
