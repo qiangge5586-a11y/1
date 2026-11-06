@@ -76,3 +76,10 @@
 Added `Iap2CsmLinkGateModel` to make the audited CSM send preconditions explicit in the offline layer: link state must be READY first; peer CSM max control-payload size must then be available and within 1..65,525; only then is the existing chunk-admission model created. The model distinguishes waiting for link, waiting for peer limit, invalid peer limit and closed link. It does not implement `Iap2CsmChannel.awaitReady()`, the CSM handshake, worker pump, or actual transport.
 
 CI [#214](https://github.com/qiangge5586-a11y/1/actions/runs/42183487239) passed all 17 Java 7 offline suites (**2,323,780 checks**). Production transport integration and Android API 17/device validation remain open.
+
+
+## API 17 duplex byte-stream contract (2026-11-06)
+
+Added Iap2DuplexByteStream and Iap2StreamDuplexAdapter under compat/iap2, and included that source directory in the Android prototype source set. The contract is deliberately transport-neutral: read returns positive byte count, 0 for a carrier timeout, -1 for EOF; write must complete the requested range or throw; close is idempotent and must unblock a pending read. The adapter maps SocketTimeoutException to zero and closes the input side without waiting for a blocked read monitor.
+
+Important limitation: InputStream itself has no portable per-call timeout API. Each concrete carrier must configure its timeout before constructing the adapter (or provide a specialized implementation). This does not yet implement Bluetooth RFCOMM, TCP tunnel, the original BlockingDuplexByteStream, link worker/pump, or iAP2 handshake. The API 17 Android prototype now compiles the neutral contract and existing offline models, but production transport remains unconnected.
