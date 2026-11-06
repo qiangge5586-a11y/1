@@ -13,6 +13,7 @@ AAR="$ANDROID_DIR/compat-overlay/build/outputs/aar/compat-overlay-release.aar"
 UNSIGNED="$BUILD_ROOT/diplay-0.3.11-honda-unsigned.apk"
 ALIGNED="$BUILD_ROOT/diplay-0.3.11-honda-aligned.apk"
 OUT="$ANDROID_DIR/build/outputs/apk/merged/diplay-0.3.11-honda-compat.apk"
+SOURCE_ZIP="$ANDROID_DIR/build/outputs/apk/merged/diplay-0.3.11-honda-source.zip"
 
 if [[ ! -f "$ORIGINAL_APK" ]]; then
   echo "Original DiPlay 0.3.11 APK missing: $ORIGINAL_APK" >&2
@@ -88,4 +89,38 @@ grep -F "name='com.shihab.diplay.honda'" "$BUILD_ROOT/badging.txt"
 grep -F "sdkVersion:'17'" "$BUILD_ROOT/badging.txt"
 unzip -l "$OUT" | grep -F 'classes5.dex'
 sha256sum "$OUT"
+
+# Export the complete recoverable source set: original APKTool resources/Smali,
+# every optimized compatibility Java module (including tests), build scripts,
+# and the source-audit documents. The offline MFi identity was already removed.
+SOURCE_ROOT="$BUILD_ROOT/source-package"
+rm -rf "$SOURCE_ROOT"
+mkdir -p "$SOURCE_ROOT"
+cp -a "$DECODED" "$SOURCE_ROOT/original-apktool"
+cp -a "$ROOT/DiPlay/compat" "$SOURCE_ROOT/compat"
+cp -a "$ROOT/DiPlay/analysis" "$SOURCE_ROOT/analysis"
+cp -a "$ROOT/DiPlay/android/compat-overlay" "$SOURCE_ROOT/android/compat-overlay"
+cp "$ROOT/DiPlay/android/settings.gradle" "$ROOT/DiPlay/android/build.gradle" \
+   "$ROOT/DiPlay/android/gradle.properties" "$SOURCE_ROOT/android/"
+mkdir -p "$SOURCE_ROOT/tools"
+cp "$ROOT/tools/build-diplay-merged.sh" "$ROOT/tools/patch-diplay-original.py" \
+   "$ROOT/tools/check-mfi-release-hygiene.py" "$ROOT/tools/test_check_mfi_release_hygiene.py" \
+   "$SOURCE_ROOT/tools/"
+cat > "$SOURCE_ROOT/BUILD_INFO.md" <<EOF
+# DiPlay 0.3.11 Honda merged source bundle
+
+- Original APK SHA-256: $EXPECTED_SHA
+- Recovered original version: 0.3.11 (APK versionCode 131)
+- Test-fork Android package: com.shihab.diplay.honda
+- Minimum Android API: 17
+- Optimized compatibility modules: bluetooth, hotspot, USB, NCM, iAP2, MFi and cluster
+- Original production DiPlay Smali/resources: original-apktool/
+- Offline MFi identity assets: intentionally excluded
+- MFi default: hardware I2C; alternate: USB/CH341
+- Signature: test key, v1 + v2 (API 17 uses v1)
+- Vehicle/iPhone hardware validation: not yet performed
+EOF
+(cd "$BUILD_ROOT" && zip -qr "$SOURCE_ZIP" source-package)
+sha256sum "$SOURCE_ZIP"
 echo "Merged DiPlay APK: $OUT"
+echo "Merged DiPlay source bundle: $SOURCE_ZIP"
