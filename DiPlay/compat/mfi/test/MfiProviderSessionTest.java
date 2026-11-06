@@ -46,27 +46,23 @@ public final class MfiProviderSessionTest {
             public byte[] readCertificate(MfiOperationContext c) { return new byte[] {1}; }
             public byte[] signChallenge(byte[] b, MfiOperationContext c) { return new byte[] {2}; }
         }, context, 5L);
-        expectCancelled(new Runnable() { public void run() { context(contextClock, 1000L, 5L).checkActive(6L); }});
         expectCancelled(new Runnable() { public void run() { session.readCertificate(6L); }});
         eq(MfiProviderSession.State.FAILED, session.state());
     }
 
-    private static Clock contextClock;
-
     private static void providerCompletionAfterDeadlineIsRejected() {
         final Clock clock = new Clock();
         final MfiOperationContext context = context(clock, 10L, 3L);
-        MfiProviderSession session = new MfiProviderSession(new MfiProviderSession.Provider() {
+        final MfiProviderSession session = new MfiProviderSession(new MfiProviderSession.Provider() {
             public byte[] readCertificate(MfiOperationContext c) {
                 clock.now += 11000000L;
                 return new byte[] {1};
             }
             public byte[] signChallenge(byte[] b, MfiOperationContext c) { return new byte[] {2}; }
         }, context, 3L);
-        expectTimeout(new Runnable() { public void run() { sessionHolder.readCertificate(3L); }});
+        expectTimeout(new Runnable() { public void run() { session.readCertificate(3L); }});
+        eq(MfiProviderSession.State.FAILED, session.state());
     }
-
-    private static MfiProviderSession sessionHolder;
 
     private static void cancelClosesAndCancelsContext() {
         Clock clock = new Clock();
