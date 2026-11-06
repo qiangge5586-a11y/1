@@ -1,7 +1,6 @@
 package com.shilapi.xcertplay.compat.iap2;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Producer-side CSM frame sender over the bounded single-owner link pump.
@@ -24,14 +23,12 @@ public final class Iap2CsmPumpSender {
         List<byte[]> chunks = Iap2CsmSendPlan.splitForLink(
                 encodedFrame, peerMaxControlPayloadBytes);
         long startedAt = System.nanoTime();
-        long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        long timeoutNanos = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         for (int i = 0; i < chunks.size(); i++) {
             long elapsed = System.nanoTime() - startedAt;
             long remainingNanos = timeoutNanos - elapsed;
-            long remainingMillis = remainingNanos <= 0L ? 0L
-                    : remainingNanos / 1000000L
-                            + (remainingNanos % 1000000L == 0L ? 0L : 1L);
-            if (!pump.sendControlAwaitCapacity(chunks.get(i), remainingMillis)) {
+            if (!pump.sendControlAwaitCapacityNanos(chunks.get(i),
+                    Math.max(0L, remainingNanos))) {
                 pump.close();
                 return false;
             }
