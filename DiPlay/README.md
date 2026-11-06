@@ -167,3 +167,10 @@ Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/4217439646
 Readiness queue handling now follows the original Smali order: validate pending payload sizes first, apply the readiness ACK field to the outbound ACK window, then flush queued packets; the same frame is then processed for Extended ACK/data. CI [run #156](https://github.com/qiangge5586-a11y/1/actions/runs/42174566575) passed **7,379 offline checks** (200 composition checks).
 
 The incoming-gap response now matches original Smali: Extended ACK frames use control `0x20`, current send sequence, current receive ACK watermark, session ID `0`, and raw missing-sequence bytes. The session descriptor `11` is not the frame session ID. CI [run #159](https://github.com/qiangge5586-a11y/1/actions/runs/42174678655) passed **7,384 offline checks** (205 composition).
+
+
+### Retransmission deadline regression checkpoint
+
+Added deterministic outbound-window regressions for two timing invariants: after a cumulative ACK removes an acknowledged packet, later unacknowledged packets keep their original retransmission deadlines armed; an explicit Extended ACK request increments only the requested packet's retry count and re-arms that packet's deadline from the request time. The tests also advance the clock to prove the earliest remaining packet is retransmitted without losing the later packet's deadline.
+
+CI [run #160](https://github.com/qiangge5586-a11y/1/actions/runs/42174934442) passed **7,393 offline checks**: 61 wireless handshake, 3,380 AirPlay IAP framing/package, 2,330 CSM framing, 64 link codec, 1,050 link decoder, 158 negotiation, 20 retransmission policy, 42 receive window, 17 ACK-window policy, 66 outbound window, and 205 link-engine composition checks. This confirms the offline model tests only; no live iPhone, Bluetooth, AirPlay, MFi, or MY16ADA hardware handshake was run.
