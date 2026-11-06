@@ -102,3 +102,8 @@ The decompile artifact was located after expanding the workflow-run search beyon
 The original `writePacket()` and companion helpers confirm: detection preamble `FF 55 02 00 EE 10`; normal packet marker `FF 5A`; 9-byte header with BE total length, control, sequence, acknowledgement, session ID, and additive two's-complement header checksum; optional payload followed by its own additive checksum; u8 sequence wrap and modular distance. `SynchronizationPayload.encode()` confirms version, outgoing window, BE u16 max length and timeouts, retry/ack counts, and 3-byte session descriptors. Offline implementation is in `Iap2LinkFrameCodec.java`, with source-derived ACK-only and data-frame golden vectors in `Iap2LinkFrameCodecTest.java`.
 
 This restores reproducibility for packet primitives, but not full state-machine conformance. ACK window advancement, extended-ACK missing-sequence list semantics, out-of-order handling, retransmission deadlines, and transition to NORMAL still require dedicated golden-vector and state-transition tests before any transport integration.
+
+
+## Link-frame codec CI verification
+
+The Java 7 offline workflow now compiles and runs `Iap2LinkFrameCodecTest`. CI run #34 (`42164770173`, commit `df94e5f74d94bc8c98a75d9429a83fbedf3c040d`) succeeded. Results: handshake lifecycle 61 checks; AirPlay IAP frame/package 3,380; CSM decoder 2,330; link-frame codec 27. Total: 5,798 offline checks. This validates framing primitives only; link state transitions and a real iPhone/vehicle handshake remain unverified.
