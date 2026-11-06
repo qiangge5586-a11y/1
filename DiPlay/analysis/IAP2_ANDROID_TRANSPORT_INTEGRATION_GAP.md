@@ -97,3 +97,10 @@ The isolated Android prototype compiles this pump scaffold because compat/iap2 i
 Added Iap2LinkModelPumpDriver, implementing the pump Driver/CommandSink/Readiness contracts around Iap2LinkEngineModel. It forwards inbound byte chunks into the model negotiation decoder, advances negotiation or post-ready window timers, maps control commands to the configured control session, and merges negotiation bytes with encoded post-ready link frames for pump output. The model does not currently expose exact timer deadlines, so this adapter deliberately requests the pump's bounded 100 ms polling cadence.
 
 This closes the test-harness composition gap only. The adapter explicitly wraps the offline Java model, not the original production Iap2LinkEngine; it does not establish source parity for all production behaviors, implement CSM queues, RFCOMM, TCP tunnel, or real device handshake. CI includes a startup-marker contract test. Do not ship this adapter as a production iAP2 engine until source-parity gaps and transport-specific tests are closed.
+
+
+## Monotonic scheduling and exact model deadlines (2026-11-06)
+
+The offline model now exposes the earliest startup marker/SYN retry deadline; the composed link model takes the minimum across negotiation, outbound retransmission, and delayed-ACK deadlines. Iap2LinkModelPumpDriver forwards that deadline to the pump instead of synthesizing a fixed 100 ms deadline. The pump uses monotonic `System.nanoTime()` milliseconds for its clock and checks readiness immediately after startup/output drain as well as after inbound/timer processing. This prevents wall-clock corrections from shifting protocol timers and avoids waiting for the first read timeout before reporting an already-ready driver.
+
+These scheduling improvements are still verified against the offline model. The original production engine's full timer and worker semantics remain subject to Smali parity review; no real transport or device handshake is implied.
