@@ -41,8 +41,13 @@ This is the decisive boundary: CSM `offer()` receives already reassembled link-c
 
 The original `Iap2CsmFramer` defines `MAX_LINK_CHUNK_BYTES = 65525`. `splitForLink()` accepts chunk sizes 1..65,525 and divides an encoded CSM frame into link-control payload chunks of at most that size.
 
-The offline `Iap2CsmFrameDecoder` uses 65,525 as a defensive maximum for one `feed()` call. This is a harness guard aligned with the maximum source link chunk, not a claim that the original `offer()` rejects a larger input array. The previous 8,192-byte cap was incorrect because it confused raw stream reads with reassembled link-control payloads; it has been removed.
+The offline `Iap2CsmFrameDecoder` now mirrors the original receive-buffer loop: accept the caller's entire byte array, drain pending frames, append only available capacity to a fixed 65,535-byte pending buffer, and repeat until all input is consumed. This avoids confusing raw 8,192-byte stream reads with reassembled link-control payloads and supports arbitrarily coalesced input arrays without unbounded pending storage.
 
 ## CI
 
 Actions run [#163](https://github.com/qiangge5586-a11y/1/actions/runs/42175105245) passed **7,393 offline checks**, including 2,330 CSM decoder checks. Java 7 offline verification only; no live Bluetooth, USB, TCP, AirPlay, iPhone, MFi or MY16ADA session is claimed.
+
+
+## Offline parity follow-up
+
+The compatibility decoder's `feed()` now uses the same bounded append/drain pattern as the source `offer()`. A regression test supplies two complete 40,006-byte CSM frames in one 80,012-byte input array; both frames are emitted and pending storage returns to zero. This validates caller-array coalescing across the fixed receive-buffer capacity.
