@@ -194,3 +194,8 @@ The wireless synthetic constructor mask 494 includes the default-argument bit fo
 ## Outbound ACK-window policy milestone (CI run #83)
 
 `Iap2AckWindowPolicy.java` isolates the original modulo-256 ACK/window predicates from `handleAcknowledgement()` and `sendPacket()`: outstanding packet retention uses `distance > 0 && distance <= peerMaxAcknowledgements + 10`; new packet queueing uses `distance > peerMaxOutgoing`; queued drain uses `distance < peerMaxOutgoing`. The strict boundaries are intentionally separate. All 17 ACK-window policy checks passed in [CI run #83](https://github.com/qiangge5586-a11y/1/actions/runs/42169304682), bringing the offline suite to 7,072 checks. This remains a policy helper, not the complete outbound packet queue or retransmission engine. See `IAP2_ACK_WINDOW_SOURCE_VERIFICATION.md`.
+
+
+## Outbound state model milestone (CI run #90)
+
+`Iap2OutboundWindowModel.java` now composes the source-derived send window, cumulative ACK packet retention/removal, queued packet drain, per-packet retransmission deadline, same-sequence retransmission and Extended ACK requested-sequence retry behavior. The 50-check regression suite passed in [CI run #90](https://github.com/qiangge5586-a11y/1/actions/runs/42169692184), total 7,122 offline checks. The model remains transport-free; source-golden verification of multiple simultaneous due-packet deadline re-arming and production link-pump integration remain open. See `IAP2_OUTBOUND_WINDOW_MODEL.md`.
