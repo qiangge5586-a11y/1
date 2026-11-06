@@ -10,6 +10,8 @@ public final class Iap2CsmFrameDecoderTest {
         resynchronizesAfterGarbageAndBadShortLength();
         retainsIncompleteFrame();
         randomizedFragmentationAndCoalescing();
+        enforcesOriginalReceiveChunkBound();
+        decodesMaximumLengthFrameInBoundedChunks();
         System.out.println("Iap2CsmFrameDecoderTest: PASS (" + checks + " checks)");
     }
     private static void fragmentedAndCoalescedFrames() {
@@ -62,6 +64,39 @@ public final class Iap2CsmFrameDecoderTest {
             }
             eq(0, decoder.pendingBytes());
         }
+    }
+
+    private static void enforcesOriginalReceiveChunkBound() {
+        final Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
+        d.feed(new byte[]{0x40});
+        eq(1, d.pendingBytes());
+        byte[] tooLarge = new byte[Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES + 1];
+        try {
+            d.feed(tooLarge);
+            throw new AssertionError("oversized chunk accepted");
+        } catch (IllegalArgumentException expected) {
+            checks++;
+        }
+        eq(0, d.pendingBytes());
+    }
+
+    private static void decodesMaximumLengthFrameInBoundedChunks() {
+        Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
+        byte[] payload = new byte[65535 - Iap2CsmFrameDecoder.HEADER_BYTES];
+        for (int i = 0; i < payload.length; i++) payload[i] = (byte)(i * 31);
+        byte[] encoded = frame(0xffff, payload);
+        eq(65535, encoded.length);
+        int offset = 0;
+        List<Iap2CsmFrameDecoder.Frame> out = null;
+        while (offset < encoded.length) {
+            int end = Math.min(encoded.length, offset + Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES);
+            out = d.feed(slice(encoded, offset, end));
+            offset = end;
+        }
+        eq(1, out.size());
+        eq(0xffff, out.get(0).messageId);
+        bytes(payload, out.get(0).payload);
+        eq(0, d.pendingBytes());
     }
     private static byte[] frame(int id,byte[] payload) {
         int n=6+payload.length; byte[] b=new byte[n];
