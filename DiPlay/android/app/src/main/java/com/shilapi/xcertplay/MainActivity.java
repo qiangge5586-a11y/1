@@ -123,7 +123,7 @@ public final class MainActivity extends Activity {
                             .append(" PID=").append(String.format("%04X", d.getProductId()))
                             .append(" 类别=").append(d.getDeviceClass())
                             .append(" 接口数=").append(d.getInterfaceCount())
-                            .append(" 配置数=").append(d.getConfigurationCount());
+                            .append(" 接口集合数=").append(d.getConfigurationCount());
                     for (int c = 0; c < d.getConfigurations().size(); c++) {
                         UsbConfigurationSnapshot configuration = d.getConfigurations().get(c);
                         display.append("\\n  配置ID=").append(configuration.getId())
@@ -131,17 +131,21 @@ public final class MainActivity extends Activity {
                         NcmInterfaceSelector.Selection ncm =
                                 UsbNcmReadOnlyMatcher.find(configuration);
                         if (ncm != null) {
-                            display.append("\\n  CDC-NCM候选：控制接口#")
+                            display.append("\\n  CDC-NCM接口形态候选：控制接口#")
                                     .append(ncm.getControl().getId())
                                     .append(" 数据接口#").append(ncm.getData().getId())
-                                    .append(" alt=").append(ncm.getData().getAlternateSetting())
-                                    .append(" claim-alt=").append(ncm.getDataClaim().getAlternateSetting());
+                                    .append(" alt=").append(ncm.getData().getAlternateSetting() < 0
+                                            ? "未知" : String.valueOf(ncm.getData().getAlternateSetting()))
+                                    .append(" claim-alt=").append(ncm.getDataClaim().getAlternateSetting() < 0
+                                            ? "未知" : String.valueOf(ncm.getDataClaim().getAlternateSetting()))
+                                    .append(ncm.getData().getAlternateSetting() < 0
+                                            ? "（旧版API未公开alt信息，结果不完整）" : "");
                         }
                         for (UsbConfigurationSnapshot.InterfaceSnapshot iface : configuration.getInterfaces()) {
                             display.append("\\n    IF#").append(iface.getId())
                                     .append(" class=").append(iface.getInterfaceClass())
                                     .append("/").append(iface.getInterfaceSubclass())
-                                    .append(" alt=").append(iface.getAlternateSetting())
+                                    .append(" alt=").append(iface.getAlternateSetting() < 0 ? "未知" : String.valueOf(iface.getAlternateSetting()))
                                     .append(" EP=").append(iface.getEndpointCount());
                         }
                     }
