@@ -99,7 +99,7 @@ public final class Iap2LinkEngineModelTest {
         eq(100, sent.transmitted.get(0).sequence);
         Iap2ReceiveWindowModel.Result received = m.receive(packet(78), 100);
         eq(1, received.delivered.size());
-        eq(350, received.acknowledgementDeadlineMillis.longValue());
+        eq(350L, received.acknowledgementDeadlineMillis.longValue());
         Iap2LinkEngineModel.TimerResult beforeAck = m.advanceTimers(349);
         truth(!beforeAck.inbound.acknowledgementNow);
         eq(0, beforeAck.outbound.retransmitted.size());
@@ -108,7 +108,7 @@ public final class Iap2LinkEngineModelTest {
         eq(0, ackDue.outbound.retransmitted.size());
         Iap2LinkEngineModel.TimerResult retryDue = m.advanceTimers(1600);
         eq(1, retryDue.outbound.retransmitted.size());
-        eq(1500, retryDue.outbound.retransmitted.get(0).deadlineMillis - 1600);
+        eq(1500L, retryDue.outbound.retransmitted.get(0).deadlineMillis - 1600);
     }
 
     private static void eofClosesBeforeAndAfterReadiness() {
