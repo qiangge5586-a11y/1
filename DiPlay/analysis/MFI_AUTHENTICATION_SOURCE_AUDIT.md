@@ -285,3 +285,29 @@ Added `MfiIap2CsmWorker` and a blocking `processNext(timeout)` entry point on th
 On peer AA05, the exchange coordinator now releases the completed provider session/context after recording SUCCEEDED. This prevents a completed authentication operation from retaining its deadline and provider state. The integration test now exercises the worker thread, ordered AA01/AA03 responses, AA05 success callback, and provider cleanup (8 checks).
 
 Java 7 offline suite passed: [run 42211396714](https://github.com/qiangge5586-a11y/1/actions/runs/42211396714). Android build for the same source revision is still being verified. This remains compatibility-layer integration; the production iAP2 Driver and actual hardware/provider remain unvalidated.
+
+
+## Generation-bound CSM session ownership (2026-11-06)
+
+Added `compat/mfi/MfiIap2SessionOwner.java` as the lifecycle boundary for one
+iAP2 MFi control-channel generation.
+
+- The owner receives a positive, externally assigned generation token and owns
+  exactly one receive coordinator, CSM bridge and worker.
+- Only ordered packets delivered by that generation's iAP2 receive window may
+  be passed to `acceptDeliveredPackets`.
+- Packet admission and teardown are serialized. Once closed, the old owner
+  rejects all further packet delivery.
+- Teardown marks the generation inactive before stopping the worker; the
+  worker cancels provider work and closes its old pump. Authentication callbacks
+  are guarded so a callback from a retired generation is not forwarded.
+- A reconnect must construct a new owner and new receive/bridge/adapter chain.
+  Do not call `reset()` on an old receive coordinator to reuse it across links.
+- This is a lifecycle composition primitive, not evidence that the repository
+  already has a production source-parity `Iap2LinkEngine`. The caller must
+  connect it to the real receive-window delivery and transport supervisor when
+  that production engine exists.
+
+Validation boundary: Java 7 source compatibility is covered by the iAP2
+workflow compile step. No physical MFi coprocessor, iPhone, Bluetooth vehicle
+head unit, or API-17 hardware validation is claimed.
