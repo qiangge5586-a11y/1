@@ -23,10 +23,10 @@ jobs:
           javac -source 1.7 -target 1.7 -Xlint:-options -d build/iap2-test \
             DiPlay/compat/iap2/Iap2WirelessHandshake.java \
             DiPlay/compat/iap2/IapTunnelFrameDecoder.java \
-            DiPlay/compat/iap2/IapTunnelPackageDecoder.java \\
+            DiPlay/compat/iap2/IapTunnelPackageDecoder.java \
             DiPlay/compat/iap2/Iap2CsmFrameDecoder.java \
             DiPlay/compat/iap2/test/Iap2WirelessHandshakeTest.java \
-            DiPlay/compat/iap2/test/IapTunnelFramingTest.java \\
+            DiPlay/compat/iap2/test/IapTunnelFramingTest.java \
             DiPlay/compat/iap2/test/Iap2CsmFrameDecoderTest.java
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2WirelessHandshakeTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.IapTunnelFramingTest
