@@ -8,8 +8,11 @@ public final class Iap2CsmFrameDecoder {
     public static final int START = 0x4040;
     public static final int HEADER_BYTES = 6;
     public static final int MAX_FRAME_BYTES = 65535;
-    /** Original Iap2LinkChannel.runPump() reads at most 8192 bytes per recv call. */
-    public static final int MAX_INPUT_CHUNK_BYTES = 8192;
+    /**
+     * CSM offer() receives link-control payload chunks, not raw stream recv() buffers.
+     * The source framer permits link chunks up to MAX_LINK_CHUNK_BYTES (65525).
+     */
+    public static final int MAX_INPUT_CHUNK_BYTES = 65525;
     private byte[] pending = new byte[0];
     private long discardedBytes;
     private long invalidLengthCandidates;
