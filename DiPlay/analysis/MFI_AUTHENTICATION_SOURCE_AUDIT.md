@@ -211,3 +211,5 @@ The isolated Android app source set already includes `../../compat/mfi`, so the 
 ## Next integration gate
 
 The next code step is to adapt the original iAP2 MFi message exchange (`0xAA00..0xAA05`) to this provider-session contract while preserving the exact wire transcript and success/failure semantics. The compatibility repository still has no production iAP2 MFi message client or hardware-backed provider; do not enable authentication or claim interoperability until that integration is source-parity tested and exercised with an authorized provider and iPhone.
+
+Android package check for the provider-session code: [build run 42201889184](https://github.com/qiangge5586-a11y/1/actions/runs/42201889184) passed Gradle assemble, AAPT package/SDK metadata verification and MFi APK hygiene scanner. Artifact ID: 13495475371; SHA-256: 076ce8eacd48abbc30c252e9f88b8974c16f49c60032a84d90068dfcd11198c2. This packages the compatibility session boundary but does not connect it to a production authenticator or validate API 17 runtime behavior.
