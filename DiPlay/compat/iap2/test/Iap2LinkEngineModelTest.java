@@ -20,6 +20,8 @@ public final class Iap2LinkEngineModelTest {
         acknowledgementBatchingAndWriteReset();
         preReadyQueueFlushAndPeerPayloadBounds();
         eofClosesBeforeAndAfterReadiness();
+        inboundGapEmitsExtendedAckWithSessionZero();
+        retransmissionWireFramePreservesOriginalPacket();
         System.out.println("Iap2LinkEngineModelTest: PASS (" + checks + " checks)");
     }
 
@@ -483,6 +485,43 @@ public final class Iap2LinkEngineModelTest {
         eq(0, after.takeNegotiationOutput().length);
         eq(0, after.drainWireFrames().size());
         eq(0, after.drainEvents().size());
+    }
+
+
+    private static void retransmissionWireFramePreservesOriginalPacket() {
+        Iap2LinkEngineModel m = model();
+        m.start(true, 0);
+        becomeReady(m);
+        m.drainEvents();
+        m.drainWireFrames();
+        byte[] payload = new byte[] {0x21, 0x22, 0x23};
+        Iap2OutboundWindowModel.Result sent = m.send(11, payload, 100);
+        eq(1, sent.transmitted.size());
+        int originalSequence = sent.transmitted.get(0).sequence;
+        List<byte[]> firstWire = m.drainWireFrames();
+        eq(1, firstWire.size());
+        List<Iap2LinkFrameDecoder.Frame> firstDecoded =
+                new Iap2LinkFrameDecoder().feed(firstWire.get(0));
+        eq(1, firstDecoded.size());
+        eq(originalSequence, firstDecoded.get(0).sequence);
+        eq(11, firstDecoded.get(0).sessionId);
+        bytes(payload, firstDecoded.get(0).payload);
+
+        Iap2LinkEngineModel.TimerResult due = m.advanceTimers(600);
+        eq(1, due.outbound.retransmitted.size());
+        eq(originalSequence, due.outbound.retransmitted.get(0).sequence);
+        eq(11, due.outbound.retransmitted.get(0).sessionId);
+        bytes(payload, due.outbound.retransmitted.get(0).payload);
+        List<byte[]> retryWire = m.drainWireFrames();
+        eq(1, retryWire.size());
+        List<Iap2LinkFrameDecoder.Frame> retryDecoded =
+                new Iap2LinkFrameDecoder().feed(retryWire.get(0));
+        eq(1, retryDecoded.size());
+        eq(0x40, retryDecoded.get(0).control);
+        eq(originalSequence, retryDecoded.get(0).sequence);
+        eq(10, retryDecoded.get(0).acknowledgement);
+        eq(11, retryDecoded.get(0).sessionId);
+        bytes(payload, retryDecoded.get(0).payload);
     }
 
     private static Iap2LinkEngineModel model() {
