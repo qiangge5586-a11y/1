@@ -28,7 +28,7 @@ def contains_private_key_pem_payload(data):
     # as byte-array constants. Reject an actual Base64 payload between matching
     # delimiters, not a parser's delimiter-only constants.
     for begin, end in PRIVATE_KEY_PEM_BLOCKS:
-        pattern = re.escape(begin) + rb"\\s*([A-Za-z0-9+/=\\r\\n]{64,})\\s*" + re.escape(end)
+        pattern = re.escape(begin) + rb"\s*([A-Za-z0-9+/=\r\n]{64,})\s*" + re.escape(end)
         if re.search(pattern, data):
             return True
     return False
