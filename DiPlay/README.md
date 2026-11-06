@@ -102,3 +102,17 @@ The source-audited link packet primitive is implemented in `compat/iap2/Iap2Link
 - Added golden-vector tests for the synchronization payload, ACK-only frame, data frame, checksums, bounds, and sequence wrap.
 - Latest CI run [#46](https://github.com/qiangge5586-a11y/1/actions/runs/42167041306) passed: 61 handshake + 3,380 IAP framing/package + 2,330 CSM + 49 link codec checks = **5,820 offline checks**.
 - This does not yet implement the full link state machine or establish an actual iPhone/vehicle session. See `analysis/IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md` for the source map and remaining engine-state work.
+
+
+### iAP2 source recovery and current link-layer milestone (2026-11-06)
+
+The original DiPlay 0.3.11 decompile artifact was recovered from [Actions run #6](https://github.com/qiangge5586-a11y/1/actions/runs/42166126298), and the original Smali for `Iap2LinkEngine`, `Iap2LinkChannel`, and related classes was inspected. The source audit now distinguishes the six-byte startup marker `FF 55 02 00 EE 10` from the packet marker `FF 5A`, confirms the 9-byte header and independent additive checksums, and corrects the wireless configuration: maxOutgoing=4, ACK timeout=500 ms, retransmit timeout=4,000 ms, max retries=4, max ACKs=3. The values 494/486 in the Kotlin constructor are default-argument masks, not link-window sizes.
+
+New offline components:
+- `compat/iap2/Iap2LinkFrameCodec.java`: source-derived packet and synchronization-payload codec.
+- `compat/iap2/Iap2LinkFrameDecoder.java`: bounded incremental link-frame decoder.
+- `compat/iap2/Iap2LinkNegotiationModel.java`: partial startup/SYN/ACK negotiation model and peer readiness gate.
+- `analysis/IAP2_LINK_ENGINE_SOURCE_AUDIT.md`: original Smali source audit.
+- `analysis/IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md`: source-to-test checklist and remaining gaps.
+
+Latest CI [run #52](https://github.com/qiangge5586-a11y/1/actions/runs/42167556922) passed **6,980 offline checks** (61 handshake lifecycle, 3,380 IAP framing/package, 2,330 CSM, 59 link codec, 1,050 link decoder, 100 negotiation model). The model remains partial: cumulative ACK windows, extended ACK retransmission, out-of-order delivery and normal data retransmission are not yet implemented. This is not proof of a real iPhone or MY16ADA vehicle handshake; no live Bluetooth, USB, AirPlay, or ROOT action was performed.
