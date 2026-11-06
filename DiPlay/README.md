@@ -90,4 +90,4 @@ A successful CI build is not proof of runtime or vehicle compatibility. Do not t
 
 ### iAP2 link-frame offline codec
 
-The source-audited link packet primitive is implemented in `compat/iap2/Iap2LinkFrameCodec.java`. It encodes/validates the 9-byte `FF 5A` header, additive header/payload checksums, u8 sequence wrap, and modular sequence distance. Golden vectors are in `compat/iap2/test/Iap2LinkFrameCodecTest.java`. CI run #34 passed 27 codec checks and 5,798 total offline checks. This is an offline codec test only; it does not establish a live iPhone or vehicle handshake.
+The source-audited link packet primitive is implemented in `compat/iap2/Iap2LinkFrameCodec.java`. It encodes/validates the 9-byte `FF 5A` header, additive header/payload checksums, u8 sequence wrap, and modular sequence distance. Golden vectors are in `compat/iap2/test/Iap2LinkFrameCodecTest.java`. CI run `42164770173` passed 27 codec checks and 5,798 total offline checks. This is an offline codec test only; it does not establish a live iPhone or vehicle handshake.
