@@ -242,3 +242,7 @@ The outbound model regression suite now verifies that cumulative ACK removal lea
 ## CSM input boundary source correction
 
 The recovered source call path is `Iap2CsmChannel.recvControl()` -> `Iap2LinkChannel.recvControl()` -> `Iap2CsmFramer.offer()`. The 8,192-byte bound applies to raw reads in `Iap2LinkChannel.runPump()`, not to the CSM framer's input method. The original outbound `splitForLink()` caps link chunks at 65,525 bytes; the offline decoder now accepts up to this size per call and rejects 65,526. CI run [#161](https://github.com/qiangge5586-a11y/1/actions/runs/42175067632) passed 7,393 offline checks.
+
+## Encoded link-frame response regression checkpoint
+
+The composition emits encoded link-frame bytes to a bounded drain-only queue: data sends/retransmits, newly released packets after cumulative ACK, immediate normal ACK, and Extended ACK. The queue is capped at 256; no transport write is implemented. Actions run [#207](https://github.com/qiangge5586-a11y/1/actions/runs/42181647104) passed **2,323,738 offline checks** (238 Link Engine checks). Run #206 failed on an incorrect readiness expectation in the test; the peer SYN-only expectation was reverted to the ACK-bit readiness behavior represented by the current source-audited model.
