@@ -80,3 +80,11 @@ Latest successful build containing the Bluetooth probe and corrected dashboard: 
 Artifact: `diplay-honda-compat-debug` (artifact ID `13472055975`, 26,587 bytes; archive digest `sha256:7756ecc3b823f4b3edaf64b058360daf3ec2bf726ba1d6f16fc4688be2e25e65`).
 
 This proves compilation, APK packaging, AAPT package identity and SDK metadata checks. It does not prove the Bluetooth adapter behaves correctly on API 17 or on the MY16ADA head unit. Real-device installation and testing remain pending.
+
+
+## Latest CI build (2026-11-06, run #25)
+
+The latest Android workflow completed successfully, including Gradle assembly, AAPT metadata verification and artifact upload:
+https://github.com/qiangge5586-a11y/1/actions/runs/42149522090
+
+Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; expires 2026-11-20). Archive digest: `sha256:035090779625eff20ee4cbc8e01eeda8d2cf0e568f71e4cbddf6e8b1464908bb`.
