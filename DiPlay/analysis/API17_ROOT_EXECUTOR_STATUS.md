@@ -44,3 +44,11 @@ No path is assumed from generic Android/Linux conventions. Any missing or unveri
 - A new run must pass the expanded Java 7 suite before this runner is considered CI-verified.
 - Android build #42159980783 passed on the earlier source commit; the newly added runner requires a fresh build run.
 - No live ROOT command has been sent to the user's vehicle, no hotspot configuration has been changed, and no in-vehicle test has been performed.
+
+
+## 2026-11-06 CI follow-up
+
+- Expanded Hotspot Actions run [#42160365707](https://github.com/qiangge5586-a11y/1/actions/runs/42160365707) passed on commit `ae42884a1b2d169aa156561c0daf7d600cce00d1`.
+- The Java 7 compile and full self-test step completed successfully. The new runner test printed: `PASS: API17 su runner allowlist and argument safety`; the coordinator, backup metadata, journal, recovery, read-only executor, diagnostic parser, USB and NCM tests also passed.
+- The matching Android Build run [#42160365649](https://github.com/qiangge5586-a11y/1/actions/runs/42160365649) is still in progress at the Gradle setup stage at the time of this update; no APK artifact for this exact commit is confirmed yet.
+- A prior build on commit `8f1fa6a692906536d4b5892baa84a9165f9a0426` passed and included the runner source; the current `ae42884` change only exposes the validator for its self-test. The new build is still required for final artifact confirmation.
