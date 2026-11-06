@@ -52,6 +52,73 @@ def main():
     if os.path.exists(identity_dir):
         raise SystemExit("offline MFi identity directory could not be removed")
 
+
+    # AirPlay type-130 receive path: parsePackages() supplies a fresh owned
+    # byte[] for each IAP body. Transfer that array directly into the private
+    # pending queue instead of copying it a second time. Also close the tunnel
+    # after releasing the queue monitor on overflow, so socket shutdown cannot
+    # hold up recv()/offer() waiters.
+    tunnel_stream = os.path.join(
+        root, "smali_classes3/com/shilapi/xcertplay/airplay/AirPlayIapTunnelStream.smali"
+    )
+    replace_once(
+        tunnel_stream,
+        """    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/AirPlayIapTunnelStream;->tunnel:Lcom/shilapi/xcertplay/airplay/IapTunnel;
+
+    invoke-virtual {v2}, Lcom/shilapi/xcertplay/airplay/IapTunnel;->close()V
+    :try_end_0
+    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+
+    .line 114
+    nop
+
+    .end local v1    # "$i$a$-synchronized-AirPlayIapTunnelStream$offer$1":I
+    monitor-exit v0
+
+    return-void
+""",
+        """    :try_end_0
+    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+
+    .line 114
+    nop
+
+    .end local v1    # "$i$a$-synchronized-AirPlayIapTunnelStream$offer$1":I
+    monitor-exit v0
+
+    iget-object v0, p0, Lcom/shilapi/xcertplay/airplay/AirPlayIapTunnelStream;->tunnel:Lcom/shilapi/xcertplay/airplay/IapTunnel;
+
+    invoke-virtual {v0}, Lcom/shilapi/xcertplay/airplay/IapTunnel;->close()V
+
+    return-void
+""",
+        "type-130 overflow closes tunnel outside queue monitor",
+    )
+    replace_once(
+        tunnel_stream,
+        """    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/AirPlayIapTunnelStream;->pending:Ljava/util/ArrayDeque;
+
+    array-length v3, p1
+
+    invoke-static {p1, v3}, Ljava/util/Arrays;->copyOf([BI)[B
+
+    move-result-object v3
+
+    const-string v4, "copyOf(...)"
+
+    invoke-static {v3, v4}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullExpressionValue(Ljava/lang/Object;Ljava/lang/String;)V
+
+    invoke-virtual {v2, v3}, Ljava/util/ArrayDeque;->addLast(Ljava/lang/Object;)V
+""",
+        """    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/AirPlayIapTunnelStream;->pending:Ljava/util/ArrayDeque;
+
+    # parsePackages() already created an owned copyOfRange() body; transfer
+    # ownership to this private queue rather than copying the same bytes again.
+    invoke-virtual {v2, p1}, Ljava/util/ArrayDeque;->addLast(Ljava/lang/Object;)V
+""",
+        "type-130 remove redundant IAP body copy",
+    )
+
     print("Original DiPlay MFi defaults patched to I2C; offline identity excluded.")
     return 0
 
