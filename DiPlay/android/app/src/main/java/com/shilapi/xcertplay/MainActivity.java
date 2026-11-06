@@ -1,9 +1,6 @@
 package com.shilapi.xcertplay;
 
 import android.app.Activity;
-import android.hardware.usb.UsbDeviceDescriptor;
-import android.hardware.usb.UsbManager;
-import android.content.Context;
 import android.widget.Button;
 import com.shilapi.xcertplay.compat.usb.UsbHostReadOnlyScanner;
 import java.util.List;
