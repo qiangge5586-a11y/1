@@ -60,6 +60,7 @@ public final class MfiOperationContext {
     public long generation() { return generation; }
     public long deadlineNanos() { return startedAtNanos + timeoutNanos; }
     public boolean isCancelled() { return cancellation.isCancelled(); }
+    public void cancel() { cancellation.cancel(); }
 
     /** Remaining time, rounded up to milliseconds and never reset by sub-operations. */
     public long remainingMillis() {
