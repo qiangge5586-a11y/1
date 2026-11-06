@@ -125,8 +125,8 @@ def main():
     tunnel = os.path.join(root, "smali_classes3/com/shilapi/xcertplay/airplay/IapTunnel.smali")
     replace_once(
         tunnel,
-        """    new-array v0, v0, [B\n\n    .line 131\n    .local v0, \\"plaintext\\":[B\n""",
-        """    new-instance v0, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n\n    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->listener:Lcom/shilapi/xcertplay/airplay/IapTunnel$Listener;\n\n    invoke-direct {v0, v2}, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;-><init>(Ljava/lang/Object;)V\n\n    .line 131\n    .local v0, \\"packageAccumulator\\":Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n""",
+        """    new-array v0, v0, [B\n\n    .line 131\n    .local v0, "plaintext":[B\n""",
+        """    new-instance v0, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n\n    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->listener:Lcom/shilapi/xcertplay/airplay/IapTunnel$Listener;\n\n    invoke-direct {v0, v2}, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;-><init>(Ljava/lang/Object;)V\n\n    .line 131\n    .local v0, "packageAccumulator":Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n""",
         "type-130 incremental package accumulator initialization",
     )
     replace_once(
