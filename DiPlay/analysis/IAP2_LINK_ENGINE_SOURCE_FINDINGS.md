@@ -210,7 +210,7 @@ This composition is intentionally incomplete: peer window limits are constructor
 
 The offline negotiation model now exports an immutable peer configuration snapshot with all six fixed SYN fields, the peer synchronization sequence, and complete session descriptors. The composition model can now build both windows from that snapshot instead of relying on caller-supplied window values. Wireless defaults applied locally are documented in `IAP2_LINK_ENGINE_COMPOSITION_MODEL.md`; they include ACK slack 10, maxOutgoingDelta 0, and defensive queue/buffer caps of 64.
 
-A source-consistency correction was also made: the original `processFrame()` calls its ACK/readiness handler for every non-zero control byte, including the SYN control frame. Therefore the peer SYN can complete READY immediately after its limits are recorded and the local ACK is queued; the model no longer requires a separate ACK-only frame for that transition.
+Direct Smali verification confirms `handleAcknowledgement()` runs only when control bit `0x40` is set. A SYN-only `0x80` frame records peer synchronization and sends the local ACK but remains NEGOTIATING. A later ACK-bearing frame opens READY; the same frame continues through optional Extended ACK and data handling. The data predicate is `(control & ~0x40) == 0` with payload, allowing both `0x00` data-only and `0x40` ACK+data frames.
 
 Verification: Actions run [#105](https://github.com/qiangge5586-a11y/1/actions/runs/42172333952) passed **7,174 offline checks**, including 121 negotiation checks and 32 composition checks. This remains an offline model, not a live iPhone/vehicle handshake.
 
@@ -220,6 +220,6 @@ The peer synchronization snapshot now has regression coverage for malformed vers
 
 ## Post-readiness frame dispatch checkpoint
 
-The offline negotiation parser now retains frames parsed after the peer SYN completes readiness. The composition dispatches cumulative ACK fields for non-zero control frames, raw Extended ACK missing-sequence lists, and data frames only when the control byte is exactly 0x40 and a payload exists. Header-only ACKs are kept separate from data. Dispatch results are returned as bounded events; they are not serialized or transmitted.
+The offline negotiation parser retains the ACK-bearing frame that transitions NEGOTIATING to NORMAL and marks its ACK as already processed, plus subsequent complete frames. The composition dispatches cumulative ACK only for bit `0x40`, Extended ACK only for bit `0x20` with payload, and data when `(control & ~0x40) == 0` with payload. It encodes model-generated data/ACK/Extended ACK frames into a drainable offline output queue but performs no transport write.
 
 Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. This validates offline dispatch semantics only, not a live link pump or vehicle session.
