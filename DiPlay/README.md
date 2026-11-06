@@ -29,6 +29,7 @@ A dedicated project now exists at `DiPlay/android/`, separate from the root `and
 - Chinese landscape diagnostic dashboard with report baseline clearly distinguished from live measurements.
 - USB Host read-only descriptor enumeration.
 - Bluetooth adapter read-only status check.
+- Offline Java 7 NTB16 codec primitive and fixture self-test (no USB I/O).
 - Hotspot safety transaction models and simulation tests are included; no real ROOT executor or system-write path is enabled.
 
 Latest successful APK build containing USB and Bluetooth read-only modules: [GitHub Actions run #42149355016](https://github.com/qiangge5586-a11y/1/actions/runs/42149355016).
@@ -57,6 +58,8 @@ Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; 
 - [Automated hotspot safety scanner](tools/audit-hotspot-safety.py)
 - [Bluetooth passive status probe](compat/bluetooth/README.md)
 - [USB read-only scanner](compat/usb/README.md)
+- [Offline NCM/NTB16 codec](compat/ncm/README.md)
+- [Protocol path map](analysis/DiPlay_PROTOCOL_PATH_MAP.md)
 
 ## Safety and remaining gates
 
