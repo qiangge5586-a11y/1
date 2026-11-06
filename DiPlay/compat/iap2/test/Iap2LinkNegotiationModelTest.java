@@ -34,7 +34,7 @@ public final class Iap2LinkNegotiationModelTest {
 
         byte[] peerSync = peerSyncFrame(77, 65535);
         model.feed(concat(slice(Iap2LinkFrameCodec.IAP2_MARKER, 2, 6), peerSync), 120);
-        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
+        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
         eq(65535, model.getPeerMaxLength());
 
         Iap2LinkFrameDecoder decoder = new Iap2LinkFrameDecoder();
