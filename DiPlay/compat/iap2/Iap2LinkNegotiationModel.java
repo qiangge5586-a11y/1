@@ -117,6 +117,7 @@ public final class Iap2LinkNegotiationModel {
                 peerSynchronizationReceived = true;
                 lastReceivedInOrder = frame.sequence;
                 sendAcknowledgement();
+                updateReadyState();
             }
         }
         if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0
