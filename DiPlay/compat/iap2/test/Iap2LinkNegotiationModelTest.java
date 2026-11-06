@@ -34,7 +34,7 @@ public final class Iap2LinkNegotiationModelTest {
 
         byte[] peerSync = peerSyncFrame(77, 65535);
         model.feed(concat(slice(Iap2LinkFrameCodec.IAP2_MARKER, 2, 6), peerSync), 120);
-        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
         eq(65535, model.getPeerMaxLength());
 
         Iap2LinkFrameDecoder decoder = new Iap2LinkFrameDecoder();
@@ -106,7 +106,7 @@ public final class Iap2LinkNegotiationModelTest {
             model.takeOutput();
             model.feed(peerSyncFrame(77, 65535, acknowledgements[i]), 1);
             model.takeOutput();
-            eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+            eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
             model.feed(Iap2LinkFrameCodec.encode(0x40, 77, acknowledgements[i], 0, null), 2);
             eq(Iap2LinkNegotiationModel.State.NORMAL, model.getState());
             truth(model.isReady());
@@ -139,7 +139,7 @@ public final class Iap2LinkNegotiationModelTest {
         model.takeOutput();
         model.feed(peerSyncFrame(77, 10), 1);
         model.takeOutput();
-        eq(Iap2LinkNegotiationModel.State.NEGOTIATING, model.getState());
+        eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
         model.feed(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
         eq(Iap2LinkNegotiationModel.State.DEAD, model.getState());
         falsity(model.isReady());
