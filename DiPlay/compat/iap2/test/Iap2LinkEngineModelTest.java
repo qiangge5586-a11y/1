@@ -12,6 +12,7 @@ public final class Iap2LinkEngineModelTest {
         bothTimersAdvanceOnSameClock();
         terminalWindowFailureClosesComposition();
         negotiatedPeerParametersBuildBothWindows();
+        preReadyQueueUsesPeerPayloadLimit();
         postSyncFramesDispatchIntoWindows();
         acknowledgementBatchingAndWriteReset();
         eofClosesBeforeAndAfterReadiness();
@@ -113,6 +114,37 @@ public final class Iap2LinkEngineModelTest {
         Iap2LinkEngineModel.TimerResult retryDue = m.advanceTimers(1600);
         eq(1, retryDue.outbound.retransmitted.size());
         eq(1500L, retryDue.outbound.retransmitted.get(0).deadlineMillis - 1600);
+    }
+
+    private static void preReadyQueueUsesPeerPayloadLimit() {
+        Iap2LinkEngineModel accepted = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        accepted.start(true, 0);
+        accepted.takeNegotiationOutput();
+        truth(accepted.queueBeforeReady(10, new byte[] {1}));
+        byte[] minSync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                4, 11, 1000, 250, 3, 3, new int[][] {{10, 0, 2}});
+        accepted.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, minSync), 1);
+        eq(Iap2LinkEngineModel.State.NEGOTIATING, accepted.state());
+        accepted.takeNegotiationOutput();
+        accepted.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+        eq(Iap2LinkEngineModel.State.READY, accepted.state());
+        List<byte[]> wire = accepted.drainWireFrames();
+        eq(1, wire.size());
+        List<Iap2LinkFrameDecoder.Frame> frames =
+                new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, frames.size());
+        bytes(new byte[] {1}, frames.get(0).payload);
+
+        Iap2LinkEngineModel rejected = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        rejected.start(true, 0);
+        rejected.takeNegotiationOutput();
+        truth(rejected.queueBeforeReady(10, new byte[] {1, 2}));
+        rejected.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, minSync), 1);
+        rejected.takeNegotiationOutput();
+        rejected.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+        eq(Iap2LinkEngineModel.State.CLOSED, rejected.state());
+        truth(rejected.getTerminalReason().contains("pending control packets"));
+        eq(0, rejected.drainWireFrames().size());
     }
 
     private static void postSyncFramesDispatchIntoWindows() {
