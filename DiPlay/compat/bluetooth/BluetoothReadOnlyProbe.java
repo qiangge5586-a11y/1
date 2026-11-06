@@ -29,6 +29,16 @@ public final class BluetoothReadOnlyProbe {
         public int getState() { return state; }
         public String getName() { return name; }
         public String getStatus() { return status; }
+
+        public String getStateLabel() {
+            switch (state) {
+                case BluetoothAdapter.STATE_OFF: return "已关闭";
+                case BluetoothAdapter.STATE_TURNING_ON: return "正在开启";
+                case BluetoothAdapter.STATE_ON: return "已开启";
+                case BluetoothAdapter.STATE_TURNING_OFF: return "正在关闭";
+                default: return "未知状态（" + state + "）";
+            }
+        }
     }
 
     public Result inspect(Context context) {
