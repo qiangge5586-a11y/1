@@ -13,6 +13,7 @@ public final class Iap2LinkModelPumpDriver implements Iap2LinkPump.Driver,
     private static final int CONTROL_SESSION_ID = Iap2LinkFrameCodec.CONTROL_SESSION_ID;
     private final Iap2LinkEngineModel engine;
     private final boolean initiator;
+    private final Iap2CsmReceiveCoordinator csmReceiver = new Iap2CsmReceiveCoordinator();
     private long lastNowMillis;
 
     public Iap2LinkModelPumpDriver(Iap2LinkEngineModel engine, boolean initiator) {
@@ -35,7 +36,25 @@ public final class Iap2LinkModelPumpDriver implements Iap2LinkPump.Driver,
         byte[] copy = new byte[length];
         System.arraycopy(bytes, 0, copy, 0, length);
         engine.feedNegotiation(copy, nowMillis);
+        drainReceivedCsmEvents();
     }
+
+    private void drainReceivedCsmEvents() {
+        List<Iap2LinkEngineModel.DispatchEvent> events = engine.drainEvents();
+        for (int i = 0; i < events.size(); i++) {
+            Iap2ReceiveWindowModel.Result received = events.get(i).receivedData;
+            if (received != null && !received.delivered.isEmpty()) {
+                csmReceiver.acceptDeliveredPackets(received.delivered);
+            }
+        }
+    }
+
+    /** Polls the next complete CSM frame delivered on the control session. */
+    public Iap2CsmReceiveQueueModel.Frame pollCsmFrame() {
+        return csmReceiver.poll();
+    }
+
+    public Iap2CsmReceiveCoordinator csmReceiver() { return csmReceiver; }
 
     public void onTimer(long nowMillis) throws IOException {
         lastNowMillis = nowMillis;
