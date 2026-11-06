@@ -54,22 +54,18 @@ public final class Iap2CsmSendAdmissionModel {
         if (queue.isClosing()) return result(Status.CLOSED, 0L, null);
 
         byte[] chunk = chunks.get(nextChunk);
-        if (queue.hasCapacity(chunk.length)) {
-            if (!queue.enqueueIfCapacity(chunk)) {
-                // The model is synchronized per object, not across queue instances.
-                // A failed admission means the queue changed state between observation and insert.
-                if (queue.isTerminated()) {
-                    String failure = queue.terminalFailure();
-                    return result(failure == null ? Status.CLOSED : Status.TERMINAL_FAILURE,
-                            0L, failure);
-                }
-                if (queue.isClosing()) return result(Status.CLOSED, 0L, null);
-            } else {
-                nextChunk++;
-                return result(nextChunk == chunks.size() ? Status.COMPLETE : Status.QUEUED,
-                        deadline.remainingMillis(nowNanos), null);
-            }
+        // enqueueIfCapacity performs the capacity check and insert under one queue lock.
+        if (queue.enqueueIfCapacity(chunk)) {
+            nextChunk++;
+            return result(nextChunk == chunks.size() ? Status.COMPLETE : Status.QUEUED,
+                    deadline.remainingMillis(nowNanos), null);
         }
+        if (queue.isTerminated()) {
+            String failure = queue.terminalFailure();
+            return result(failure == null ? Status.CLOSED : Status.TERMINAL_FAILURE,
+                    0L, failure);
+        }
+        if (queue.isClosing()) return result(Status.CLOSED, 0L, null);
 
         long remaining = deadline.remainingMillis(nowNanos);
         if (remaining == 0L) {
