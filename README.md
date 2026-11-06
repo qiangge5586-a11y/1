@@ -13,11 +13,11 @@ Target baseline recorded in `思域报告.pdf`: 2019 Honda Civic factory center 
 
 ### Current DiPlay status
 
-- iAP2 Link/CSM framing, wireless bootstrap models, sequence/window logic, bounded pump scaffolding, CSM send/receive adapters and source-parity audits are covered by Java 7 offline tests.
-- Bluetooth RFCOMM connector follows secure → insecure → reflective fallback and now shares one monotonic overall timeout across attempts. The default is 10 seconds; accepted range is 1–300 seconds.
+- iAP2 Link/CSM framing, wireless bootstrap models, sequence/window logic, bounded pump scaffolding, CSM send/receive adapters and source-parity audits are covered by Java 7 offline tests. The retransmission timer now mirrors the original engine's explicit receive-ACK deadline rather than taking a global minimum.
+- Bluetooth RFCOMM connector follows secure → insecure → reflective fallback and shares one monotonic overall timeout across attempts. The default is 10 seconds; accepted range is 1–300 seconds. Pure Java deadline tests pass.
 - USB enumeration remains read-only. NCM/NTB16 codec and interface selection are fixture-only; no USB endpoint transfer is wired.
 - ROOT hotspot work retains the bottom-layer safety module: read-only preflight, backup metadata checks, process identity checks, append-only journal, recovery classification and transaction coordinator. No mutating production `RootOps` adapter is enabled.
-- The isolated diagnostic dashboard can manually enumerate USB descriptors and inspect Bluetooth adapter state. It does not start iAP2, mutate hotspot settings, or exercise the live Bluetooth transport.
+- The isolated diagnostic dashboard can manually enumerate USB descriptors, inspect Bluetooth adapter state, and (after an explicit tap) run the fixed ROOT/hotspot read-only command catalog. It does not start iAP2, mutate hotspot settings, or exercise the live Bluetooth transport.
 
 ### Important boundaries
 
