@@ -33,13 +33,15 @@ public final class Iap2LinkNegotiationModelTest {
 
         Iap2LinkFrameDecoder decoder = new Iap2LinkFrameDecoder();
         List<Iap2LinkFrameDecoder.Frame> response = decoder.feed(model.takeOutput());
-        eq(1, response.size());
+        eq(2, response.size());
         eq(Iap2LinkFrameCodec.CONTROL_SYNCHRONIZE, response.get(0).control);
         int[] local = Iap2LinkFrameCodec.decodeSynchronizationPayload(response.get(0).payload);
         notNull(local);
         eq(4, local[0]); eq(65535, local[1]); eq(4000, local[2]); eq(500, local[3]);
         eq(4, local[4]); eq(3, local[5]);
         eq(2, local[8]); // control session version in descriptor (id 10, kind 0, version 2)
+        eq(Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT, response.get(1).control);
+        eq(77, response.get(1).acknowledgement);
 
         byte[] peerAck = Iap2LinkFrameCodec.encode(Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT,
                 77, 99, 0, null);
@@ -48,9 +50,7 @@ public final class Iap2LinkNegotiationModelTest {
         truth(model.isReady());
         Iap2LinkFrameDecoder ackDecoder = new Iap2LinkFrameDecoder();
         List<Iap2LinkFrameDecoder.Frame> ack = ackDecoder.feed(model.takeOutput());
-        eq(1, ack.size());
-        eq(0x40, ack.get(0).control);
-        eq(77, ack.get(0).acknowledgement);
+        eq(0, ack.size());
     }
 
     private static void initiatorStartsSyncImmediately() {
