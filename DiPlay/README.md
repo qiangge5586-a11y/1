@@ -214,3 +214,10 @@ The original `Iap2LinkChannel` worker pump and `Iap2CsmChannel` call edges have 
 - CI Run #210 passed after adding wire-frame decoder round-trip coverage for outbound retransmission and Extended ACK responses: `Iap2LinkEngineModelTest` 264 checks; all 16 offline suites passed.
 - Evidence: [GitHub Actions #210](https://github.com/qiangge5586-a11y/1/actions/runs/42183299341), tested commit `db67b97002bf5ad9797ead2397b08d80418d1b66`.
 - Scope remains offline model/codec validation; no live transport or vehicle handshake is claimed.
+
+
+### CSM send readiness gate — 2026-11-06
+
+- Added an offline CSM gate that requires link READY and a known peer CSM control-payload limit before constructing the chunk-admission model. Unknown peer limit, invalid limit and closed link are distinct outcomes.
+- GitHub Actions [Run #214](https://github.com/qiangge5586-a11y/1/actions/runs/42183487239) passed **2,323,780 checks across 17 Java 7 offline suites**.
+- This remains an offline precondition model; it does not implement the CSM handshake or live transport.
