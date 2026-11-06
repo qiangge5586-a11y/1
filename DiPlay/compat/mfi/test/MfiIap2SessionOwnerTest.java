@@ -59,8 +59,10 @@ public final class MfiIap2SessionOwnerTest {
         MfiIap2CsmPumpBridge bridge = new MfiIap2CsmPumpBridge(
                 receive, adapter, pump, 64, 100L);
         MfiIap2SessionOwner owner = new MfiIap2SessionOwner(
-                91L, receive, bridge, listener());
+                91L, MfiIap2Channel.AIRPLAY_TYPE130_TUNNEL, receive, bridge, listener());
         check(owner.generation() == 91L, "generation retained");
+        check(owner.channel() == MfiIap2Channel.AIRPLAY_TYPE130_TUNNEL,
+                "type-130 tunnel has an explicit independent channel scope");
         owner.start();
         check(owner.isActive(), "active after start");
         owner.close();
