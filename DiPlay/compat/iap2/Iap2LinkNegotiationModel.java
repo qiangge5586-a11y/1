@@ -116,7 +116,6 @@ public final class Iap2LinkNegotiationModel {
                 peerSynchronizationReceived = true;
                 lastReceivedInOrder = frame.sequence;
                 sendAcknowledgement();
-                updateReadyState();
             }
         }
         if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0
@@ -132,13 +131,6 @@ public final class Iap2LinkNegotiationModel {
         }
     }
 
-    private void updateReadyState() {
-        if (state == State.NEGOTIATING && peerSynchronizationReceived
-                && localSynchronizationAcknowledged && peerMaxLength > 10) {
-            state = State.NORMAL;
-            synchronizationDeadline = null;
-        }
-    }
 
     private void enterNegotiating(long nowMillis) {
         state = State.NEGOTIATING;
