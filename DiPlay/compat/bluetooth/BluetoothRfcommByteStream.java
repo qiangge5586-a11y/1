@@ -22,9 +22,7 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
     private final OutputStream output;
     private final Object readLock = new Object();
     private final Object writeLock = new Object();
-    private final byte[] ring = new byte[MAX_BUFFERED_BYTES];
-    private int head;
-    private int size;
+    private final BoundedByteRingBuffer ring = new BoundedByteRingBuffer(MAX_BUFFERED_BYTES);
     private boolean eof;
     private boolean closed;
     private IOException readFailure;
@@ -57,13 +55,10 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
                 int offset = 0;
                 while (offset < count) {
                     synchronized (readLock) {
-                        while (!closed && size == ring.length) readLock.wait();
+                        while (!closed && ring.remainingCapacity() == 0) readLock.wait();
                         if (closed) return;
-                        int tail = (head + size) % ring.length;
-                        int copy = Math.min(count - offset,
-                                Math.min(ring.length - size, ring.length - tail));
-                        System.arraycopy(chunk, offset, ring, tail, copy);
-                        size += copy;
+                        int copy = Math.min(count - offset, ring.remainingCapacity());
+                        if (!ring.offer(chunk, offset, copy)) throw new IOException("RFCOMM receive ring rejected writable bytes");
                         offset += copy;
                         readLock.notifyAll();
                     }
@@ -86,7 +81,7 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
         if (length == 0) return 0;
         long deadline = System.nanoTime() + timeoutMillis * 1000000L;
         synchronized (readLock) {
-            while (size == 0 && !eof && !closed) {
+            while (ring.size() == 0 && !eof && !closed) {
                 if (timeoutMillis == 0) return 0;
                 long remaining = deadline - System.nanoTime();
                 if (remaining <= 0L) return 0;
@@ -99,16 +94,11 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
                     throw new IOException("RFCOMM read interrupted");
                 }
             }
-            if (size == 0) {
+            if (ring.size() == 0) {
                 if (readFailure != null) throw readFailure;
                 return -1;
             }
-            int count = Math.min(length, size);
-            int first = Math.min(count, ring.length - head);
-            System.arraycopy(ring, head, buffer, offset, first);
-            if (first < count) System.arraycopy(ring, 0, buffer, offset + first, count - first);
-            head = (head + count) % ring.length;
-            size -= count;
+            int count = ring.read(buffer, offset, length);
             readLock.notifyAll();
             return count;
         }
@@ -137,7 +127,7 @@ public final class BluetoothRfcommByteStream implements Iap2DuplexByteStream {
     }
 
     public int bufferedBytes() {
-        synchronized (readLock) { return size; }
+        synchronized (readLock) { return ring.size(); }
     }
 
     private static void checkRange(byte[] buffer, int offset, int length) {
