@@ -204,6 +204,9 @@ public final class Iap2OutboundWindowModel {
     private Packet transmit(int sessionId, byte[] payload, long nowMillis) {
         sentSequence = Iap2LinkFrameCodec.nextSequence(sentSequence);
         if (peerMaxRetransmissions == 0) {
+            // Source sendPacket() advances the acknowledged watermark when
+            // retransmission is disabled, so the send window never stalls.
+            lastSentAcknowledged = Integer.valueOf(sentSequence);
             return new Packet(sentSequence, sessionId, payload, 0, 0);
         }
         Packet packet = new Packet(sentSequence, sessionId, payload, 0,
