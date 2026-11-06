@@ -37,6 +37,7 @@ public final class Iap2CsmReceiveCoordinator {
             } catch (RuntimeException malformed) {
                 closed = true;
                 terminalReason = "Invalid CSM control payload";
+                notifyAll();
                 throw malformed;
             }
             for (int j = 0; j < frames.size(); j++) {
