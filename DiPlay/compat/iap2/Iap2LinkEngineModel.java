@@ -173,7 +173,6 @@ public final class Iap2LinkEngineModel {
         if (!negotiation.isReady()) return;
         ensureWindowModels();
         List<Iap2LinkNegotiationModel.ReadyFrame> frames = negotiation.drainPostReadyFrames();
-        boolean preReadyFlushed = false;
         for (int i = 0; i < frames.size(); i++) {
             if (pendingEvents.size() >= 256) {
                 localTerminalReason = "iAP2 pending dispatch event limit exceeded";
@@ -187,18 +186,18 @@ public final class Iap2LinkEngineModel {
             Iap2ReceiveWindowModel.Result acknowledgementBatch = null;
             boolean carriesAck = (frame.control
                     & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0;
+            if (readyFrame.readinessTransitioned && !validatePreReadyPackets()) return;
             if (carriesAck) {
                 accumulatedAcknowledgements++;
-                // Negotiation handled the readiness gate, but the composed
-                // outbound window is separate and must apply this ACK once.
+                // The negotiation model evaluated readiness, but this
+                // separate outbound window still applies the ACK field once.
                 cumulativeAck = outbound.acknowledge(frame.acknowledgement, nowMillis);
                 enqueuePacketFrames(cumulativeAck.transmitted);
             }
-            if (!preReadyFlushed) {
-                // Original handleAcknowledgement() applies the ACK and drains
-                // writable packets before processFrame() checks ACK batching.
+            if (readyFrame.readinessTransitioned) {
+                // Original handleAcknowledgement() updates the ACK watermark,
+                // then drains queued packets before processFrame() continues.
                 flushPreReadyPackets(nowMillis);
-                preReadyFlushed = true;
                 if (localTerminalReason != null) return;
             }
             if ((frame.control & Iap2LinkFrameCodec.CONTROL_EXTENDED_ACKNOWLEDGEMENT) != 0
@@ -298,16 +297,21 @@ public final class Iap2LinkEngineModel {
         }
     }
 
-    private void flushPreReadyPackets(long nowMillis) {
-        if (preReadyPackets.isEmpty()) return;
+    private boolean validatePreReadyPackets() {
+        if (preReadyPackets.isEmpty()) return true;
         Iap2LinkNegotiationModel.PeerConfiguration peer = negotiation.getPeerConfiguration();
         for (int i = 0; i < preReadyPackets.size(); i++) {
             if (!peer.acceptsPayload(preReadyPackets.get(i).payload)) {
                 localTerminalReason = "peer iAP2 maxLength cannot carry pending control packets";
                 preReadyPackets.clear();
-                return;
+                return false;
             }
         }
+        return true;
+    }
+
+    private void flushPreReadyPackets(long nowMillis) {
+        if (preReadyPackets.isEmpty()) return;
         for (int i = 0; i < preReadyPackets.size(); i++) {
             PreReadyPacket packet = preReadyPackets.get(i);
             Iap2OutboundWindowModel.Result result =
