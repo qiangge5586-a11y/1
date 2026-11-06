@@ -171,7 +171,7 @@ The original `Iap2LinkEngine.processFrame()` calls `handleAcknowledgement()` for
 
 Added `compat/iap2/Iap2LinkEngineModel.java` as an offline lifecycle/readiness composition over the existing negotiation, outbound-window, and receive-window models. It rejects data-window calls before READY, delegates ACK and Extended ACK work, advances inbound delayed-ACK and outbound retransmission timers against one supplied clock, and closes on EOF.
 
-- CI run [#95](https://github.com/qiangge5586-a11y/1/actions/runs/42170649686): **7,145 offline checks passed**; new composition test: 16 checks.
+- CI run [#95](https://github.com/qiangge5586-a11y/1/actions/runs/42170649686): **7,147 offline checks passed** in run [#98](https://github.com/qiangge5586-a11y/1/actions/runs/42170739023); composition suite: 19 checks. A follow-up lifecycle correction makes outbound retry exhaustion and inbound receive-window terminal failures report CLOSED at the composition boundary.
 - The model deliberately does not parse live data packets or serialize outbound data frames.
 - Peer maxOutgoing/maxAcknowledgements/timeouts/retry settings remain explicit constructor inputs. The negotiation model does not yet expose the complete peer SYN configuration; automatic configuration handoff is a remaining task.
 - Run #94 failed on an initial test-fixture null reference; the fixture was fixed before run #95. Do not treat #94 as a passing run.
