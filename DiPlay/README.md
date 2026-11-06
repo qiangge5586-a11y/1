@@ -32,11 +32,12 @@ A dedicated project now exists at `DiPlay/android/`, separate from the root `and
 - Offline Java 7 NTB16 codec and incremental stream decoder, with 37 synthetic tests total (no USB I/O).
 - Hotspot safety transaction models and simulation tests are included; no real ROOT executor or system-write path is enabled.
 
-Latest successful APK build containing USB and Bluetooth read-only modules, the offline NTB16 codec, the incremental NTB16 stream decoder, and the pure-Java CDC-NCM interface selector: [GitHub Actions run #46](https://github.com/qiangge5586-a11y/1/actions/runs/42154175515).
+Latest successful APK build containing USB and Bluetooth read-only modules, the offline NTB16 codec, the incremental NTB16 stream decoder, the pure-Java CDC-NCM interface selector, and passive USB interface/endpoint descriptor snapshots: [GitHub Actions run #61](https://github.com/qiangge5586-a11y/1/actions/runs/42154838829).
 
-Artifact: `diplay-honda-compat-debug`, ID `13473488991`, archive size 32,467 bytes; archive digest `sha256:78a2e0aaa6ffcb5e4fded459e32b964e85cac8681169ef677df1080987918ead` (expires 2026-11-20). Downloaded archive inspection confirmed it contains `app-debug.apk` (36,148 bytes); APK SHA-256: `d6bd29c796235a51a81629a53c2f6834b692a78e43a983d4e2d80141159cf069`.
+Artifact: `diplay-honda-compat-debug`, ID `13473308976`, archive size 36,214 bytes; archive digest `sha256:ab0ab7570cf03a048050e12c7985b208344137c09dfcc9b9320c7753bc474636` (expires 2026-11-20). Downloaded archive inspection confirmed it contains `app-debug.apk` (39,894 bytes); APK SHA-256: `2bfb283c58b646d668665ee3c921d9635e7392410285f11c87c309de736e13a4`.
 
-The matching descriptor/NCM test workflow [run #80](https://github.com/qiangge5586-a11y/1/actions/runs/42154832836) passed the expanded fixture suite: 14 NTB16 codec cases, 11 stream-decoder cases, 7 CDC-NCM interface-selector cases, and 5 USB-to-NCM snapshot matcher cases (37 tests total across NCM/USB).The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
+The matching descriptor/NCM test workflow [run #81](https://github.com/qiangge5586-a11y/1/actions/runs/42154838842) passed: 14 NTB16 codec cases, 11 stream-decoder cases, 7 CDC-NCM interface-selector cases, and 5 USB-to-NCM snapshot matcher cases (37 tests total across NCM/USB).
+The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
 
 
 
