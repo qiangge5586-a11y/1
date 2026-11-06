@@ -165,3 +165,19 @@ CI run [#52](https://github.com/qiangge5586-a11y/1/actions/runs/42167556922) pas
 - 100 link negotiation model checks
 
 The model is intentionally partial. It verifies the marker/SYN/ACK startup sequence and readiness gate, not full cumulative ACK, extended ACK, reorder, retransmission, or hardware interoperability.
+
+
+## Retransmission policy offline milestone (2026-11-06)
+
+The new `Iap2RetransmissionPolicy` helper isolates two source-confirmed rules from `Iap2LinkEngine` without claiming to implement the complete engine:
+
+- Peer `maxRetransmissions=0` disables retention/retransmission.
+- Otherwise the packet retry counter is incremented first; when the incremented count equals the peer limit, the link terminates. With peer limit 4, retransmission counts 1, 2 and 3 are allowed; count 4 terminates. This means three retransmissions after the original send, not four.
+- Explicit missing-sequence requests from extended ACK use the same retry-counter policy.
+- Extended-ACK payload membership is treated as a list of unsigned sequence bytes, not a bitmap.
+
+A separate negotiation regression was also fixed: if the peer's valid synchronization arrives after an ACK of the local SYN, the model now re-evaluates the readiness gate on the synchronization event. CI had exposed that ordering bug; the correction is covered by the ACK-before-peer-SYN test.
+
+CI run [#64](https://github.com/qiangge5586-a11y/1/actions/runs/42168651726) passed **7,004 offline checks**: 61 wireless handshake, 3,380 AirPlay IAP framing/package, 2,330 CSM, 59 link codec, 1,050 incremental link decoder, 104 negotiation model, and 20 retransmission-policy checks.
+
+Scope remains deliberately limited: the helper does not yet own a pending-packet queue, cumulative ACK window, reorder buffer, timer scheduler, or transport. Those are still separate implementation stages and must be compared against the original Smali before integration. No live iPhone, MY16ADA, Bluetooth, USB, AirPlay or ROOT operation was performed.
