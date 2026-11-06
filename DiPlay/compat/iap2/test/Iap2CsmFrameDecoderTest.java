@@ -12,7 +12,7 @@ public final class Iap2CsmFrameDecoderTest {
         reportsResynchronizationDiagnostics();
         retainsIncompleteFrame();
         randomizedFragmentationAndCoalescing();
-        enforcesOriginalLinkControlChunkBound();
+        acceptsLargeCoalescedInputLikeOriginalOffer();
         decodesMaximumLengthFrameInBoundedChunks();
         System.out.println("Iap2CsmFrameDecoderTest: PASS (" + checks + " checks)");
     }
@@ -109,22 +109,22 @@ public final class Iap2CsmFrameDecoderTest {
         }
     }
 
-    private static void enforcesOriginalLinkControlChunkBound() {
-        final Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
-        byte[] accepted = new byte[Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES];
-        // Keep a plausible maximum-size CSM frame incomplete across this full link chunk.
-        accepted[0] = 0x40; accepted[1] = 0x40;
-        accepted[2] = (byte) 0xff; accepted[3] = (byte) 0xff;
-        accepted[4] = 0x12; accepted[5] = 0x34;
-        d.feed(accepted);
-        eq(Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES, d.pendingBytes());
-        byte[] tooLarge = new byte[Iap2CsmFrameDecoder.MAX_INPUT_CHUNK_BYTES + 1];
-        try {
-            d.feed(tooLarge);
-            throw new AssertionError("oversized link-control chunk accepted");
-        } catch (IllegalArgumentException expected) {
-            checks++;
-        }
+    private static void acceptsLargeCoalescedInputLikeOriginalOffer() {
+        Iap2CsmFrameDecoder d = new Iap2CsmFrameDecoder();
+        byte[] firstPayload = new byte[40000];
+        byte[] secondPayload = new byte[40000];
+        for (int i = 0; i < firstPayload.length; i++) firstPayload[i] = (byte) (i * 7);
+        for (int i = 0; i < secondPayload.length; i++) secondPayload[i] = (byte) (i * 13);
+        byte[] first = frame(0x1234, firstPayload);
+        byte[] second = frame(0x5678, secondPayload);
+        byte[] coalesced = concat(first, second);
+        truth(coalesced.length > Iap2CsmFrameDecoder.MAX_FRAME_BYTES);
+        List<Iap2CsmFrameDecoder.Frame> out = d.feed(coalesced);
+        eq(2, out.size());
+        eq(0x1234, out.get(0).messageId);
+        bytes(firstPayload, out.get(0).payload);
+        eq(0x5678, out.get(1).messageId);
+        bytes(secondPayload, out.get(1).payload);
         eq(0, d.pendingBytes());
     }
 
