@@ -13,6 +13,7 @@ public final class Iap2LinkFrameCodecTest {
         rejectsInvalidHeaderAndPayloadChecksums();
         validatesHeaderFieldsAndFrameBounds();
         wrapsEightBitSequences();
+        validatesCumulativeAckWindowAcrossWrap();
         System.out.println("Iap2LinkFrameCodecTest: PASS (" + checks + " checks)");
     }
 
@@ -119,6 +120,14 @@ public final class Iap2LinkFrameCodecTest {
         eq(2, Iap2LinkFrameCodec.sequenceDistance(1, Integer.valueOf(255)));
         eq(255, Iap2LinkFrameCodec.sequenceDistance(254, Integer.valueOf(255)));
         eq(0, Iap2LinkFrameCodec.sequenceDistance(42, null));
+    }
+
+    private static void validatesCumulativeAckWindowAcrossWrap() {
+        truth(Iap2LinkFrameCodec.isAcceptableCumulativeAck(255, 0, 3, 10));
+        truth(Iap2LinkFrameCodec.isAcceptableCumulativeAck(255, 12, 3, 10));
+        falsity(Iap2LinkFrameCodec.isAcceptableCumulativeAck(255, 13, 3, 10));
+        falsity(Iap2LinkFrameCodec.isAcceptableCumulativeAck(255, 254, 3, 10));
+        falsity(Iap2LinkFrameCodec.isAcceptableCumulativeAck(255, 255, 3, 10));
     }
 
     private static byte[] hex(String value) {
