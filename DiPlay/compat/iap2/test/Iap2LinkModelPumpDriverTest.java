@@ -26,6 +26,9 @@ public final class Iap2LinkModelPumpDriverTest {
     private static void equal(int expected, int actual, String label) {
         if (expected != actual) throw new AssertionError(label + ": " + expected + " != " + actual);
     }
+    private static void equal(long expected, long actual, String label) {
+        if (expected != actual) throw new AssertionError(label + ": " + expected + " != " + actual);
+    }
     private static void truth(boolean value, String label) {
         if (!value) throw new AssertionError(label);
     }
