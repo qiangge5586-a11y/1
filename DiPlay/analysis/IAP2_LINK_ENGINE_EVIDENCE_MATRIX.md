@@ -121,7 +121,7 @@ The decompile artifact is now available and was downloaded for inspection:
 - Normal ACK updates last acknowledged sequence, removes acknowledged outstanding packets, rearms the earliest pending retransmission deadline, and releases queued packets while the peer outgoing window allows.
 - Retransmission chooses the outstanding packet with the earliest deadline, increments its retry count, and either resends or enters DEAD when the configured retry limit is reached.
 - Peer maxLength must exceed 10; payload acceptance is bounded by peer maxLength minus 10.
-- Wireless link configuration: maxOutgoing=4, zeroAcknowledgements=false, control-session version 2, constructor final slot 494. Wired uses zeroAcknowledgements=true and final slot 486. Preserve these distinct values.
+- Wireless link configuration: maxOutgoing=4, acknowledgementTimeoutMillis=500 (default from LwipNcmBridge.WRITE_TIMEOUT_MILLIS), zeroAcknowledgements=false, control-session version 2, queue/out-of-order capacities 64, pending output 1 MiB, pending events 256. Wired uses zeroAcknowledgements=true. The constructor values 494 (wireless) and 486 (wired) are Kotlin default-argument bit masks, not link window or maxOutgoing values.
 
 ### Smali method provenance
 
@@ -138,3 +138,11 @@ Line numbers below refer to APKTool output paths inside the retrieved artifact:
 \`DiPlay/compat/iap2/Iap2LinkFrameCodec.java\` now implements only source-grounded wire primitives: frame encoding, 9-byte header parsing, additive checksums, synchronization payload encode/decode, and 8-bit sequence arithmetic. It deliberately does not implement the engine state machine, queue/window logic, Bluetooth, or socket I/O.
 
 Golden-vector tests were added in \`Iap2LinkFrameCodecTest.java\` for sync payload layout, ACK-only frame, data frame, header/payload checksums, marker, bounds, and sequence wrap. These are deterministic offline tests, not a live iPhone/vehicle handshake.
+
+
+## Implemented offline milestones (2026-11-06)
+
+- `DiPlay/compat/iap2/Iap2LinkFrameDecoder.java`: bounded incremental parser mirroring original header/payload checksum handling, bytewise FF 5A resynchronization, partial-frame retention, and 8,192-byte input chunks.
+- `DiPlay/compat/iap2/Iap2LinkNegotiationModel.java`: partial deterministic model of marker detection, SYN generation/retry, peer sync, ACK readiness gate, invalid maxLength, and EOF. It does not yet model cumulative ACK windows, extended ACK retransmit selection, out-of-order delivery, or normal data retransmission.
+- Latest CI run [#52](https://github.com/qiangge5586-a11y/1/actions/runs/42167556922) passed 6,980 offline checks: 61 handshake lifecycle + 3,380 IAP framing/package + 2,330 CSM + 59 link codec + 1,050 link decoder + 100 negotiation model.
+- No real iPhone, Bluetooth, USB, AirPlay tunnel, or Honda head-unit session was attempted.
