@@ -10,6 +10,7 @@ public final class Iap2LinkEngineModelTest {
         bothTimersAdvanceOnSameClock();
         terminalWindowFailureClosesComposition();
         negotiatedPeerParametersBuildBothWindows();
+        postSyncFramesDispatchIntoWindows();
         eofClosesBeforeAndAfterReadiness();
         System.out.println("Iap2LinkEngineModelTest: PASS (" + checks + " checks)");
     }
@@ -109,6 +110,45 @@ public final class Iap2LinkEngineModelTest {
         Iap2LinkEngineModel.TimerResult retryDue = m.advanceTimers(1600);
         eq(1, retryDue.outbound.retransmitted.size());
         eq(1500L, retryDue.outbound.retransmitted.get(0).deadlineMillis - 1600);
+    }
+
+    private static void postSyncFramesDispatchIntoWindows() {
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        m.start(true, 0);
+        m.takeNegotiationOutput();
+        byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                2, 4096, 1500, 250, 3, 5,
+                new int[][] {{10, 0, 2}, {11, 2, 1}});
+        byte[] peerSyn = Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, sync);
+        byte[] firstData = Iap2LinkFrameCodec.encode(0x40, 78, 99, 10,
+                new byte[] {4, 5, 6});
+        m.feedNegotiation(concat(peerSyn, firstData), 10);
+        eq(Iap2LinkEngineModel.State.READY, m.state());
+        List<Iap2LinkEngineModel.DispatchEvent> events = m.drainEvents();
+        eq(1, events.size());
+        notNull(events.get(0).receivedData);
+        eq(1, events.get(0).receivedData.delivered.size());
+        eq(78, events.get(0).receivedData.delivered.get(0).sequence);
+
+        Iap2OutboundWindowModel.Result sent = m.send(10, new byte[] {9}, 20);
+        eq(1, sent.transmitted.size());
+        eq(100, sent.transmitted.get(0).sequence);
+        byte[] extendedAck = Iap2LinkFrameCodec.encode(0x20, 79, 99, 11,
+                new byte[] {100});
+        m.feedNegotiation(extendedAck, 30);
+        events = m.drainEvents();
+        eq(1, events.size());
+        notNull(events.get(0).extendedAcknowledgement);
+        eq(1, events.get(0).extendedAcknowledgement.retransmitted.size());
+        eq(100, events.get(0).extendedAcknowledgement.retransmitted.get(0).sequence);
+
+        byte[] ackOnly = Iap2LinkFrameCodec.encode(0x40, 80, 100, 0, null);
+        m.feedNegotiation(ackOnly, 40);
+        events = m.drainEvents();
+        eq(1, events.size());
+        truth(events.get(0).receivedData == null);
+        truth(events.get(0).cumulativeAcknowledgement.accepted);
+        eq(Iap2LinkEngineModel.State.READY, m.state());
     }
 
     private static void eofClosesBeforeAndAfterReadiness() {
