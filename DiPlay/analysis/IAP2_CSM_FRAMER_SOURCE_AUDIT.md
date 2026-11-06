@@ -56,3 +56,17 @@ The compatibility decoder's `feed()` now uses the same bounded append/drain patt
 ## Latest implementation verification
 
 Actions run [#166](https://github.com/qiangge5586-a11y/1/actions/runs/42175369108) passed **7,397 offline checks**, including 2,334 CSM decoder checks. The coalesced-input test exercises the original append/drain behavior with an 80,012-byte caller array containing two complete CSM frames. This is source-informed offline parity testing, not hardware interoperability validation.
+
+
+## CSM channel queue and send backpressure (verified Smali)
+
+The same recovered `Iap2CsmChannel.smali` confirms the channel-level behavior surrounding the framer:
+
+- `enqueue(frame)` counts the full encoded CSM frame size, including its six-byte header.
+- Receive queue admission requires both fewer than 64 queued frames and enough remaining capacity under 1,048,576 queued bytes.
+- If either bound would be exceeded, the channel fails closed with `IOException("CSM received-frame queue limit exceeded")`.
+- `takeReceived()` removes the oldest frame and subtracts its full encoded size from `receivedBytes`.
+- `send(frame, timeout)` obtains `peerMaxControlPayloadBytes()`, calls `splitForLink()`, and submits each chunk through `sendControlAwaitCapacity` under one deadline.
+- If the complete CSM frame cannot be queued before that deadline, the channel fails closed with `IOException("iAP2 could not queue the complete CSM frame before its timeout")`.
+
+These queue limits are source-derived original behavior, distinct from the offline decoder's fixed receive-buffer limit. The next implementation gate is to model/test queue admission, byte accounting, timeout and fail-closed semantics separately from link-layer sequence/ACK state.
