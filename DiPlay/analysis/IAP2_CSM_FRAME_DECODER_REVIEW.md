@@ -45,3 +45,8 @@ Inspect the exact original Smali call path from `Iap2Session.openTunnel` and `Ia
 The recovered original Smali confirms the CSM input path: `Iap2CsmChannel` calls `Iap2LinkChannel.recvControl()`, then passes the returned control payload to `Iap2CsmFramer.offer()`. The original framer's `offer()` drains a 65,535-byte receive buffer while copying arbitrarily sized input chunks into available capacity. Outbound `splitForLink()` explicitly caps each link chunk at 65,525 bytes. Therefore 8,192 is only the raw stream read size in `Iap2LinkChannel.runPump()`; it is not the CSM framer's input limit.
 
 The offline decoder's defensive per-call cap is corrected to 65,525 bytes, derived from the original link-chunk maximum. This preserves bounded input while accepting the largest valid link-control chunk. It is a harness guard rather than a claim that the original `offer()` rejects larger caller arrays.
+
+
+## CI result after correcting the input-layer boundary
+
+Actions run [#163](https://github.com/qiangge5586-a11y/1/actions/runs/42175105245) passed on commit `94df7289bd468f97b1e9d43ff43cc4c3c222df14`. The complete offline suite passed **7,393 checks**, including 2,330 CSM decoder checks. This confirms the revised 65,525-byte per-call guard and existing maximum 65,535-byte frame coverage in the Java 7 offline harness. It does not validate a live iPhone or vehicle transport.
