@@ -59,6 +59,9 @@ pub struct EngineConfig {
     /// Opt-in for MIB3. Other receivers retain their previous startup behavior.
     #[serde(default)]
     pub wait_for_control: bool,
+    /// Use DiPlay 0.3.11 type-130 encrypted iAP2 DataStream instead of RTSP POST /command.
+    #[serde(default)]
+    pub diplay_0311: bool,
     #[serde(default)]
     pub keep_alive_stats: bool,
     pub identity_path: String,
@@ -488,6 +491,7 @@ pub async fn run_engine(
         identity_path: cfg.identity_path.clone(),
         enable_audio: cfg.enable_audio && cfg.carlife_enabled,
         wait_for_control: cfg.wait_for_control,
+        diplay_0311: cfg.diplay_0311,
         media_readiness,
         keep_alive_stats: cfg.keep_alive_stats,
         width: cfg.width,

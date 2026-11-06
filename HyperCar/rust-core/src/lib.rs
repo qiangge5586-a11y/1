@@ -25,6 +25,7 @@ mod carlife;
 mod crypto;
 mod engine;
 mod iap2_nav;
+mod iap_tunnel;
 mod pairing;
 mod rtsp;
 mod screen;

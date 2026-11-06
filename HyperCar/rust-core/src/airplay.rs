@@ -19,6 +19,7 @@ use std::time::Duration;
 
 use parking_lot::Mutex;
 
+use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpStream, UdpSocket};
 use tokio::sync::mpsc;
@@ -55,6 +56,8 @@ pub struct AirplayParams {
     pub identity_path: String,
     pub enable_audio: bool,
     pub wait_for_control: bool,
+    /// DiPlay 0.3.11 uses an encrypted AirPlay type-130 TCP DataStream for phone-to-car iAP2.
+    pub diplay_0311: bool,
     pub media_readiness: Arc<crate::media_start::MediaReadiness>,
     pub keep_alive_stats: bool,
     /// 设置里的 CarLife 编码分辨率（仅作 `/info` 无显示器信息时的兜底）。
@@ -302,6 +305,29 @@ async fn negotiate_media(
     let MediaSession { info, timing, event_channel, event_rx, keep_alive_port } =
         setup_media_session(&channel, p, info, shared_secret.as_ref(), &*factory, stop.clone()).await?;
 
+    // DiPlay 0.3.11 requires type-130 DataStream SETUP after the session/event
+    // channel is live and before the type-110 screen stream is negotiated.
+    let iap_tunnel = if p.diplay_0311 {
+        match shared_secret.as_ref() {
+            Some(shared) => match crate::iap_tunnel::setup(&channel, &*factory, &p.car_ip, shared).await {
+                Ok(tunnel) => {
+                    emit_log(&format!("IAP: DiPlay type-130 tunnel ready dataPort={} seed={}", tunnel.data_port, tunnel.seed));
+                    Some(tunnel)
+                }
+                Err(error) => {
+                    emit_log(&format!("IAP: DiPlay type-130 setup failed; video negotiation continues without outbound iAP2: {error}"));
+                    None
+                }
+            },
+            None => {
+                emit_log("IAP: DiPlay type-130 requires an AirPlay shared secret; outbound iAP2 tunnel disabled");
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     // ---- 2.6 用 /info 结果校准显示尺寸与能力（上面拿不到就全用兜底）----
     let keep_alive_stats = p.keep_alive_stats
         || info
@@ -446,8 +472,15 @@ async fn negotiate_media(
 
 
     // MIB3 虚拟 iAP2：控制通道出站、事件通道入站；与当前引擎一起取消。
-    spawn_iap_sender(channel.clone(), iap_rx, stop.clone(), p.media_readiness.clone());
-    emit_state("iap_ready", "主屏 SETUP 已完成，可启动虚拟 iAP2 控制链路");
+    if let Some(tunnel) = iap_tunnel {
+        spawn_iap_tunnel_sender(tunnel.writer, tunnel.key, iap_rx, stop.clone(), p.media_readiness.clone(), channel.clone());
+        emit_state("iap_ready", "DiPlay type-130 iAP2 TCP tunnel is ready");
+    } else if !p.diplay_0311 {
+        spawn_iap_sender(channel.clone(), iap_rx, stop.clone(), p.media_readiness.clone());
+        emit_state("iap_ready", "主屏 SETUP 已完成，可启动虚拟 iAP2 控制链路");
+    } else {
+        emit_state("iap_unavailable", "DiPlay type-130 tunnel unavailable; video remains active");
+    }
 
     // Activate the video session first. The caller can start its pump as soon as
     // this function returns; optional audio is deliberately not awaited here.
@@ -1066,6 +1099,69 @@ fn spawn_iap_sender(
                     let detail = format!("虚拟 iAP2 控制事务失败: {reason}");
                     command_failed=true;
                     emit_log(&format!("{detail}；控制应答失败不直接关闭媒体，反馈心跳继续判断连接状态"));
+                }
+            }
+        }
+    });
+
+}
+
+fn spawn_iap_tunnel_sender(
+    mut writer: OwnedWriteHalf,
+    key: [u8; 32],
+    mut packets: mpsc::Receiver<crate::media_start::IapCommand>,
+    stop: Arc<SessionStop>,
+    readiness: Arc<crate::media_start::MediaReadiness>,
+    channel: Arc<RtspChannel>,
+) {
+    spawn_scoped(stop.clone(), async move {
+        let mut counter = 0u64;
+        let mut reclaim_started = false;
+        let mut command_failed = false;
+        while let Some(command) = packets.recv().await {
+            match command {
+                crate::media_start::IapCommand::Packet(packet) => {
+                    if command_failed { continue; }
+                    let frames = match crate::iap_tunnel::encode_comm_frames(&key, counter, &packet) {
+                        Ok(frames) => frames,
+                        Err(error) => {
+                            command_failed = true;
+                            emit_log(&format!("IAP: DiPlay comm framing failed: {error}"));
+                            continue;
+                        }
+                    };
+                    for frame in frames {
+                        if let Err(error) = writer.write_all(&frame).await {
+                            command_failed = true;
+                            emit_log(&format!("IAP: DiPlay type-130 TCP write failed: {error}"));
+                            break;
+                        }
+                        counter = counter.wrapping_add(1);
+                    }
+                    if !command_failed {
+                        emit_log(&format!("IAP: DiPlay type-130 packet framed; nextCounter={counter}"));
+                    }
+                }
+                crate::media_start::IapCommand::ControlReady => {
+                    if command_failed {
+                        emit_log("IAP: DiPlay control_ready ignored after tunnel write failure");
+                        continue;
+                    }
+                    readiness.control_ready();
+                    if !reclaim_started {
+                        reclaim_started = true;
+                        let reclaim_channel = channel.clone();
+                        spawn_scoped(stop.clone(), async move {
+                            for delay in [1500, 2500, 8000, 18000] {
+                                tokio::time::sleep(Duration::from_millis(delay)).await;
+                                match assert_modes(&reclaim_channel).await {
+                                    Ok(()) => emit_log("AIRPLAY: DiPlay control-ready resource reclaim acknowledged; display not verified"),
+                                    Err(error) => emit_log(&format!("AIRPLAY: DiPlay resource reclaim failed: {error}; media retained")),
+                                }
+                            }
+                        });
+                    }
+                    emit_log("IAP: DiPlay type-130 control_ready after prior TCP writes");
                 }
             }
         }
