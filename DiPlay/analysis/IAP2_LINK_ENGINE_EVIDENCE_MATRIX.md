@@ -195,3 +195,9 @@ Remaining: validate the exact source-side peer-limit and queued-payload readines
 ## SYN boundary and malformed-input regression checkpoint
 
 Added tests for malformed version/fixed-prefix payloads, peer maxLength minimum 11 and maximum 65,535, u8 window/retry boundaries (0 and 255), u16 timeout boundaries (0 and 65,535), and the source decoder's treatment of trailing incomplete session-descriptor bytes (ignored after complete 3-byte descriptors). Actions run [#107](https://github.com/qiangge5586-a11y/1/actions/runs/42172506528) passed **7,199 offline checks** (146 negotiation, 32 composition). Run #106 exposed only a null-assertion helper defect in the new test and failed; the test was corrected before #107.
+
+## Unified post-SYN frame dispatch checkpoint
+
+The negotiation decoder now queues post-readiness frames (including frames following the peer SYN in the same input buffer). The composition dispatches them in order: non-zero control byte -> cumulative ACK model; Extended ACK bit -> raw missing-sequence list to retransmission model; exact ACK-only/data control predicate plus non-null payload -> receive-window model. Header-only ACKs are not delivered as zero-length data. Dispatch results are bounded and drainable (256 pending events); no wire responses are serialized or written.
+
+Actions run [#113](https://github.com/qiangge5586-a11y/1/actions/runs/42172814303) passed **7,214 offline checks**, including 47 composition checks. Test coverage includes same-buffer SYN+data, ordered delivery, Extended ACK targeted retransmission and ACK-only handling. Runs #109–#112 failed during initial wiring and fixture corrections; #113 is the passing result.
