@@ -93,3 +93,12 @@ This gives the real handshake gate: link must become ready and publish a valid p
 The current repository tree does not preserve the APKTool Smali output or JADX source for `Iap2LinkEngine` / `Iap2LinkChannel`. The decompile workflow is configured to retain its artifact for 30 days, but no identifiable decompile run or artifact ID was found in the latest 100 workflow runs inspected for this continuation. The detailed link-layer values above are therefore prior audit findings, not raw source excerpts available for independent re-verification from the current checkout.
 
 Before implementing synchronization, sequence/ACK, extended ACK, reordering, retransmission, peer-limit, ready-gate, or EOF behavior, restore the original Smali evidence and derive exact golden byte fixtures. See [IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md](IAP2_LINK_ENGINE_EVIDENCE_MATRIX.md) for the source-to-test checklist and acceptance criteria. No guessed marker or ACK behavior should be implemented.
+
+
+## Restored Smali artifact and packet primitive verification (2026-11-06)
+
+The decompile artifact was located after expanding the workflow-run search beyond the first 200 records: run `42142476134` succeeded and produced artifact `13468029869` (`diplay-0.3.11-decompiled`). ZIP SHA-256: `fc047244952803306aa690e35c59fa31cbe3817eb5f10e5e6001e96bd8cfc8f5`. It includes APKTool Smali for the original link engine and its nested packet/header/synchronization classes. The earlier note saying no artifact was found is superseded by this recovery.
+
+The original `writePacket()` and companion helpers confirm: detection preamble `FF 55 02 00 EE 10`; normal packet marker `FF 5A`; 9-byte header with BE total length, control, sequence, acknowledgement, session ID, and additive two's-complement header checksum; optional payload followed by its own additive checksum; u8 sequence wrap and modular distance. `SynchronizationPayload.encode()` confirms version, outgoing window, BE u16 max length and timeouts, retry/ack counts, and 3-byte session descriptors. Offline implementation is in `Iap2LinkFrameCodec.java`, with source-derived ACK-only and data-frame golden vectors in `Iap2LinkFrameCodecTest.java`.
+
+This restores reproducibility for packet primitives, but not full state-machine conformance. ACK window advancement, extended-ACK missing-sequence list semantics, out-of-order handling, retransmission deadlines, and transition to NORMAL still require dedicated golden-vector and state-transition tests before any transport integration.
