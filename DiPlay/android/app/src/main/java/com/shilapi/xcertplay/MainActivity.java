@@ -11,6 +11,8 @@ import java.util.List;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +26,9 @@ import android.widget.TextView;
  */
 public final class MainActivity extends Activity {
     private ClusterProjectionController clusterProjectionController;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private ExecutorService diagnosticExecutor;
+    private volatile boolean activityDestroyed;
     private static final int BG = 0xff101820;
     private static final int PANEL = 0xff1b2a36;
     private static final int TEXT = 0xffe6edf3;
@@ -65,6 +70,8 @@ public final class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
+        activityDestroyed = false;
+        diagnosticExecutor = Executors.newSingleThreadExecutor();
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
@@ -167,50 +174,67 @@ public final class MainActivity extends Activity {
                 "可手动读取 USB Host 当前公开的接口与端点描述信息。不会打开设备、申请通信权限或传输数据。API 17 不公开 alternate setting 字段，相关值会标记为未知。");
         final TextView usbStatus = text("USB 状态：尚未扫描", 14, MUTED);
         root.addView(usbStatus);
-        Button usbScan = new Button(this);
+        final Button usbScan = new Button(this);
         usbScan.setText("扫描 USB 设备（只读）");
         usbScan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UsbHostReadOnlyScanner.ScanResult scan =
-                        new UsbHostReadOnlyScanner().scan(MainActivity.this);
-                StringBuilder display = new StringBuilder(scan.getStatus());
-                List<com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor> devices =
-                        scan.getDevices();
-                for (int i = 0; i < devices.size(); i++) {
-                    com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor d = devices.get(i);
-                    display.append("\n设备 ").append(i + 1)
-                            .append(": VID=").append(String.format("%04X", d.getVendorId()))
-                            .append(" PID=").append(String.format("%04X", d.getProductId()))
-                            .append(" 类别=").append(d.getDeviceClass())
-                            .append(" 接口数=").append(d.getInterfaceCount())
-                            .append(" 接口集合数=").append(d.getInterfaceGroupCount());
-                    for (int c = 0; c < d.getConfigurations().size(); c++) {
-                        UsbConfigurationSnapshot configuration = d.getConfigurations().get(c);
-                        display.append("\n  接口列表（配置元数据未知） 接口=").append(configuration.getInterfaceCount());
-                        NcmInterfaceSelector.Selection ncm =
-                                UsbNcmReadOnlyMatcher.find(configuration);
-                        if (ncm != null) {
-                            display.append("\n  CDC-NCM接口形态候选：控制接口#")
-                                    .append(ncm.getControl().getId())
-                                    .append(" 数据接口#").append(ncm.getData().getId())
-                                    .append(" alt=").append(ncm.getData().getAlternateSetting() < 0
-                                            ? "未知" : String.valueOf(ncm.getData().getAlternateSetting()))
-                                    .append(" claim-alt=").append(ncm.getDataClaim().getAlternateSetting() < 0
-                                            ? "未知" : String.valueOf(ncm.getDataClaim().getAlternateSetting()))
-                                    .append(ncm.getData().getAlternateSetting() < 0
-                                            ? "（旧版API未公开alt信息，结果不完整）" : "");
+                usbScan.setEnabled(false);
+                usbStatus.setText("正在后台枚举 USB 元数据……");
+                diagnosticExecutor.execute(new Runnable() {
+                    @Override public void run() {
+                        final String report;
+                        try {
+                            UsbHostReadOnlyScanner.ScanResult scan =
+                                    new UsbHostReadOnlyScanner().scan(getApplicationContext());
+                            StringBuilder display = new StringBuilder(scan.getStatus());
+                            List<com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor> devices = scan.getDevices();
+                            for (int i = 0; i < devices.size(); i++) {
+                                com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor d = devices.get(i);
+                                display.append("\n设备 ").append(i + 1)
+                                        .append(": VID=").append(String.format("%04X", d.getVendorId()))
+                                        .append(" PID=").append(String.format("%04X", d.getProductId()))
+                                        .append(" 类别=").append(d.getDeviceClass())
+                                        .append(" 接口数=").append(d.getInterfaceCount())
+                                        .append(" 接口集合数=").append(d.getInterfaceGroupCount());
+                                for (int c = 0; c < d.getConfigurations().size(); c++) {
+                                    UsbConfigurationSnapshot configuration = d.getConfigurations().get(c);
+                                    display.append("\n  接口列表（配置元数据未知） 接口=").append(configuration.getInterfaceCount());
+                                    NcmInterfaceSelector.Selection ncm = UsbNcmReadOnlyMatcher.find(configuration);
+                                    if (ncm != null) {
+                                        display.append("\n  CDC-NCM接口形态候选：控制接口#")
+                                                .append(ncm.getControl().getId())
+                                                .append(" 数据接口#").append(ncm.getData().getId())
+                                                .append(" alt=").append(ncm.getData().getAlternateSetting() < 0
+                                                        ? "未知" : String.valueOf(ncm.getData().getAlternateSetting()))
+                                                .append(" claim-alt=").append(ncm.getDataClaim().getAlternateSetting() < 0
+                                                        ? "未知" : String.valueOf(ncm.getDataClaim().getAlternateSetting()))
+                                                .append(ncm.getData().getAlternateSetting() < 0
+                                                        ? "（旧版API未公开alt信息，结果不完整）" : "");
+                                    }
+                                    for (UsbConfigurationSnapshot.InterfaceSnapshot iface : configuration.getInterfaces()) {
+                                        display.append("\n    IF#").append(iface.getId())
+                                                .append(" class=").append(iface.getInterfaceClass())
+                                                .append("/").append(iface.getInterfaceSubclass())
+                                                .append(" alt=").append(iface.getAlternateSetting() < 0 ? "未知" : String.valueOf(iface.getAlternateSetting()))
+                                                .append(" EP=").append(iface.getEndpointCount());
+                                    }
+                                }
+                            }
+                            report = display.toString();
+                        } catch (Throwable failure) {
+                            report = "USB 扫描失败：" + failure.getClass().getSimpleName()
+                                    + (failure.getMessage() == null ? "" : " - " + failure.getMessage());
                         }
-                        for (UsbConfigurationSnapshot.InterfaceSnapshot iface : configuration.getInterfaces()) {
-                            display.append("\n    IF#").append(iface.getId())
-                                    .append(" class=").append(iface.getInterfaceClass())
-                                    .append("/").append(iface.getInterfaceSubclass())
-                                    .append(" alt=").append(iface.getAlternateSetting() < 0 ? "未知" : String.valueOf(iface.getAlternateSetting()))
-                                    .append(" EP=").append(iface.getEndpointCount());
-                        }
+                        mainHandler.post(new Runnable() {
+                            @Override public void run() {
+                                if (activityDestroyed) return;
+                                usbStatus.setText(report);
+                                usbScan.setEnabled(true);
+                            }
+                        });
                     }
-                }
-                usbStatus.setText(display.toString());
+                });
             }
         });
         root.addView(usbScan, new LinearLayout.LayoutParams(
@@ -220,18 +244,37 @@ public final class MainActivity extends Activity {
                 "只读取蓝牙适配器是否存在、开关状态和设备名称；不会开启蓝牙、扫描、配对或连接。");
         final TextView bluetoothStatus = text("蓝牙状态：尚未检测", 14, MUTED);
         root.addView(bluetoothStatus);
-        Button bluetoothCheck = new Button(this);
+        final Button bluetoothCheck = new Button(this);
         bluetoothCheck.setText("检测蓝牙状态（只读）");
         bluetoothCheck.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe.Result r =
-                        new com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe()
-                                .inspect(MainActivity.this);
-                String detail = r.getStatus() + "\n适配器状态：" + r.getStateLabel();
-                if (r.getName() != null) detail += "\n设备名称：" + r.getName();
-                detail += "\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
-                bluetoothStatus.setText(detail);
+                bluetoothCheck.setEnabled(false);
+                bluetoothStatus.setText("正在后台读取蓝牙适配器状态……");
+                diagnosticExecutor.execute(new Runnable() {
+                    @Override public void run() {
+                        final String detail;
+                        try {
+                            com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe.Result r =
+                                    new com.shilapi.xcertplay.compat.bluetooth.BluetoothReadOnlyProbe()
+                                            .inspect(getApplicationContext());
+                            String value = r.getStatus() + "\n适配器状态：" + r.getStateLabel();
+                            if (r.getName() != null) value += "\n设备名称：" + r.getName();
+                            value += "\n适配器：" + (r.isAdapterPresent() ? "存在" : "未检测到");
+                            detail = value;
+                        } catch (Throwable failure) {
+                            detail = "蓝牙检测失败：" + failure.getClass().getSimpleName()
+                                    + (failure.getMessage() == null ? "" : " - " + failure.getMessage());
+                        }
+                        mainHandler.post(new Runnable() {
+                            @Override public void run() {
+                                if (activityDestroyed) return;
+                                bluetoothStatus.setText(detail);
+                                bluetoothCheck.setEnabled(true);
+                            }
+                        });
+                    }
+                });
             }
         });
         root.addView(bluetoothCheck, new LinearLayout.LayoutParams(
@@ -286,6 +329,8 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        activityDestroyed = true;
+        if (diagnosticExecutor != null) diagnosticExecutor.shutdownNow();
         if (clusterProjectionController != null) clusterProjectionController.dismiss();
         super.onDestroy();
     }
