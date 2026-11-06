@@ -1,6 +1,7 @@
 package com.shilapi.xcertplay.compat.iap2;
 
-import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.List;
 
 public final class IapTunnelFramingTest {
@@ -11,6 +12,8 @@ public final class IapTunnelFramingTest {
         packageFragmentationAndCoalescing();
         packageRejectsInvalidSizesAndResets();
         packagePreservesUnknownTypes();
+        randomizedFrameChunkBoundaries();
+        randomizedPackageChunkBoundaries();
         System.out.println("IapTunnelFramingTest: PASS (" + checks + " checks)");
     }
 
@@ -61,6 +64,55 @@ public final class IapTunnelFramingTest {
         IapTunnelPackageDecoder d=new IapTunnelPackageDecoder(64);
         List<IapTunnelPackageDecoder.Package> out=d.feed(packet(7,new byte[0]));
         eq(1,out.size()); eq(7,out.get(0).messageType); check(!out.get(0).isComm());
+    }
+
+
+    private static void randomizedFrameChunkBoundaries() {
+        Random random = new Random(1302026L);
+        IapTunnelFrameDecoder decoder = new IapTunnelFrameDecoder(512);
+        for (int n = 0; n < 100; n++) {
+            int size = random.nextInt(200) + 1;
+            byte[] cipher = new byte[size];
+            random.nextBytes(cipher);
+            byte[] encoded = frame(cipher);
+            int offset = 0;
+            while (offset < encoded.length) {
+                int chunk = Math.min(encoded.length - offset, random.nextInt(17) + 1);
+                List<byte[]> out = decoder.feed(slice(encoded, offset, offset + chunk));
+                offset += chunk;
+                if (offset < encoded.length) eq(0, out.size());
+                else {
+                    eq(1, out.size());
+                    bytes(cipher, slice(out.get(0), 0, cipher.length));
+                    eq(0x5a, out.get(0)[out.get(0).length - 1] & 255);
+                }
+            }
+            eq(0, decoder.pendingBytes());
+        }
+    }
+
+    private static void randomizedPackageChunkBoundaries() {
+        Random random = new Random(5703L);
+        IapTunnelPackageDecoder decoder = new IapTunnelPackageDecoder(1024);
+        for (int n = 0; n < 100; n++) {
+            int size = random.nextInt(300);
+            byte[] body = new byte[size];
+            random.nextBytes(body);
+            byte[] encoded = packet(n % 2 == 0 ? IapTunnelPackageDecoder.MESSAGE_TYPE_COMM : n, body);
+            int offset = 0;
+            while (offset < encoded.length) {
+                int chunk = Math.min(encoded.length - offset, random.nextInt(23) + 1);
+                List<IapTunnelPackageDecoder.Package> out = decoder.feed(slice(encoded, offset, offset + chunk));
+                offset += chunk;
+                if (offset < encoded.length) eq(0, out.size());
+                else {
+                    eq(1, out.size());
+                    bytes(body, out.get(0).body);
+                    eq(n % 2 == 0, out.get(0).isComm() ? 1 : 0);
+                }
+            }
+            eq(0, decoder.pendingBytes());
+        }
     }
 
     private static byte[] header(int size) { byte[] b=new byte[32]; b[0]=(byte)(size>>>24); b[1]=(byte)(size>>>16); b[2]=(byte)(size>>>8); b[3]=(byte)size; return b; }
