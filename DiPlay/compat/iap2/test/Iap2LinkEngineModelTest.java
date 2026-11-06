@@ -131,10 +131,21 @@ public final class Iap2LinkEngineModelTest {
         truth(events.get(0).receivedData != null);
         eq(1, events.get(0).receivedData.delivered.size());
         eq(78, events.get(0).receivedData.delivered.get(0).sequence);
+        eq(0, m.drainWireFrames().size());
 
         Iap2OutboundWindowModel.Result sent = m.send(10, new byte[] {9}, 20);
         eq(1, sent.transmitted.size());
         eq(100, sent.transmitted.get(0).sequence);
+        List<byte[]> wire = m.drainWireFrames();
+        eq(1, wire.size());
+        Iap2LinkFrameDecoder wireDecoder = new Iap2LinkFrameDecoder();
+        List<Iap2LinkFrameDecoder.Frame> wireFrames = wireDecoder.feed(wire.get(0));
+        eq(1, wireFrames.size());
+        eq(0x40, wireFrames.get(0).control);
+        eq(100, wireFrames.get(0).sequence);
+        eq(78, wireFrames.get(0).acknowledgement);
+        eq(10, wireFrames.get(0).sessionId);
+        bytes(new byte[] {9}, wireFrames.get(0).payload);
         byte[] extendedAck = Iap2LinkFrameCodec.encode(0x20, 79, 99, 11,
                 new byte[] {100});
         m.feedNegotiation(extendedAck, 30);
@@ -143,6 +154,13 @@ public final class Iap2LinkEngineModelTest {
         truth(events.get(0).extendedAcknowledgement != null);
         eq(1, events.get(0).extendedAcknowledgement.retransmitted.size());
         eq(100, events.get(0).extendedAcknowledgement.retransmitted.get(0).sequence);
+        wire = m.drainWireFrames();
+        eq(1, wire.size());
+        wireFrames = new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, wireFrames.size());
+        eq(100, wireFrames.get(0).sequence);
+        eq(78, wireFrames.get(0).acknowledgement);
+        bytes(new byte[] {9}, wireFrames.get(0).payload);
 
         byte[] ackOnly = Iap2LinkFrameCodec.encode(0x40, 80, 100, 0, null);
         m.feedNegotiation(ackOnly, 40);
@@ -150,6 +168,21 @@ public final class Iap2LinkEngineModelTest {
         eq(1, events.size());
         truth(events.get(0).receivedData == null);
         truth(events.get(0).cumulativeAcknowledgement.acknowledgementAccepted);
+        eq(0, m.drainWireFrames().size());
+        byte[] secondData = Iap2LinkFrameCodec.encode(0x40, 79, 100, 10, new byte[] {7});
+        m.feedNegotiation(secondData, 50);
+        m.drainEvents();
+        byte[] thirdData = Iap2LinkFrameCodec.encode(0x40, 80, 100, 10, new byte[] {8});
+        m.feedNegotiation(thirdData, 60);
+        events = m.drainEvents();
+        truth(events.get(0).receivedData.acknowledgementNow);
+        wire = m.drainWireFrames();
+        eq(1, wire.size());
+        wireFrames = new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, wireFrames.size());
+        eq(0x40, wireFrames.get(0).control);
+        eq(80, wireFrames.get(0).acknowledgement);
+        truth(wireFrames.get(0).payload == null);
         eq(Iap2LinkEngineModel.State.READY, m.state());
     }
 
