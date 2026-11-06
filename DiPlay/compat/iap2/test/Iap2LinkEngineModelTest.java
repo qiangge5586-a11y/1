@@ -41,13 +41,19 @@ public final class Iap2LinkEngineModelTest {
         becomeReady(m);
         Iap2ReceiveWindowModel.Result gap = m.receive(packet(14), 100);
         bytes(new byte[] {11, 12, 13}, gap.extendedAcknowledgement);
-        Iap2ReceiveWindowModel.Result fill = m.receive(packet(11), 101);
+        Iap2ReceiveWindowModel.Result first = m.receive(packet(11), 101);
+        eq(1, first.delivered.size());
+        m.receive(packet(12), 102);
+        Iap2ReceiveWindowModel.Result fill = m.receive(packet(13), 103);
         eq(2, fill.delivered.size());
-        eq(12, fill.delivered.get(1).sequence);
+        eq(14, fill.delivered.get(1).sequence);
     }
 
     private static void bothTimersAdvanceOnSameClock() {
-        Iap2LinkEngineModel m = model();
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel(),
+                new Iap2OutboundWindowModel(99, Integer.valueOf(99), 4, 3,
+                        10, 500, 4, 8),
+                new Iap2ReceiveWindowModel(10, 10, 4, 3, 500, 0, 64));
         m.start(true, 0);
         becomeReady(m);
         m.send(10, new byte[] {1}, 100);
