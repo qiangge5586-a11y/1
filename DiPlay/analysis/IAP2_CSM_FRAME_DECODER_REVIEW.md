@@ -23,13 +23,15 @@ It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and 
 2. **Resynchronization:** invalid bytes and too-short candidate lengths are skipped one byte at a time. A plausible but incomplete 0x4040 candidate is retained until more bytes arrive; this is necessary for fragmented input but means false sync inside corrupted data can temporarily delay resynchronization.
 3. **Memory bound:** each input chunk is limited to 8,192 bytes, matching the source `recv(8192, waitMillis)` call; pending data is limited to one maximum CSM frame. An oversized chunk clears pending state and fails closed. The decoder should be reset on stream-generation changes.
 4. **Protocol evidence:** the current decoder is an offline compatibility model. Before wiring it into the original session path, verify the exact framing implementation in Smali and confirm that this 0x4040 format is the framing used at the specific CSM call site. Do not infer that every iAP2 transport layer uses this same frame header.
-5. **Semantics:** the decoder returns message ID and payload only. It does not implement sequence numbers, ACKs, retransmission, checksums, channel negotiation, message fragmentation semantics, or MFi authentication.
-6. **Failure behavior:** the current parser silently discards garbage/short-length candidates instead of returning a structured resync diagnostic. A production adapter should expose discarded-byte counts and distinguish malformed stream from normal partial input.
+5. **Diagnostics:** the decoder now exposes cumulative `getDiscardedBytes()` and `getInvalidLengthCandidates()` counters so an adapter can distinguish ordinary fragmentation from resynchronization work. `reset()` clears both counters and pending bytes at a session-generation boundary.
+6. **Semantics:** the decoder returns message ID and payload only. It does not implement sequence numbers, ACKs, retransmission, checksums, channel negotiation, message fragmentation semantics, or MFi authentication.
+7. **Failure behavior:** the current parser silently discards garbage/short-length candidates instead of returning a structured resync diagnostic. A production adapter should expose discarded-byte counts and distinguish malformed stream from normal partial input.
 
 ## Tests
 
 - Existing deterministic tests cover fragmented/coalesced frames, garbage resynchronization, invalid short lengths and incomplete tail retention.
 - Randomized test covers 100 frames with varying payload sizes, IDs and chunk boundaries.
+- Resynchronization diagnostics are checked against a malformed short-length candidate followed by a valid frame; reset clears diagnostics.
 - Boundary tests reject 8,193-byte input chunks and decode a maximum 65,535-byte CSM frame in bounded 8 KiB reads.
 - CI workflow: `.github/workflows/diplay-iap2-handshake.yml`.
 
