@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Single-consumer bridge between the bounded CSM receive queue, MFi adapter,
  * and the single-owner iAP2 link pump.
  *
- * Call processAvailable() from a dedicated application/CSM worker, never from
- * the link-pump worker or its callbacks. The bridge performs no socket I/O.
+ * Call from a dedicated application/CSM consumer worker, never from the
+ * link-pump worker or its callbacks. This class performs no socket I/O.
  */
 public final class MfiIap2CsmPumpBridge {
     private final Iap2CsmReceiveCoordinator receive;
@@ -42,19 +42,13 @@ public final class MfiIap2CsmPumpBridge {
         this.sendTimeoutMillis = sendTimeoutMillis;
     }
 
-    /**
-     * Processes up to maxFrames already admitted by Iap2CsmReceiveCoordinator.
-     * Returns the number of inbound frames processed. AA04/AA05 are terminal
-     * authentication results and correctly produce no outbound frame.
-     */
+    /** Process up to maxFrames already queued; useful for bounded batch consumers/tests. */
     public int processAvailable(int maxFrames) throws IOException {
         if (maxFrames < 1 || maxFrames > Iap2CsmReceiveQueueModel.MAX_PENDING_FRAMES)
             throw new IllegalArgumentException("maxFrames must be in 1..64");
-        if (cancelled.get()) throw new IOException("MFi CSM bridge is cancelled");
-        if (!processing.compareAndSet(false, true))
-            throw new IllegalStateException("MFi CSM bridge already has an active consumer");
-        int processed = 0;
+        enterConsumer();
         try {
+            int processed = 0;
             while (processed < maxFrames && !cancelled.get()) {
                 Iap2CsmReceiveQueueModel.Frame inbound = receive.poll();
                 if (inbound == null) {
@@ -64,20 +58,9 @@ public final class MfiIap2CsmPumpBridge {
                     }
                     break;
                 }
-                byte[] completeFrame = Iap2CsmFrameCodec.encode(inbound.messageId, inbound.payload);
-                byte[] outbound = adapter.onInboundFrame(completeFrame);
+                processInbound(inbound);
                 processed++;
-                if (cancelled.get()) throw new IOException("MFi CSM bridge cancelled during exchange");
-                if (outbound != null && !sender.sendEncodedFrame(outbound,
-                        peerMaxControlPayloadBytes, sendTimeoutMillis)) {
-                    cancel();
-                    throw new IOException("MFi CSM response could not be admitted to iAP2 pump");
-                }
-                if (adapter.state() == MfiIap2ExchangeCoordinator.State.FAILED
-                        || adapter.state() == MfiIap2ExchangeCoordinator.State.CLOSED) {
-                    break;
-                }
-                if (adapter.state() == MfiIap2ExchangeCoordinator.State.SUCCEEDED) break;
+                if (isTerminalState()) break;
             }
             return processed;
         } catch (RuntimeException failure) {
@@ -88,7 +71,56 @@ public final class MfiIap2CsmPumpBridge {
         }
     }
 
-    /** Session teardown/reconnect invalidates provider work and closes the old link pump. */
+    /**
+     * Blocking single-frame consumer API. A timeout returns zero; a received frame
+     * returns one. The receive queue owns interruption and close semantics.
+     */
+    public int processNext(long receiveTimeoutMillis) throws IOException {
+        if (receiveTimeoutMillis < 0L || receiveTimeoutMillis > 300000L)
+            throw new IllegalArgumentException("receive timeout must be in 0..300000");
+        enterConsumer();
+        try {
+            Iap2CsmReceiveQueueModel.Frame inbound = receive.receive(receiveTimeoutMillis);
+            if (inbound == null) return 0;
+            if (cancelled.get()) throw new IOException("MFi CSM bridge is cancelled");
+            processInbound(inbound);
+            return 1;
+        } catch (IOException failure) {
+            if (!cancelled.get()) cancel();
+            throw failure;
+        } catch (RuntimeException failure) {
+            cancel();
+            throw failure;
+        } finally {
+            processing.set(false);
+        }
+    }
+
+    private void enterConsumer() {
+        if (cancelled.get()) throw new IllegalStateException("MFi CSM bridge is cancelled");
+        if (!processing.compareAndSet(false, true))
+            throw new IllegalStateException("MFi CSM bridge already has an active consumer");
+    }
+
+    private void processInbound(Iap2CsmReceiveQueueModel.Frame inbound) throws IOException {
+        byte[] completeFrame = Iap2CsmFrameCodec.encode(inbound.messageId, inbound.payload);
+        byte[] outbound = adapter.onInboundFrame(completeFrame);
+        if (cancelled.get()) throw new IOException("MFi CSM bridge cancelled during exchange");
+        if (outbound != null && !sender.sendEncodedFrame(outbound,
+                peerMaxControlPayloadBytes, sendTimeoutMillis)) {
+            cancel();
+            throw new IOException("MFi CSM response could not be admitted to iAP2 pump");
+        }
+    }
+
+    private boolean isTerminalState() {
+        MfiIap2ExchangeCoordinator.State current = adapter.state();
+        return current == MfiIap2ExchangeCoordinator.State.FAILED
+                || current == MfiIap2ExchangeCoordinator.State.CLOSED
+                || current == MfiI2ExchangeCoordinator.State.SUCCEEDED;
+    }
+
+    /** Explicit teardown/reconnect invalidates provider work and closes the old link pump. */
     public void cancel() {
         if (!cancelled.compareAndSet(false, true)) return;
         adapter.cancel();
