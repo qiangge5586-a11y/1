@@ -2,6 +2,7 @@ package com.shilapi.xcertplay;
 
 import android.app.Activity;
 import android.widget.Button;
+import com.shilapi.xcertplay.compat.cluster.ClusterProjectionController;
 import com.shilapi.xcertplay.compat.usb.UsbHostReadOnlyScanner;
 import com.shilapi.xcertplay.compat.usb.UsbConfigurationSnapshot;
 import com.shilapi.xcertplay.compat.usb.UsbNcmReadOnlyMatcher;
@@ -22,6 +23,7 @@ import android.widget.TextView;
  * reference baseline or not yet measured; probes run only after an explicit user tap.
  */
 public final class MainActivity extends Activity {
+    private ClusterProjectionController clusterProjectionController;
     private static final int BG = 0xff101820;
     private static final int PANEL = 0xff1b2a36;
     private static final int TEXT = 0xffe6edf3;
@@ -235,11 +237,56 @@ public final class MainActivity extends Activity {
         root.addView(bluetoothCheck, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        section(root, "仪表盘投屏（外接屏验证）",
+                "使用 Android 4.2.2 / API 17 的 Presentation 接口，向系统识别到的独立外接显示屏输出导航样例。不会镜像其他应用，不会发送 CAN 指令，也不会修改车辆配置。");
+        final TextView clusterStatus = text("外接显示屏：尚未检测", 14, MUTED);
+        root.addView(clusterStatus);
+        clusterProjectionController = new ClusterProjectionController(this);
+        Button clusterScan = new Button(this);
+        clusterScan.setText("检测可投屏显示屏");
+        clusterScan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int count = clusterProjectionController.getPresentationDisplayCount();
+                clusterStatus.setText("系统公开的外接演示屏数量：" + count
+                        + (count == 0 ? "\n未发现可用外接屏；不能据此判断原车仪表有无视频输入。" : ""));
+            }
+        });
+        root.addView(clusterScan, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        Button clusterStart = new Button(this);
+        clusterStart.setText("输出导航样例到外接屏");
+        clusterStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                clusterStatus.setText(clusterProjectionController.showDemo());
+            }
+        });
+        root.addView(clusterStart, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        Button clusterStop = new Button(this);
+        clusterStop.setText("停止外接屏显示");
+        clusterStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                clusterProjectionController.dismiss();
+                clusterStatus.setText("外接屏显示已关闭。");
+            }
+        });
+        root.addView(clusterStop, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         TextView footer = text("安全提示：本验证版不是完整 DiPlay 复刻版，请勿作为车机正式升级包使用。",
                 13, MUTED);
         footer.setPadding(dp(2), dp(4), dp(2), dp(12));
         root.addView(footer);
 
         setContentView(scroll);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (clusterProjectionController != null) clusterProjectionController.dismiss();
+        super.onDestroy();
     }
 }
