@@ -186,3 +186,10 @@ Scope remains deliberately limited: the helper does not yet own a pending-packet
 ## Retransmission counter representation cross-check (2026-11-06)
 
 The original Smali artifact's `Iap2LinkEngine$Packet` declares `retransmissions:I` (32-bit signed integer), and `retransmitDuePacket(J)` performs `getRetransmissions()`, `add-int/2addr`, then compares the incremented integer for exact equality with peer `maxRetransmissions`. The peer limit itself is decoded from a u8 synchronization field. The normal reachable lifecycle increments from zero and terminates exactly when the counter reaches that peer limit (0 disables retention), so values above the negotiated u8 limit are not reached in a valid packet lifecycle. Do not reinterpret the internal counter field as a wire u8.
+
+
+## Terminal-state cleanup parity (2026-11-06)
+
+The original `Iap2LinkEngine.die(reason)` Smali path cancels marker/SYN/ACK deadlines, transitions to DEAD, marks the link non-writable, resets the pending output buffer, clears pending events and enqueues a terminal Dead event. The offline composition previously exposed already-queued wire frames and dispatch events after EOF or a terminal window failure. It now closes the negotiation model as well and clears pending wire frames, dispatch events, pre-ready packets and ACK-batch state. The negotiation model clears pending encoded output, post-ready frames, partial startup-marker bytes and decoder pending bytes on its terminal transition. The offline model retains the terminal reason but does not yet define a separate Dead-event type.
+
+Regression coverage includes EOF before/after readiness, stale output/event suppression after EOF, and terminal retransmission failure clearing pending output/events. CI run [#203](https://github.com/qiangge5586-a11y/1/actions/runs/42180479594) passed **2,323,717 Java 7 offline checks**, including 217 link-engine composition checks and 184 negotiation checks. No live Bluetooth/USB/vehicle test was performed.
