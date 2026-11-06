@@ -13,7 +13,7 @@ Date: 2026-11-06
 - incomplete frames are retained between calls
 - garbage and candidate headers with lengths below 6 are skipped during resynchronization
 - maximum total frame length is 65,535 bytes
-- each feed chunk is capped at 65,525 bytes, matching the original CSM `splitForLink()` maximum link chunk; `Iap2CsmChannel.recv()` passes reassembled link-control payloads to `Iap2CsmFramer.offer()`, not raw 8,192-byte socket reads
+- feed accepts arbitrary caller-array sizes like the original `offer()`; it drains a fixed 65,535-byte receive buffer, appends only available capacity, then drains again. `Iap2CsmChannel.recv()` passes reassembled link-control payloads, not raw 8,192-byte socket reads
 
 It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and the 32-byte AirPlay IAP package parser. These three layers must not be conflated.
 
@@ -21,7 +21,7 @@ It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and 
 
 1. **Incremental behavior:** the decoder handles split headers, split payloads and multiple coalesced frames. Deterministic randomized fragmentation coverage has been added.
 2. **Resynchronization:** invalid bytes and too-short candidate lengths are skipped one byte at a time. A plausible but incomplete 0x4040 candidate is retained until more bytes arrive; this is necessary for fragmented input but means false sync inside corrupted data can temporarily delay resynchronization.
-3. **Memory bound:** each input chunk is limited to 65,525 bytes, matching `Iap2CsmFramer.MAX_LINK_CHUNK_BYTES`; the earlier 8,192-byte limit incorrectly applied the lower-level stream read size to already reassembled link-control payloads. Pending data remains limited to one maximum CSM frame. An oversized chunk clears pending state and fails closed. The decoder should be reset on stream-generation changes.
+3. **Memory bound:** input arrays are consumed incrementally through a fixed 65,535-byte pending buffer: drain, append only available capacity, drain again. This mirrors original `offer()` and accepts coalesced arrays larger than one CSM frame without allocating an unbounded pending buffer. The decoder should be reset on stream-generation changes.
 4. **Protocol evidence:** the current decoder is an offline compatibility model. Before wiring it into the original session path, verify the exact framing implementation in Smali and confirm that this 0x4040 format is the framing used at the specific CSM call site. Do not infer that every iAP2 transport layer uses this same frame header.
 5. **Diagnostics:** the decoder now exposes cumulative `getDiscardedBytes()` and `getInvalidLengthCandidates()` counters so an adapter can distinguish ordinary fragmentation from resynchronization work. `reset()` clears both counters and pending bytes at a session-generation boundary.
 6. **Semantics:** the decoder returns message ID and payload only. It does not implement sequence numbers, ACKs, retransmission, checksums, channel negotiation, message fragmentation semantics, or MFi authentication.
@@ -32,7 +32,7 @@ It is deliberately separate from the AirPlay encrypted IAP TCP frame parser and 
 - Existing deterministic tests cover fragmented/coalesced frames, every possible two-part split boundary, byte-at-a-time delivery, garbage resynchronization, invalid short lengths and incomplete tail retention.
 - Randomized test covers 100 frames with varying payload sizes, IDs and chunk boundaries.
 - Resynchronization diagnostics are checked against a malformed short-length candidate followed by a valid frame; reset clears diagnostics.
-- Boundary tests accept a 65,525-byte link-control chunk, reject 65,526 bytes, and decode a maximum 65,535-byte CSM frame in bounded chunks.
+- Boundary tests feed two coalesced 40,006-byte CSM frames in one call (larger than the receive buffer), and decode a maximum 65,535-byte CSM frame in bounded chunks.
 - CI workflow: `.github/workflows/diplay-iap2-handshake.yml`.
 
 ## Next gate
@@ -50,3 +50,8 @@ The offline decoder's defensive per-call cap is corrected to 65,525 bytes, deriv
 ## CI result after correcting the input-layer boundary
 
 Actions run [#163](https://github.com/qiangge5586-a11y/1/actions/runs/42175105245) passed on commit `94df7289bd468f97b1e9d43ff43cc4c3c222df14`. The complete offline suite passed **7,393 checks**, including 2,330 CSM decoder checks. This confirms the revised 65,525-byte per-call guard and existing maximum 65,535-byte frame coverage in the Java 7 offline harness. It does not validate a live iPhone or vehicle transport.
+
+
+## Fixed-buffer parity follow-up
+
+The offline decoder now follows the original `offer()` loop more closely: before appending, drain complete frames; append only up to the remaining capacity of the 65,535-byte receive buffer; continue until the entire caller array has been consumed; drain once more. A new test feeds two coalesced 40,006-byte CSM frames in one call, proving that input arrays larger than the fixed receive buffer are processed without growing the pending buffer beyond one maximum frame.
