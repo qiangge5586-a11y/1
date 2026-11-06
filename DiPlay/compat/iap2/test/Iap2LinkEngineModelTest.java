@@ -13,26 +13,23 @@ public final class Iap2LinkEngineModelTest {
     }
 
     private static void readinessGatesDataPlane() {
-        Iap2LinkEngineModel m = model();
+        final Iap2LinkEngineModel m = model();
         m.start(true, 0);
         eq(Iap2LinkEngineModel.State.NEGOTIATING, m.state());
         throwsState(new Runnable() { public void run() {
-            modelForGate.send(10, new byte[] {1}, 0);
+            m.send(10, new byte[] {1}, 0);
         }});
     }
 
-    private static Iap2LinkEngineModel modelForGate;
-
     private static void ackReleasesQueuedOutboundPacket() {
         Iap2LinkEngineModel m = model();
-        modelForGate = m;
         m.start(true, 0);
         becomeReady(m);
         eq(Iap2LinkEngineModel.State.READY, m.state());
         eq(0, m.send(10, new byte[] {7}, 10).transmitted.size());
-        eq(1, m.acknowledge(101, 20).transmitted.size());
-        eq(105, m.acknowledge(101, 21).transmitted.size() == 0
-                ? 105 : m.acknowledge(101, 22).transmitted.get(0).sequence);
+        Iap2OutboundWindowModel.Result ack = m.acknowledge(101, 20);
+        eq(1, ack.transmitted.size());
+        eq(105, ack.transmitted.get(0).sequence);
     }
 
     private static void receiveAndExtendedAckRemainDistinctEvents() {
