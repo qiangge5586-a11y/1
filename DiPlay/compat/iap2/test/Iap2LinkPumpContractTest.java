@@ -66,7 +66,7 @@ public final class Iap2LinkPumpContractTest {
         Iap2LinkPump.Listener listener = new ListenerStub() {
             public void onClosed(String reason) { closed.countDown(); }
         };
-        Iap2LinkPump pump = new Iap2LinkPump(
+        final Iap2LinkPump pump = new Iap2LinkPump(
                 new Iap2StreamDuplexAdapter(new ByteArrayInputStream(new byte[0]),
                         new ByteArrayOutputStream()), driver, listener);
         pump.start();
