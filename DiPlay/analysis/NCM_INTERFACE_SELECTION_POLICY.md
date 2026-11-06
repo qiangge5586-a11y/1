@@ -18,7 +18,7 @@ The source was recovered from JADX Java-like output. The original APK reports 10
 
 - `DiPlay/compat/ncm/NcmInterfaceSelector.java` models the descriptor data using plain Java objects.
 - It has no Android USB imports and performs no USB permission request, open, claim, alternate-setting change, transfer, or ROOT operation.
-- `NcmInterfaceSelectorTest.java` covers seven deterministic fixtures for the selection rules above.
+- `NcmInterfaceSelectorTest.java` covers nine deterministic fixtures for the selection rules above.
 - The model is compiled into the isolated Android compatibility app, but is not connected to the read-only USB scanner or any USB I/O path.
 
 ## Remaining integration gates
