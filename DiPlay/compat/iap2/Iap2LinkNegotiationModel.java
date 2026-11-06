@@ -36,6 +36,11 @@ public final class Iap2LinkNegotiationModel {
         }
 
         public int getSessionDescriptorCount() { return sessionDescriptors.length / 3; }
+        /** Original peerPayloadIsAcceptable(): payload length must be <= maxLength - 10. */
+        public boolean acceptsPayload(byte[] payload) {
+            return payload != null && maxLength > 10 && payload.length <= maxLength - 10;
+        }
+
         public int[] getSessionDescriptor(int index) {
             if (index < 0 || index >= getSessionDescriptorCount()) {
                 throw new IndexOutOfBoundsException("session descriptor " + index);
