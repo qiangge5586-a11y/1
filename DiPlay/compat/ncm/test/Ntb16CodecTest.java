@@ -94,7 +94,7 @@ public final class Ntb16CodecTest {
     private static void parsesChainedNdpsAndStopsOnCycle() {
         byte[] block = new byte[48];
         nth(block, 48, 12);
-        ndp(block, 12, 12, 28);
+        ndp(block, 12, 16, 28);
         putU16(block, 20, 44); putU16(block, 22, 2);
         putU16(block, 24, 0); putU16(block, 26, 0);
         ndp(block, 28, 16, 12);
