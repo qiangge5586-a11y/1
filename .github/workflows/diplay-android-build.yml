@@ -8,6 +8,7 @@ on:
       - "DiPlay/compat/usb/**"
       - "DiPlay/compat/bluetooth/**"
       - "DiPlay/compat/ncm/**"
+      - "DiPlay/compat/iap2/**"
       - ".github/workflows/diplay-android-build.yml"
 permissions:
   contents: read
