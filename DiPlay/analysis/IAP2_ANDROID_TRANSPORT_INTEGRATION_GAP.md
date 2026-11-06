@@ -69,3 +69,10 @@
 - 当前 iAP2 CI 的 2,323,738 项检查属于 Java 7 离线模型检查，不是 APK 运行测试，也不是真实设备握手。
 
 后续最小风险实现应先新增独立的 API 17 双向流 adapter 与 pump contract 测试，再迁移生产 link engine；不能先把模型的 `drainWireFrames()` 直接连到 socket，因为它尚未完整复刻原版 worker 的定时、阻塞、事件和关闭语义。
+
+
+## CSM send precondition gate model (2026-11-06)
+
+Added `Iap2CsmLinkGateModel` to make the audited CSM send preconditions explicit in the offline layer: link state must be READY first; peer CSM max control-payload size must then be available and within 1..65,525; only then is the existing chunk-admission model created. The model distinguishes waiting for link, waiting for peer limit, invalid peer limit and closed link. It does not implement `Iap2CsmChannel.awaitReady()`, the CSM handshake, worker pump, or actual transport.
+
+CI [#214](https://github.com/qiangge5586-a11y/1/actions/runs/42183487239) passed all 17 Java 7 offline suites (**2,323,780 checks**). Production transport integration and Android API 17/device validation remain open.
