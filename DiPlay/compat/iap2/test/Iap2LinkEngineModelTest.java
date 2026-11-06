@@ -178,10 +178,24 @@ public final class Iap2LinkEngineModelTest {
         events = m.drainEvents();
         truth(events.get(0).receivedData != null);
         eq(79, events.get(0).receivedData.delivered.get(0).sequence);
+        truth(events.get(0).receivedData.acknowledgementNow);
+        wire = m.drainWireFrames();
+        eq(1, wire.size());
+        wireFrames = new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, wireFrames.size());
+        eq(0x40, wireFrames.get(0).control);
+        eq(79, wireFrames.get(0).acknowledgement);
+        truth(wireFrames.get(0).payload == null);
+
+        // A subsequent ACK+data frame is delivered, then ACKed at its deadline.
         byte[] thirdData = Iap2LinkFrameCodec.encode(0x40, 80, 100, 10, new byte[] {8});
         m.feedNegotiation(thirdData, 60);
         events = m.drainEvents();
-        truth(events.get(0).receivedData.acknowledgementNow);
+        truth(events.get(0).receivedData != null);
+        truth(!events.get(0).receivedData.acknowledgementNow);
+        eq(0, m.drainWireFrames().size());
+        Iap2LinkEngineModel.TimerResult delayedAck = m.advanceTimers(310);
+        truth(delayedAck.inbound.acknowledgementNow);
         wire = m.drainWireFrames();
         eq(1, wire.size());
         wireFrames = new Iap2LinkFrameDecoder().feed(wire.get(0));
