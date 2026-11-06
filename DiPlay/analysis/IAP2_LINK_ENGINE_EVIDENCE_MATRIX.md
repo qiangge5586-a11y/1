@@ -224,3 +224,7 @@ Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/4217439646
 - The ACK counter is incremented before readiness queue flushing, so a queued write can reset it before the final per-frame batch threshold check.
 
 Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks** (200 composition checks). The queue cap of 64 is explicitly defensive, not source-derived. The model remains disconnected from live transport and hardware.
+
+## Readiness ACK mutation order
+
+The readiness-triggering ACK frame is now modeled in source order: pre-ready payload validation precedes ACK-window mutation; the ACK field is applied before queued packets are flushed; then the same frame continues through Extended ACK/data handling and the end-of-frame ACK-batch threshold. Actions run [#156](https://github.com/qiangge5586-a11y/1/actions/runs/42174566575) passed **7,379 offline checks**.
