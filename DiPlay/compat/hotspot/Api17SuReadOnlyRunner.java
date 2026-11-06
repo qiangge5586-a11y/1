@@ -66,7 +66,7 @@ public final class Api17SuReadOnlyRunner implements HotspotReadOnlyExecutor.Runn
         }
     }
 
-    static String requireCatalogCommand(String executable, String[] arguments) {
+    public static String requireCatalogCommand(String executable, String[] arguments) {
         if (executable == null || arguments == null)
             throw new IllegalArgumentException("command required");
         for (HotspotReadOnlyOperation.Kind kind : HotspotReadOnlyOperation.Kind.values()) {
