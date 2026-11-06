@@ -15,6 +15,8 @@ public final class Iap2OutboundWindowModelTest {
         sourceAckStopsAtFirstPacketInsideRetentionWindow();
         timeoutRetransmitsSamePacketAndAdvancesRetry();
         earliestDuePacketLeavesOtherDeadlineArmed();
+        sourceTimerUsesLastSentPacketDeadline();
+        extendedAckUsesLastMatchedPacketDeadline();
         retryLimitTerminatesAtExactCount();
         extendedAckRetransmitsOnlyRequestedSequences();
         sequenceWrapWorksAcrossAckAndSend();
@@ -79,7 +81,9 @@ public final class Iap2OutboundWindowModelTest {
         eq(1, ack.acknowledged.size());
         eq(100, ack.acknowledged.get(0).intValue());
         eq(Long.valueOf(601), m.getNextDeadlineMillis());
-        Iap2OutboundWindowModel.Result due = m.advanceTime(601);
+        Iap2OutboundWindowModel.Result due = m.advanceTime(600);
+        eq(0, due.retransmitted.size());
+        due = m.advanceTime(601);
         eq(1, due.retransmitted.size());
         eq(101, due.retransmitted.get(0).sequence);
         eq(1, due.retransmitted.get(0).retryCount);
@@ -128,8 +132,9 @@ public final class Iap2OutboundWindowModelTest {
         Iap2OutboundWindowModel m = model(99, 99, 8, 3, 10, 500, 4, 8);
         m.send(10, new byte[] {1}, 100);
         m.send(11, new byte[] {2}, 101);
-        eq(Long.valueOf(600), m.getNextDeadlineMillis());
-        Iap2OutboundWindowModel.Result first = m.advanceTime(600);
+        eq(Long.valueOf(601), m.getNextDeadlineMillis());
+        eq(0, m.advanceTime(600).retransmitted.size());
+        Iap2OutboundWindowModel.Result first = m.advanceTime(601);
         eq(1, first.retransmitted.size());
         eq(100, first.retransmitted.get(0).sequence);
         eq(Long.valueOf(601), m.getNextDeadlineMillis());
@@ -137,6 +142,31 @@ public final class Iap2OutboundWindowModelTest {
         eq(1, second.retransmitted.size());
         eq(101, second.retransmitted.get(0).sequence);
         eq(Long.valueOf(1100), m.getNextDeadlineMillis());
+    }
+
+    private static void sourceTimerUsesLastSentPacketDeadline() {
+        Iap2OutboundWindowModel m = model(99, 99, 8, 3, 10, 500, 4, 8);
+        m.send(10, new byte[] {1}, 100);
+        m.send(10, new byte[] {2}, 101);
+        eq(Long.valueOf(601), m.getNextDeadlineMillis());
+        Iap2OutboundWindowModel.Result early = m.advanceTime(600);
+        eq(0, early.retransmitted.size());
+        Iap2OutboundWindowModel.Result due = m.advanceTime(601);
+        eq(1, due.retransmitted.size());
+        eq(100, due.retransmitted.get(0).sequence);
+        eq(Long.valueOf(601), m.getNextDeadlineMillis());
+    }
+
+    private static void extendedAckUsesLastMatchedPacketDeadline() {
+        Iap2OutboundWindowModel m = model(99, 99, 8, 3, 10, 100, 4, 8);
+        m.send(10, new byte[] {1}, 0);
+        m.send(11, new byte[] {2}, 1);
+        Iap2OutboundWindowModel.Result r = m.requestMissing(
+                new byte[] {101, 100}, 20);
+        eq(2, r.retransmitted.size());
+        // The original iterates outstanding packets in order; sequence 101
+        // is the last match and therefore owns the receive-ACK timer.
+        eq(Long.valueOf(101), m.getNextDeadlineMillis());
     }
 
     private static void retryLimitTerminatesAtExactCount() {
