@@ -101,3 +101,9 @@ The composition exposes `queueBeforeReady(sessionId, payload)` for packets queue
 The 64-packet pre-ready queue limit is a defensive offline-harness cap, not a claimed original APK constant. The payload-size predicate is only applied to the pre-ready queue: original NORMAL `sendPacket()` does not repeat this check for post-ready calls.
 
 Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 158 negotiation and 200 composition checks. Tests cover payload cloning, accepted and rejected pre-ready sizes, no partial flush on an invalid queue, queue-cap termination, readiness-frame flush ordering, ACK-batch threshold and counter reset. No live transport or head-unit session is claimed.
+
+## Readiness ACK ordering checkpoint
+
+The composition now mirrors the original `handleAcknowledgement()` ordering for a readiness-triggering ACK frame: validate every pre-ready queued payload first; then apply the ACK field to the outbound window; then flush accepted queued packets; only afterward continue the same frame's Extended ACK/data path and end-of-frame ACK batching. This prevents queued packets from being sent before the readiness ACK watermark has been applied and ensures an oversized pending packet terminates before ACK-window mutation.
+
+Actions run [#156](https://github.com/qiangge5586-a11y/1/actions/runs/42174566575) passed **7,379 offline checks**, including 200 composition checks. This is source-ordered offline simulation only.
