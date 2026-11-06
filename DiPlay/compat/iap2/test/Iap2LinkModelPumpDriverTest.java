@@ -14,9 +14,13 @@ public final class Iap2LinkModelPumpDriverTest {
         }
         truth(!driver.isReady(), "not ready before peer synchronization");
         truth(!driver.isTerminal(), "not terminal after startup marker");
+        equal(2000L, driver.nextDeadlineMillis(), "exact marker resend deadline");
         driver.onTimer(1100L);
         truth(!driver.isTerminal(), "timer poll keeps detecting state alive");
-        System.out.println("Iap2LinkModelPumpDriverTest: 10 checks passed");
+        equal(2000L, driver.nextDeadlineMillis(), "deadline remains stable before expiry");
+        driver.onTimer(2000L);
+        equal(3000L, driver.nextDeadlineMillis(), "marker deadline advances by source interval");
+        System.out.println("Iap2LinkModelPumpDriverTest: 13 checks passed");
     }
 
     private static void equal(int expected, int actual, String label) {
