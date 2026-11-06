@@ -11,6 +11,7 @@ public final class Iap2LinkEngineModelTest {
         receiveAndExtendedAckRemainDistinctEvents();
         bothTimersAdvanceOnSameClock();
         terminalWindowFailureClosesComposition();
+        terminalClosureDiscardsPendingFramesAndEvents();
         negotiatedPeerParametersBuildBothWindows();
         preReadyQueueUsesPeerPayloadLimit();
         readinessAckUpdatesOutboundWindow();
@@ -84,6 +85,8 @@ public final class Iap2LinkEngineModelTest {
         truth(due.outbound.terminalReason != null);
         eq(Iap2LinkEngineModel.State.CLOSED, m.state());
         truth(m.getTerminalReason().contains("retransmission"));
+        eq(0, m.drainWireFrames().size());
+        eq(0, m.drainEvents().size());
     }
 
     private static void negotiatedPeerParametersBuildBothWindows() {
@@ -412,6 +415,30 @@ public final class Iap2LinkEngineModelTest {
         eq(0, frames.get(0).sessionId);
         eq(77, frames.get(0).acknowledgement);
         bytes(new byte[] {78, 79}, frames.get(0).payload);
+    }
+
+
+    private static void terminalClosureDiscardsPendingFramesAndEvents() {
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        m.start(true, 0);
+        becomeReady(m);
+        m.send(10, new byte[] {1, 2, 3}, 10);
+        eq(1, m.drainWireFrames().size());
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x00, 78, 99, 10,
+                new byte[] {4, 5}), 20);
+        eq(1, m.drainEvents().size());
+
+        // Queue new output and an undispatched event, then terminate the link.
+        m.send(10, new byte[] {6}, 30);
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x00, 79, 99, 10,
+                new byte[] {7}), 40);
+        m.endOfStream();
+        eq(Iap2LinkEngineModel.State.CLOSED, m.state());
+        eq(0, m.drainWireFrames().size());
+        eq(0, m.drainEvents().size());
+        throwsState(new Runnable() { public void run() {
+            m.send(10, new byte[] {8}, 50);
+        }});
     }
 
     private static void eofClosesBeforeAndAfterReadiness() {
