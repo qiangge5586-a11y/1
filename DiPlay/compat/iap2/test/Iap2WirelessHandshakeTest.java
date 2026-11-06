@@ -8,6 +8,7 @@ public final class Iap2WirelessHandshakeTest {
         testTunnelMayArriveBeforeOptionalHandoffObservations();
         testStaleCallbacksAfterReconnect();
         testFailureIsTerminalUntilNewGeneration();
+        testAvailabilityFalseAndLateNotificationsDoNotRegressTunnelPhase();
         System.out.println("Iap2WirelessHandshakeTest: PASS (" + checks + " checks)");
     }
 
@@ -80,6 +81,24 @@ public final class Iap2WirelessHandshakeTest {
         check(next != g);
         eq(Iap2WirelessHandshake.Phase.IDLE, h.getPhase());
         eq(null, h.getFailureReason());
+    }
+
+
+    private static void testAvailabilityFalseAndLateNotificationsDoNotRegressTunnelPhase() {
+        Iap2WirelessHandshake h = new Iap2WirelessHandshake();
+        long g = h.beginSession();
+        bootstrap(h, g);
+        eq(Iap2WirelessHandshake.Result.ACCEPTED, h.onCarPlayAvailability(g, false));
+        check(h.hasCarPlayAvailability());
+        check(!h.isCarPlayAvailable());
+        eq(Iap2WirelessHandshake.Result.DUPLICATE, h.onCarPlayAvailability(g, false));
+        eq(Iap2WirelessHandshake.Result.ACCEPTED, h.onCarPlayAvailability(g, true));
+        eq(Iap2WirelessHandshake.Result.ACCEPTED, h.onTunnelStreamReceived(g));
+        eq(Iap2WirelessHandshake.Result.ACCEPTED, h.onTunnelOpened(g));
+        eq(Iap2WirelessHandshake.Result.ACCEPTED, h.onTunnelMfiAuthenticated(g));
+        eq(Iap2WirelessHandshake.Result.ACCEPTED, h.onTunnelControlActive(g));
+        eq(Iap2WirelessHandshake.Result.ACCEPTED, h.onWifiConfigurationRequested(g));
+        eq(Iap2WirelessHandshake.Phase.ACTIVE, h.getPhase());
     }
 
     private static void bootstrap(Iap2WirelessHandshake h, long g) {
