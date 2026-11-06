@@ -9,10 +9,12 @@ Purpose: turn the existing link-layer audit into a reproducible source-to-test p
 - The repository contains the APK and the decompile workflow definition.
 - The decompile workflow is configured to upload `diplay-0.3.11-decompiled` for 30 days.
 - The current `main` tree does not contain APKTool Smali output or JADX source for `Iap2LinkEngine` / `Iap2LinkChannel`.
-- The latest 100 repository workflow runs inspected on 2026-11-06 did not include a run identifiable as the decompile workflow. No artifact ID was available to retrieve.
-- Therefore the detailed values in `IAP2_LINK_AND_CSM_FRAMING_AUDIT.md` remain prior audit findings, but this checkout does not currently carry the raw Smali lines needed for independent line-by-line reproduction.
+- The decompile run was found on workflow-run history page 3: run `42142476134`, completed successfully at `2026-11-06T01:14:21Z`.
+- Artifact `diplay-0.3.11-decompiled`, ID `13468029869`, was downloaded; ZIP SHA-256: `fc047244952803306aa690e35c59fa31cbe3817eb5f10e5e6001e96bd8cfc8f5`.
+- The artifact contains original APKTool Smali for `Iap2LinkEngine`, `Iap2LinkChannel`, `Iap2LinkEngine$Companion`, `Header`, `Packet`, `ReceiveBuffer`, and `SynchronizationPayload` under `smali_classes4`.
+- The earlier statement that no decompile run was found was incomplete because only the first two pages (200 runs) had been checked. The artifact is now available and the core packet primitives have been source-audited.
 
-Do not silently promote an audit note into a golden wire fixture. Before protocol implementation, retrieve the decompile artifact or rerun the decompile workflow and preserve the relevant Smali excerpts (with APK SHA-256 and class/method provenance).
+The artifact is temporary (expires `2026-12-06T01:15:20Z`). Preserve source excerpts or a reproducible source-audit note in the repository; do not rely on the temporary artifact as the only long-term evidence.
 
 ## Source extraction checklist
 
@@ -68,3 +70,16 @@ The link-layer implementation may begin only when:
 - every implemented wire field has at least one source-grounded fixture;
 - the test suite checks both expected positive transitions and malformed/timeout terminal cases;
 - CI compiles with the project's Java 7 compatibility target.
+
+
+## First restored source findings (2026-11-06)
+
+Source: `Iap2LinkEngine.smali` methods `writePacket`, `parseAvailable`, `processFrame`; `Iap2LinkEngine$Companion.smali` methods `checksum`, `checksumValid`, `parseHeader`, `readU16`, `sequenceDistance`, `nextSequence`; `Iap2LinkEngine$SynchronizationPayload.smali` method `encode`.
+
+- Detection preamble is six bytes `FF 55 02 00 EE 10`; after it is consumed, the engine enters NEGOTIATING and emits synchronization.
+- Normal link frame marker is `FF 5A`, not the detection preamble.
+- Normal header is 9 bytes: marker[0..1], total frame length u16 BE[2..3], control[4], sequence[5], acknowledgement[6], session ID[7], additive checksum[8]. Header checksum makes the unsigned byte sum of all 9 header bytes equal 0 modulo 256.
+- Payload frames append a separate additive checksum byte; payload plus checksum sums to 0 modulo 256. A null payload is a 9-byte control frame; a non-null payload frame length is payload length + 10.
+- Sequence numbers are u8; next sequence wraps modulo 256; distance is `(sequence - previous) & 0xFF`.
+- Synchronization payload begins with version u8, maxOutgoing u8, then maxLength/retransmissionTimeout/acknowledgementTimeout as u16 BE, maxRetransmissions u8, maxAcknowledgements u8, followed by 3-byte session descriptors (id, kind, version).
+- The offline codec and two golden vectors are now in `Iap2LinkFrameCodec.java` and `test/Iap2LinkFrameCodecTest.java`. They cover the source-derived 9-byte ACK-only frame and a data frame with payload checksum. These tests validate framing primitives only, not the complete link state machine.
