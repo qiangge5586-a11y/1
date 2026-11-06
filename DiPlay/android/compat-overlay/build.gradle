@@ -27,7 +27,8 @@ android {
                     '../../compat/ncm',
                     '../../compat/iap2',
                     '../../compat/cluster',
-                    '../../compat/mfi'
+                    '../../compat/mfi',
+                    '../../compat/airplay'
                 ]
                 exclude '**/test/**'
             }
