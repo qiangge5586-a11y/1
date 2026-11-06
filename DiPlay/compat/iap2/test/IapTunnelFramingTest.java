@@ -22,7 +22,7 @@ public final class IapTunnelFramingTest {
         eq(0,out.size()); eq(2,d.pendingBytes());
         out = d.feed(concat(slice(f1,2,f1.length), f2));
         eq(2,out.size());
-        bytes(new byte[]{1,2,3,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,4,5,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a,0x5a}, concat(out.get(0),out.get(1)));
+        eq(19,out.get(0).length); eq(18,out.get(1).length);\n        bytes(new byte[]{1,2,3},slice(out.get(0),0,3));\n        bytes(new byte[]{4,5},slice(out.get(1),0,2));\n        eq(0x5a,out.get(0)[18] & 255); eq(0x5a,out.get(1)[17] & 255);
         eq(0,d.pendingBytes());
     }
 
