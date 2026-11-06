@@ -99,3 +99,20 @@ The offline negotiation model was corrected to match the exact `processFrame` bi
 - Checks: 61 handshake lifecycle + 3,380 encrypted IAP frame/package + 2,330 CSM + 64 link codec + 1,050 link decoder + 108 negotiation model + 20 retransmission policy = **7,013 offline checks**.
 
 This is a Java 7 offline model validation only. It does not yet provide a full source-equivalent link engine: cumulative ACK queue/window processing, out-of-order packet delivery, delayed ACK scheduling, extended ACK selective retransmission, and retransmission timer integration remain separate work items.
+
+
+## Control-bit re-audit correction (2026-11-06)
+
+A line-by-line re-read of the recovered `Iap2LinkEngine.smali` `processFrame()` (source line 357 onward) supersedes the earlier composition note that described readiness as triggered by every non-zero control byte.
+
+The actual source tests the bits independently:
+
+- Reset: `control & 0x10` terminates the link.
+- Synchronization: `control & 0x80` decodes the SYN payload and calls `handleSynchronization()`.
+- Cumulative ACK / readiness: `control & 0x40` only. A SYN-only `0x80` frame records peer limits and emits the local ACK, but remains NEGOTIATING. An ACK-bearing frame (commonly a later `0x40` frame) runs the readiness gate.
+- Extended ACK: `control & 0x20` with a non-null payload calls `handleExtendedAcknowledgement()`.
+- Data: `(control & ~0x40) == 0` and non-null payload calls `handleData()`. Thus both `0x00` data-only and `0x40` data-plus-cumulative-ACK frames carry data. The latter runs both ACK and data handling.
+
+The offline negotiation model now stays NEGOTIATING after a SYN-only frame and queues the ACK-bearing frame that completes readiness for composition dispatch. The composition model applies cumulative ACK only when bit `0x40` is set, handles Extended ACK independently, and accepts both `0x00` and `0x40` data frames.
+
+This correction is based on the original Smali, not a protocol convention. Regression tests cover SYN-only versus ACK readiness, Extended ACK not being treated as cumulative ACK, data-only frames, and combined ACK/data frames.
