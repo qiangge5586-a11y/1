@@ -30,6 +30,7 @@ jobs:
             DiPlay/compat/iap2/IapTunnelFrameDecoder.java \
             DiPlay/compat/iap2/IapTunnelPackageDecoder.java \
             DiPlay/compat/iap2/Iap2CsmFrameDecoder.java \
+            DiPlay/compat/iap2/Iap2CsmFrameCodec.java \
             DiPlay/compat/iap2/Iap2CsmReceiveQueueModel.java \
             DiPlay/compat/iap2/Iap2CsmSendPlan.java \
             DiPlay/compat/iap2/Iap2LinkCommandQueueModel.java \
@@ -50,6 +51,7 @@ jobs:
             DiPlay/compat/iap2/test/Iap2WirelessHandshakeTest.java \
             DiPlay/compat/iap2/test/IapTunnelFramingTest.java \
             DiPlay/compat/iap2/test/Iap2CsmFrameDecoderTest.java \
+            DiPlay/compat/iap2/test/Iap2CsmFrameCodecTest.java \
             DiPlay/compat/iap2/test/Iap2CsmReceiveQueueModelTest.java \
             DiPlay/compat/iap2/test/Iap2CsmSendPlanTest.java \
             DiPlay/compat/iap2/test/Iap2LinkCommandQueueModelTest.java \
@@ -70,6 +72,7 @@ jobs:
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2WirelessHandshakeTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.IapTunnelFramingTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmFrameDecoderTest
+          java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmFrameCodecTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmReceiveQueueModelTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmSendPlanTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkCommandQueueModelTest
