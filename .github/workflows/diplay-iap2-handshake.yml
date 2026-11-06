@@ -30,6 +30,7 @@ jobs:
             DiPlay/compat/iap2/Iap2CsmSendPlan.java \
             DiPlay/compat/iap2/Iap2LinkCommandQueueModel.java \
             DiPlay/compat/iap2/Iap2CsmSendDeadline.java \
+            DiPlay/compat/iap2/Iap2CsmSendAdmissionModel.java \
             DiPlay/compat/iap2/Iap2LinkFrameCodec.java \
             DiPlay/compat/iap2/Iap2LinkFrameDecoder.java \
             DiPlay/compat/iap2/Iap2LinkNegotiationModel.java \
@@ -45,6 +46,7 @@ jobs:
             DiPlay/compat/iap2/test/Iap2CsmSendPlanTest.java \
             DiPlay/compat/iap2/test/Iap2LinkCommandQueueModelTest.java \
             DiPlay/compat/iap2/test/Iap2CsmSendDeadlineTest.java \
+            DiPlay/compat/iap2/test/Iap2CsmSendAdmissionModelTest.java \
             DiPlay/compat/iap2/test/Iap2LinkFrameCodecTest.java \
             DiPlay/compat/iap2/test/Iap2LinkFrameDecoderTest.java \
             DiPlay/compat/iap2/test/Iap2LinkNegotiationModelTest.java \
@@ -60,6 +62,7 @@ jobs:
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmSendPlanTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkCommandQueueModelTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmSendDeadlineTest
+          java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2CsmSendAdmissionModelTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkFrameCodecTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkFrameDecoderTest
           java -cp build/iap2-test com.shilapi.xcertplay.compat.iap2.Iap2LinkNegotiationModelTest
