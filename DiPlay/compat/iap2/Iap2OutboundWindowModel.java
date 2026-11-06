@@ -103,22 +103,19 @@ public final class Iap2OutboundWindowModel {
     public synchronized Result acknowledge(int acknowledgement, long nowMillis) {
         checkByte(acknowledgement, "acknowledgement");
         if (terminalReason != null) return empty(false);
-        if (lastSentAcknowledged == null
-                || !Iap2LinkFrameCodec.isAcceptableCumulativeAck(lastSentAcknowledged.intValue(),
-                        acknowledgement, peerMaxAcknowledgements, ackSlack)) {
-            return empty(false);
-        }
+        // Source Iap2LinkEngine.handleAcknowledgement() accepts the received
+        // u8 ACK watermark directly; it does not apply a forward-window validator.
         lastSentAcknowledged = Integer.valueOf(acknowledgement);
         ArrayList<Integer> removed = new ArrayList<Integer>();
-        for (int i = unacknowledged.size() - 1; i >= 0; i--) {
-            Packet packet = unacknowledged.get(i);
-            if (!Iap2AckWindowPolicy.remainsUnacknowledged(packet.sequence,
-                    acknowledgement, peerMaxAcknowledgements)) {
-                removed.add(Integer.valueOf(packet.sequence));
-                unacknowledged.remove(i);
-            }
+        // The source walks from the head and stops at the first packet still
+        // inside maxAcknowledgements + ACK_SLACK. It does not scan later entries.
+        while (!unacknowledged.isEmpty()) {
+            Packet first = unacknowledged.get(0);
+            if (Iap2AckWindowPolicy.remainsUnacknowledged(first.sequence,
+                    acknowledgement, peerMaxAcknowledgements)) break;
+            removed.add(Integer.valueOf(first.sequence));
+            unacknowledged.remove(0);
         }
-        Collections.sort(removed);
         ArrayList<Packet> sent = drainQueued(nowMillis);
         return result(sent, new ArrayList<Packet>(), removed, true);
     }
