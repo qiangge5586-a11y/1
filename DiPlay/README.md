@@ -152,3 +152,5 @@ The offline Link Engine composition dispatches frames using the original Smali c
 - Header-only ACK frames do not become empty data packets.
 
 The composition returns deterministic events and encoded response frames for inspection; it does not write to a live transport. Actions run [#133](https://github.com/qiangge5586-a11y/1/actions/runs/42173519353) passed **7,257 offline checks**, including 152 negotiation and 84 composition checks.
+
+The Link Engine composition now also models the original pre-ready outbound queue gate. Before READY, `queueBeforeReady()` retains packets; on the ACK-bearing readiness frame, every queued payload is checked against `peer.maxLength - 10`. Any oversized queued packet closes the model before any queued data is emitted; accepted packets flush through the negotiated outbound window. This check mirrors original Smali and is not applied to normal post-ready `sendPacket()` calls. Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/42174129287) passed **7,297 offline checks** (158 negotiation, 118 composition), including maxLength=11 one-byte accepted/two-byte rejected tests.
