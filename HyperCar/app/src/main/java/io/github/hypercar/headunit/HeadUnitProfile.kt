@@ -183,6 +183,26 @@ object HeadUnitProfiles {
      * mDNS before ctrl invitation, without 0x4301. Hypercar's real-car path remains unverified.
      * Per-receiver successes still override this profile preference for other MMI firmware.
      */
+    /** Honda DiPlay 0.3.11: dedicated type-130 encrypted DataStream iAP tunnel. */
+    val DIPLAY_0311 = HeadUnitProfile(
+        id = "diplay_0311",
+        label = "DiPlay 0.3.11（本田）",
+        model = "Honda Civic OEM head unit",
+        notes = "专用 AirPlay type-130 加密 iAP TCP 隧道；仅启用此档案时切换出站 iAP 传输，其他档案保持原行为。",
+        verified = false,
+        validatesDeviceId = false,
+        sendCarPlayAvailability = false,
+        openEaSessions = false,
+        sendTransportIdentifier = false,
+        replyPowerUpdates = true,
+        dropProfilesBeforeIap2 = false,
+        abortWhenCarPlayWindowClosed = false,
+        preferMdnsAirplay = true,
+        fallbackAirplayPorts = listOf(7000, 7001, 7100, 17000),
+        keepIap2AliveOnly = false,
+        pairingHint = "选择此档案以启用 DiPlay 0.3.11 专用 type-130 iAP 隧道；首次连接仍需完成车机配对。",
+    )
+
     val AUDI_MIB3 = HeadUnitProfile(
         id = "audi_mib3",
         mfiPreferredChallengeBytes = 20,
