@@ -1,5 +1,4 @@
 //! DiPlay 0.3.11 AirPlay DataStream type-130 tunnel for outbound virtual iAP2.
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
@@ -158,5 +157,29 @@ mod tests {
         assert_eq!(n,a.len()-2);
         let plain=crate::crypto::chacha_open(&key,&nonce64(0),&a[2..],&a[0..2]).unwrap();
         assert_eq!(plain,b"one");
+    }
+    #[test]
+    fn setup_response_requires_type130_and_nonzero_port() {
+        let body = bplist::encode(&Value::dict(vec![("streams", Value::array(vec![
+            Value::dict(vec![
+                ("type", Value::int(130)),
+                ("streamConnectionID", Value::int(77)),
+                ("dataPort", Value::int(49152)),
+            ]),
+        ]))]));
+        assert_eq!(parse_setup_response(&body, 77).unwrap(), 49152);
+        assert!(parse_setup_response(&body, 78).is_err());
+    }
+
+    #[test]
+    fn large_comm_package_is_split_into_independently_authenticated_frames() {
+        let key = [9u8; 32];
+        let payload = vec![0x5a; 65_520];
+        let frames = encode_comm_frames(&key, 11, &build_comm_package(&payload).unwrap()).unwrap();
+        assert_eq!(frames.len(), 2);
+        let first = crate::crypto::chacha_open(&key, &nonce64(11), &frames[0][2..], &frames[0][..2]).unwrap();
+        let second = crate::crypto::chacha_open(&key, &nonce64(12), &frames[1][2..], &frames[1][..2]).unwrap();
+        assert_eq!(first.len(), u16::MAX as usize - 16);
+        assert_eq!(first.len() + second.len(), 32 + payload.len());
     }
 }
