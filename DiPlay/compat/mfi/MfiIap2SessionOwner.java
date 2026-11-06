@@ -14,6 +14,7 @@ import java.util.List;
  */
 public final class MfiIap2SessionOwner {
     private final long generation;
+    private final MfiIap2Channel channel;
     private final Iap2CsmReceiveCoordinator receive;
     private final MfiIap2CsmPumpBridge bridge;
     private final MfiIap2CsmWorker worker;
@@ -24,10 +25,18 @@ public final class MfiIap2SessionOwner {
             Iap2CsmReceiveCoordinator receive,
             MfiIap2CsmPumpBridge bridge,
             MfiIap2CsmWorker.Listener listener) {
+        this(generation, MfiIap2Channel.RFCOMM_CONTROL, receive, bridge, listener);
+    }
+
+    public MfiIap2SessionOwner(long generation, MfiIap2Channel channel,
+            Iap2CsmReceiveCoordinator receive,
+            MfiIap2CsmPumpBridge bridge,
+            MfiIap2CsmWorker.Listener listener) {
         if (generation <= 0L) throw new IllegalArgumentException("generation must be positive");
-        if (receive == null || bridge == null || listener == null)
+        if (channel == null || receive == null || bridge == null || listener == null)
             throw new NullPointerException("MFi session owner dependency");
         this.generation = generation;
+        this.channel = channel;
         this.receive = receive;
         this.bridge = bridge;
         this.worker = new MfiIap2CsmWorker(bridge, new GuardedListener(listener));
@@ -60,6 +69,7 @@ public final class MfiIap2SessionOwner {
 
     public synchronized boolean isActive() { return active; }
     public long generation() { return generation; }
+    public MfiIap2Channel channel() { return channel; }
 
     private void ensureActive() {
         if (!active) throw new IllegalStateException("MFi session generation is inactive");
