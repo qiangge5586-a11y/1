@@ -15,6 +15,20 @@ def replace_once(path, old, new, label):
         target.write(content.replace(old, new, 1))
 
 
+def replace_once_any(path, candidates, label):
+    """Apply the first exact-one anchor; useful across Apktool debug-local variants."""
+    with open(path, "r", encoding="utf-8") as source:
+        content = source.read()
+    for old, new in candidates:
+        count = content.count(old)
+        if count == 1:
+            with open(path, "w", encoding="utf-8") as target:
+                target.write(content.replace(old, new, 1))
+            return
+    counts = [content.count(old) for old, _new in candidates]
+    raise SystemExit("%s: no unique patch anchor; candidate counts=%s" % (label, counts))
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("usage: patch-diplay-original.py APKTOOL_DECODED_DIR")
@@ -123,10 +137,18 @@ def main():
     # with an amortized-growth accumulator. Ciphertext framing/decryption stays
     # byte-for-byte on the original path.
     tunnel = os.path.join(root, "smali_classes3/com/shilapi/xcertplay/airplay/IapTunnel.smali")
-    replace_once(
+    replace_once_any(
         tunnel,
-        """    new-array v0, v0, [B\n\n    .line 131\n    .local v0, "plaintext":[B\n""",
-        """    new-instance v0, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n\n    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->listener:Lcom/shilapi/xcertplay/airplay/IapTunnel$Listener;\n\n    invoke-direct {v0, v2}, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;-><init>(Ljava/lang/Object;)V\n\n    .line 131\n    .local v0, "packageAccumulator":Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n""",
+        [
+            (
+                """    new-array v0, v0, [B\n\n    .line 131\n    .local v0, "plaintext":[B\n""",
+                """    new-instance v0, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n\n    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->listener:Lcom/shilapi/xcertplay/airplay/IapTunnel$Listener;\n\n    invoke-direct {v0, v2}, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;-><init>(Ljava/lang/Object;)V\n\n    .line 131\n    .local v0, "packageAccumulator":Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n""",
+            ),
+            (
+                """    .local v0, "plaintext":[B\n""",
+                """    new-instance v0, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n\n    iget-object v2, p0, Lcom/shilapi/xcertplay/airplay/IapTunnel;->listener:Lcom/shilapi/xcertplay/airplay/IapTunnel$Listener;\n\n    invoke-direct {v0, v2}, Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;-><init>(Ljava/lang/Object;)V\n\n    .local v0, "packageAccumulator":Lcom/shilapi/xcertplay/airplay/TunnelPackageAccumulator;\n""",
+            ),
+        ],
         "type-130 incremental package accumulator initialization",
     )
     replace_once(
