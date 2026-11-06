@@ -104,3 +104,10 @@ This closes the test-harness composition gap only. The adapter explicitly wraps 
 The offline model now exposes the earliest startup marker/SYN retry deadline; the composed link model takes the minimum across negotiation, outbound retransmission, and delayed-ACK deadlines. Iap2LinkModelPumpDriver forwards that deadline to the pump instead of synthesizing a fixed 100 ms deadline. The pump uses monotonic `System.nanoTime()` milliseconds for its clock and checks readiness immediately after startup/output drain as well as after inbound/timer processing. This prevents wall-clock corrections from shifting protocol timers and avoids waiting for the first read timeout before reporting an already-ready driver.
 
 These scheduling improvements are still verified against the offline model. The original production engine's full timer and worker semantics remain subject to Smali parity review; no real transport or device handshake is implied.
+
+
+## CSM sender over the bounded pump (2026-11-06)
+
+Added `Iap2CsmPumpSender` as a producer-side bridge: it splits an already encoded CSM frame using the negotiated peer control-payload maximum and admits chunks to the pump's bounded 64-command / 1 MiB queue under one shared timeout. If a multi-chunk frame cannot be fully admitted, it closes the pump to avoid leaving a truncated CSM frame followed by unrelated traffic. The producer API waits outside the pump worker; it must not be called from Driver or Listener callbacks. `Iap2CsmPumpSenderTest` verifies chunk ordering and byte preservation through the pump, while `Iap2LinkPumpContractTest` covers queue saturation, timeout, and producer wake-up when the worker dequeues commands.
+
+This composes the offline CSM send plan with the transport pump. It is not yet a source-parity implementation of the original `Iap2CsmChannel` blocking/wakeup and close semantics; the exact original send timeout and failure propagation still require Smali-to-code comparison before production use.
