@@ -11,6 +11,8 @@ public final class Iap2CsmFrameDecoder {
     /** Original Iap2LinkChannel.runPump() reads at most 8192 bytes per recv call. */
     public static final int MAX_INPUT_CHUNK_BYTES = 8192;
     private byte[] pending = new byte[0];
+    private long discardedBytes;
+    private long invalidLengthCandidates;
 
     public static final class Frame {
         public final int messageId;
@@ -39,12 +41,15 @@ public final class Iap2CsmFrameDecoder {
             int available = joined.length - offset;
             if (available >= 2 && readU16(joined, offset) != START) {
                 offset++;
+                discardedBytes++;
                 continue;
             }
             if (available < HEADER_BYTES) break;
             int length = readU16(joined, offset + 2);
             if (length < HEADER_BYTES) {
                 offset++;
+                discardedBytes++;
+                invalidLengthCandidates++;
                 continue;
             }
             if (available < length) break;
@@ -63,7 +68,16 @@ public final class Iap2CsmFrameDecoder {
     }
 
     public synchronized int pendingBytes() { return pending.length; }
-    public synchronized void reset() { pending = new byte[0]; }
+    /** Number of bytes skipped while searching for a valid CSM frame boundary. */
+    public synchronized long getDiscardedBytes() { return discardedBytes; }
+    /** Number of 0x4040 candidates rejected because total length was below six bytes. */
+    public synchronized long getInvalidLengthCandidates() { return invalidLengthCandidates; }
+    /** Reset stream state and diagnostics when the underlying session generation changes. */
+    public synchronized void reset() {
+        pending = new byte[0];
+        discardedBytes = 0;
+        invalidLengthCandidates = 0;
+    }
 
     private static int readU16(byte[] b, int p) {
         return ((b[p] & 255) << 8) | (b[p + 1] & 255);
