@@ -338,3 +338,12 @@ Generation teardown tests now run in the iAP2 workflow:
 The next integration point remains the source-parity link engine. The current
 `Iap2LinkModelPumpDriver` is a model-backed driver, not yet the restored
 production `Iap2LinkEngine`; no production lifecycle wiring should be claimed.
+
+
+Channel-scope validation after adding `MfiIap2Channel`:
+- iAP2 Java 7 workflow (including the explicit AIRPLAY_TYPE130_TUNNEL owner test):
+  https://github.com/qiangge5586-a11y/1/actions/runs/42213523334
+- Android build:
+  https://github.com/qiangge5586-a11y/1/actions/runs/42213523381
+Both completed successfully for implementation commit
+`1ad00a11a63ba61219d9d948e13d278915936368`.
