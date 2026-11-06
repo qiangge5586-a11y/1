@@ -2,7 +2,6 @@ package com.shilapi.xcertplay.compat.usb;
 
 import android.content.Context;
 import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbConfiguration;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbManager;
@@ -29,42 +28,39 @@ public final class UsbHostReadOnlyScanner {
         public String getStatus() { return status; }
     }
 
-    private List<UsbConfigurationSnapshot> readConfigurations(UsbDevice device) {
-        List<UsbConfigurationSnapshot> configurations =
-                new ArrayList<UsbConfigurationSnapshot>();
-        int configurationCount = device.getConfigurationCount();
-        if (configurationCount < 0) configurationCount = 0;
-        if (configurationCount > 32) configurationCount = 32;
-        for (int c = 0; c < configurationCount; c++) {
-            UsbConfiguration configuration = device.getConfiguration(c);
-            if (configuration == null) continue;
-            List<UsbConfigurationSnapshot.InterfaceSnapshot> interfaces =
-                    new ArrayList<UsbConfigurationSnapshot.InterfaceSnapshot>();
-            int interfaceCount = Math.min(Math.max(configuration.getInterfaceCount(), 0), 255);
-            for (int i = 0; i < interfaceCount; i++) {
-                UsbInterface usbInterface = configuration.getInterface(i);
-                if (usbInterface == null) continue;
-                List<UsbConfigurationSnapshot.EndpointSnapshot> endpoints =
-                        new ArrayList<UsbConfigurationSnapshot.EndpointSnapshot>();
-                int endpointCount = Math.min(Math.max(usbInterface.getEndpointCount(), 0), 255);
-                for (int e = 0; e < endpointCount; e++) {
-                    UsbEndpoint endpoint = usbInterface.getEndpoint(e);
-                    if (endpoint == null) continue;
-                    endpoints.add(new UsbConfigurationSnapshot.EndpointSnapshot(
-                            endpoint.getAddress(), endpoint.getAttributes(),
-                            endpoint.getDirection(), endpoint.getType(),
-                            endpoint.getMaxPacketSize(), endpoint.getInterval()));
-                }
-                interfaces.add(new UsbConfigurationSnapshot.InterfaceSnapshot(
-                        usbInterface.getId(), usbInterface.getInterfaceClass(),
-                        usbInterface.getInterfaceSubclass(), usbInterface.getInterfaceProtocol(),
-                        usbInterface.getAlternateSetting(), endpoints));
+    /**
+     * API 12-compatible path for the API-17 Honda target. UsbConfiguration and
+     * UsbDevice.getConfigurationCount/getConfiguration are API 21+, so this
+     * scanner deliberately uses only UsbDevice's API-12 interface list.
+     */
+    private List<UsbConfigurationSnapshot> readInterfaceSnapshot(UsbDevice device) {
+        List<UsbConfigurationSnapshot.InterfaceSnapshot> interfaces =
+                new ArrayList<UsbConfigurationSnapshot.InterfaceSnapshot>();
+        int interfaceCount = Math.min(Math.max(device.getInterfaceCount(), 0), 255);
+        for (int i = 0; i < interfaceCount; i++) {
+            UsbInterface usbInterface = device.getInterface(i);
+            if (usbInterface == null) continue;
+            List<UsbConfigurationSnapshot.EndpointSnapshot> endpoints =
+                    new ArrayList<UsbConfigurationSnapshot.EndpointSnapshot>();
+            int endpointCount = Math.min(Math.max(usbInterface.getEndpointCount(), 0), 255);
+            for (int e = 0; e < endpointCount; e++) {
+                UsbEndpoint endpoint = usbInterface.getEndpoint(e);
+                if (endpoint == null) continue;
+                endpoints.add(new UsbConfigurationSnapshot.EndpointSnapshot(
+                        endpoint.getAddress(), endpoint.getAttributes(),
+                        endpoint.getDirection(), endpoint.getType(),
+                        endpoint.getMaxPacketSize(), endpoint.getInterval()));
             }
-            configurations.add(new UsbConfigurationSnapshot(configuration.getId(),
-                    configuration.getName(), configuration.getAttributes(),
-                    configuration.getMaxPower(), interfaces));
+            interfaces.add(new UsbConfigurationSnapshot.InterfaceSnapshot(
+                    usbInterface.getId(), usbInterface.getInterfaceClass(),
+                    usbInterface.getInterfaceSubclass(), usbInterface.getInterfaceProtocol(),
+                    usbInterface.getAlternateSetting(), endpoints));
         }
-        return configurations;
+        List<UsbConfigurationSnapshot> groups = new ArrayList<UsbConfigurationSnapshot>();
+        groups.add(new UsbConfigurationSnapshot(0,
+                "API 12+ device interface list (configuration metadata unavailable)",
+                0, 0, interfaces));
+        return groups;
     }
 
     public ScanResult scan(Context context) {
@@ -85,7 +81,7 @@ public final class UsbHostReadOnlyScanner {
                     if (count < 0) count = 0;
                     if (count > 255) count = 255;
                     List<UsbConfigurationSnapshot> configurations =
-                            readConfigurations(device);
+                            readInterfaceSnapshot(device);
                     result.add(new UsbDeviceDescriptor(device.getVendorId(),
                             device.getProductId(), device.getDeviceClass(),
                             device.getDeviceSubclass(), device.getDeviceProtocol(), count,
