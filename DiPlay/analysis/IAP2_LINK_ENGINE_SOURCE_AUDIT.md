@@ -220,3 +220,22 @@ The original source contains two different byte sequences with different roles; 
 - Start bytes of each encoded iAP2 link frame: `FF 5A` (the frame header's two-byte sync word).
 
 Both values are directly present in the archived original `Iap2LinkEngine` source/Smali: `IAP2_MARKER = {-1, 85, 2, 0, -18, 16}`, while `LINK_START_HIGH = -1` and `LINK_START_LOW = 90`. The model's `IAP2_MARKER` and frame codec constants intentionally represent these separate protocol layers. Earlier shorthand describing `FF 5A` as the startup marker was imprecise; `FF 5A` is the per-frame sync word.
+
+## Follow-up source parity audit: cumulative ACK, receive window, and lifecycle
+
+Audited against the archived JADX source for `com.shilapi.xcertplay.transport.Iap2LinkEngine` (2026-11-06):
+
+- Sequence arithmetic is unsigned 8-bit modular distance: `(sequence - previous) & 0xff`; next sequence is `(sequence + 1) & 0xff`. The offline receive/outbound models use the same arithmetic.
+- Cumulative ACK handling stores the received ACK watermark directly, then removes outstanding packets from the head until the first packet whose modular distance remains within `peerMaxAcknowledgements + 10`. It rearms the receive-ACK deadline from that first remaining packet's original deadline, then drains queued packets while the sent-to-acknowledged distance is strictly less than peer maxOutgoing.
+- Receive handling ignores duplicate last-in-order and packets farther than `peerMaxOutgoing + 10` after sending an immediate ACK; suppresses duplicate out-of-order sequence numbers; bounds out-of-order storage by configured maximum; sorts by modular distance; delivers contiguous packets; and emits Extended ACK only when a gap distance is at least peer maxOutgoing.
+- Delayed ACK uses `max(peerMaxOutgoing - maxOutgoingDelta, 1)`; when that threshold is reached it advances lastAcknowledgedReceived and ACKs immediately, otherwise it schedules `now + peerAcknowledgementTimeoutMillis`. When peer maxAcknowledgements is zero, data delivery does not schedule delayed ACK.
+- Terminal `die(reason)` cancels all four timers, marks DEAD, sets writable false, clears pending wire output and all queued events, then emits only one Dead event. The offline engine adapter intentionally clears its pending wire frames/events but does not expose the same event type.
+
+### Remaining parity checks before production wiring
+
+- The offline `Iap2ReceiveWindowModel` and `Iap2OutboundWindowModel` encode the core sequence/window rules, but they are still separate deterministic models; they are not a drop-in replacement for the original engine's event queue, synchronization, or timer ownership.
+- Need dedicated differential tests for cumulative ACK edge values across wraparound, ACK values outside the nominal outstanding span, delayed-ACK rearming after duplicate/out-of-window packets, and the exact out-of-order limit boundary.
+- The RFCOMM connector currently applies the supplied timeout independently to each of its three fallback attempts. Therefore its worst-case wall time can exceed the nominal timeout (up to roughly three attempts plus fallback delay). This is a concrete integration risk; decide whether the timeout is per-attempt or a single overall connection deadline before wiring it into a user-facing connect flow.
+- `BluetoothRfcommByteStream` uses a 1 MiB bounded receive ring and a dedicated blocking reader. Closing the socket is relied upon to release that reader; this must be verified on Android API 17/vendor Bluetooth stack. No head-unit test has yet established this behavior.
+
+No production behavior was changed by this audit. The ROOT hotspot configuration module remains untouched.
