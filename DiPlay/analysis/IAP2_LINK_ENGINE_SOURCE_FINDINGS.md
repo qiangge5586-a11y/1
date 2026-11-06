@@ -235,3 +235,9 @@ The offline composition now mirrors this with `queueBeforeReady()`, a whole-queu
 Smali `processFrame()` increments `accumulatedAcknowledgements` for ACK-bit frames. After Extended ACK/data handling, if peer maxAcknowledgements is positive and the count reaches that limit, the engine resets the count, advances `lastAcknowledgedReceived` to `lastReceivedInOrder`, and emits an ACK. Independently, `writePacket()` resets `accumulatedAcknowledgements` on every outgoing frame. The offline composition now models both rules and emits the resulting ACK-only frame into its drainable offline output queue.
 
 Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks**, including 200 composition checks.
+
+## Readiness ACK and queued-packet ordering
+
+Smali `handleAcknowledgement()` checks peer synchronization, usable maxLength, and every pre-ready queued payload before changing state to NORMAL. It then sets writable, updates `lastSentAcknowledged` from the ACK field, and drains queued packets against the updated sequence window. The composition now mirrors that ordering: validate queue first, apply the readiness frame's ACK to the outbound model, then flush the queue. It continues processing the same frame's optional Extended ACK/data predicates afterward.
+
+Actions run [#156](https://github.com/qiangge5586-a11y/1/actions/runs/42174566575) passed **7,379 offline checks** (200 composition checks).
