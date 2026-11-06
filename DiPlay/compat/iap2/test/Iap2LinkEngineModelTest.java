@@ -135,6 +135,10 @@ public final class Iap2LinkEngineModelTest {
                 new Iap2LinkFrameDecoder().feed(wire.get(0));
         eq(1, frames.size());
         bytes(new byte[] {1}, frames.get(0).payload);
+        // The original NORMAL sendPacket() path does not repeat the pre-ready payload check.
+        Iap2OutboundWindowModel.Result postReadyOversize =
+                accepted.send(10, new byte[] {2, 3}, 3);
+        eq(1, postReadyOversize.transmitted.size());
 
         Iap2LinkEngineModel rejected = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
         rejected.start(true, 0);
