@@ -276,3 +276,12 @@ Added `MfiIap2CsmPumpBridge` as a single-consumer compatibility layer. It drains
 The bridge must run on a dedicated application/CSM consumer worker, not on the link-pump worker or its callbacks. AA04/AA05 remain terminal peer outcomes with no response frame. Explicit teardown cancels the provider session and closes the old pump. The new offline test exercises concatenated AA00, AA02 and AA05 messages through the receive queue and verifies AA01/AA03 are emitted in order.
 
 The Java 7 CI workflow now runs this integration test. The compatibility-layer receive/adapter/send path is connected; a production iAP2 Driver, concrete provider implementation, worker lifecycle integration, and API 17 hardware validation are still outstanding.
+
+
+## Follow-up: dedicated CSM worker lifecycle (2026-11-06)
+
+Added `MfiIap2CsmWorker` and a blocking `processNext(timeout)` entry point on the bridge. The worker now waits on the receive coordinator's bounded queue instead of requiring external polling, processes messages serially, and reports peer success, peer rejection, or transport/processing failure through a listener. It runs on a dedicated daemon thread and must not share the link-pump worker thread.
+
+On peer AA05, the exchange coordinator now releases the completed provider session/context after recording SUCCEEDED. This prevents a completed authentication operation from retaining its deadline and provider state. The integration test now exercises the worker thread, ordered AA01/AA03 responses, AA05 success callback, and provider cleanup (8 checks).
+
+Java 7 offline suite passed: [run 42211396714](https://github.com/qiangge5586-a11y/1/actions/runs/42211396714). Android build for the same source revision is still being verified. This remains compatibility-layer integration; the production iAP2 Driver and actual hardware/provider remain unvalidated.
