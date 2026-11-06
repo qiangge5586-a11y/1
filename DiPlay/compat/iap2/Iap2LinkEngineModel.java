@@ -59,6 +59,7 @@ public final class Iap2LinkEngineModel {
         if (closed) return;
         negotiation.feed(bytes, nowMillis);
         dispatchPostReadyFrames(nowMillis);
+        synchronizeTerminalState();
     }
 
     public synchronized boolean initiateSynchronizationIfDetecting(long nowMillis) {
@@ -72,7 +73,7 @@ public final class Iap2LinkEngineModel {
         if (closed) return State.CLOSED;
         negotiation.advanceTime(nowMillis);
         if (negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD) {
-            closed = true;
+            closeAndClearPending();
             return State.CLOSED;
         }
         return state();
@@ -98,6 +99,7 @@ public final class Iap2LinkEngineModel {
         requireReady();
         Iap2OutboundWindowModel.Result result = outbound.send(sessionId, payload, nowMillis);
         enqueuePacketFrames(result.transmitted);
+        synchronizeTerminalState();
         return result;
     }
 
@@ -106,6 +108,7 @@ public final class Iap2LinkEngineModel {
         requireReady();
         Iap2OutboundWindowModel.Result result = outbound.acknowledge(acknowledgement, nowMillis);
         enqueuePacketFrames(result.transmitted);
+        synchronizeTerminalState();
         return result;
     }
 
@@ -114,6 +117,7 @@ public final class Iap2LinkEngineModel {
         requireReady();
         Iap2OutboundWindowModel.Result result = outbound.requestMissing(missingSequences, nowMillis);
         enqueuePacketFrames(result.retransmitted);
+        synchronizeTerminalState();
         return result;
     }
 
@@ -122,6 +126,7 @@ public final class Iap2LinkEngineModel {
         requireReady();
         Iap2ReceiveWindowModel.Result result = inbound.receive(packet, nowMillis);
         enqueueInboundResponse(result);
+        synchronizeTerminalState();
         return result;
     }
 
@@ -132,20 +137,19 @@ public final class Iap2LinkEngineModel {
         Iap2ReceiveWindowModel.Result inboundResult = inbound.advanceTime(nowMillis);
         enqueuePacketFrames(outboundResult.retransmitted);
         enqueueInboundResponse(inboundResult);
+        synchronizeTerminalState();
         return new TimerResult(outboundResult, inboundResult);
     }
 
     public synchronized void endOfStream() {
         if (closed) return;
-        closed = true;
         if (started) negotiation.feedEof();
+        closeAndClearPending();
     }
 
     public synchronized State state() {
-        if (closed || localTerminalReason != null
-                || negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD
-                || (outbound != null && outbound.getTerminalReason() != null)
-                || (inbound != null && inbound.getTerminalReason() != null)) {
+        synchronizeTerminalState();
+        if (closed) {
             return State.CLOSED;
         }
         if (negotiation.isReady()) return State.READY;
@@ -176,6 +180,7 @@ public final class Iap2LinkEngineModel {
         for (int i = 0; i < frames.size(); i++) {
             if (pendingEvents.size() >= 256) {
                 localTerminalReason = "iAP2 pending dispatch event limit exceeded";
+                closeAndClearPending();
                 return;
             }
             Iap2LinkNegotiationModel.ReadyFrame readyFrame = frames.get(i);
@@ -264,11 +269,37 @@ public final class Iap2LinkEngineModel {
     private void enqueueWireFrame(byte[] frame) {
         // Original writePacket() resets the ACK batch counter on every emitted frame.
         accumulatedAcknowledgements = 0;
+        if (closed) return;
         if (pendingWireFrames.size() >= 256) {
             localTerminalReason = "iAP2 pending wire-frame queue limit exceeded";
+            closeAndClearPending();
             return;
         }
         pendingWireFrames.add(frame);
+    }
+
+    /**
+     * Original Iap2LinkEngine.die() cancels timers, resets pending wire output,
+     * clears queued events and emits only its terminal event. This offline
+     * composition has no Dead-event type, so it preserves the reason and clears
+     * all pending dispatch/output state instead of exposing stale frames.
+     */
+    private void synchronizeTerminalState() {
+        if (closed) return;
+        if (localTerminalReason != null
+                || negotiation.getState() == Iap2LinkNegotiationModel.State.DEAD
+                || (outbound != null && outbound.getTerminalReason() != null)
+                || (inbound != null && inbound.getTerminalReason() != null)) {
+            closeAndClearPending();
+        }
+    }
+
+    private void closeAndClearPending() {
+        closed = true;
+        pendingWireFrames.clear();
+        pendingEvents.clear();
+        preReadyPackets.clear();
+        accumulatedAcknowledgements = 0;
     }
 
     /** Drains parsed post-SYN link-frame outcomes in wire order. */
