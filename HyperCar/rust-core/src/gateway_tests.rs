@@ -18,10 +18,11 @@ async fn keyframe_recovery_writes_pause_start_once_and_never_restarts_after_canc
     let first=Arc::new(std::sync::atomic::AtomicBool::new(false));
     let handler=tokio::spawn(handle_cmd_client(hu,events,Arc::new(Mutex::new((1280,720))),30,0,"test".into(),"test".into(),stop.clone(),first.clone(),ready));
     assert_eq!(command(&mut md).await.0,0x18001);
-    // Enter the encoder-start boundary with the phone's real protocol message ID.
+    // This test isolates recovery after the first frame; suppress the independent
+    // pre-first-frame START retry tick before entering the encoder-start boundary.
+    first.store(true,std::sync::atomic::Ordering::Relaxed);
     md.write_all(&[0,0,0,0,0,1,0,8]).await.unwrap();
     assert_eq!(command(&mut md).await.0,0x18009);assert_eq!(command(&mut md).await.0,0x1801d);
-    first.store(true,std::sync::atomic::Ordering::Relaxed);
     assert_eq!(crate::video_recovery::request(stop.id),Some(false));
     assert_eq!(crate::video_recovery::request(stop.id),None);
     let restart=tokio::time::timeout(Duration::from_secs(2),async {let a=command(&mut md).await;let b=command(&mut md).await;(a.0,b.0)}).await.unwrap();
