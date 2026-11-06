@@ -13,6 +13,7 @@ public final class Iap2LinkEngineModelTest {
         terminalWindowFailureClosesComposition();
         negotiatedPeerParametersBuildBothWindows();
         postSyncFramesDispatchIntoWindows();
+        acknowledgementBatchingAndWriteReset();
         eofClosesBeforeAndAfterReadiness();
         System.out.println("Iap2LinkEngineModelTest: PASS (" + checks + " checks)");
     }
@@ -223,6 +224,57 @@ public final class Iap2LinkEngineModelTest {
         eq(80, wireFrames.get(0).acknowledgement);
         truth(wireFrames.get(0).payload == null);
         eq(Iap2LinkEngineModel.State.READY, m.state());
+    }
+
+    private static void acknowledgementBatchingAndWriteReset() {
+        Iap2LinkEngineModel m = new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
+        m.start(true, 0);
+        m.takeNegotiationOutput();
+        byte[] sync = Iap2LinkFrameCodec.encodeSynchronizationPayload(
+                4, 4096, 1500, 250, 3, 2,
+                new int[][] {{10, 0, 2}, {11, 2, 1}});
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x80, 77, 0, 0, sync), 1);
+        m.takeNegotiationOutput();
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 77, 99, 0, null), 2);
+        eq(Iap2LinkEngineModel.State.READY, m.state());
+        List<Iap2LinkEngineModel.DispatchEvent> events = m.drainEvents();
+        eq(1, events.size());
+        truth(events.get(0).acknowledgementBatch == null);
+        eq(0, m.drainWireFrames().size());
+
+        // Any local writePacket() output resets the accumulated peer-ACK count.
+        m.send(10, new byte[] {1}, 3);
+        List<byte[]> wire = m.drainWireFrames();
+        eq(1, wire.size());
+        List<Iap2LinkFrameDecoder.Frame> decoded =
+                new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, decoded.size());
+        eq(100, decoded.get(0).sequence);
+
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 78, 100, 0, null), 4);
+        events = m.drainEvents();
+        eq(1, events.size());
+        truth(events.get(0).acknowledgementBatch == null);
+        eq(0, m.drainWireFrames().size());
+
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 79, 100, 0, null), 5);
+        events = m.drainEvents();
+        eq(1, events.size());
+        truth(events.get(0).acknowledgementBatch != null);
+        truth(events.get(0).acknowledgementBatch.acknowledgementNow);
+        wire = m.drainWireFrames();
+        eq(1, wire.size());
+        decoded = new Iap2LinkFrameDecoder().feed(wire.get(0));
+        eq(1, decoded.size());
+        eq(0x40, decoded.get(0).control);
+        eq(77, decoded.get(0).acknowledgement);
+
+        // The ACK emitted by the batch threshold resets the counter again.
+        m.feedNegotiation(Iap2LinkFrameCodec.encode(0x40, 80, 100, 0, null), 6);
+        events = m.drainEvents();
+        eq(1, events.size());
+        truth(events.get(0).acknowledgementBatch == null);
+        eq(0, m.drainWireFrames().size());
     }
 
     private static void eofClosesBeforeAndAfterReadiness() {
