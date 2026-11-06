@@ -70,3 +70,15 @@ The same recovered `Iap2CsmChannel.smali` confirms the channel-level behavior su
 - If the complete CSM frame cannot be queued before that deadline, the channel fails closed with `IOException("iAP2 could not queue the complete CSM frame before its timeout")`.
 
 These queue limits are source-derived original behavior, distinct from the offline decoder's fixed receive-buffer limit. The next implementation gate is to model/test queue admission, byte accounting, timeout and fail-closed semantics separately from link-layer sequence/ACK state.
+
+
+## Receive-queue offline model
+
+Added `Iap2CsmReceiveQueueModel` as a separate Java 7 offline model of the original `Iap2CsmChannel.enqueue()` / `takeReceived()` accounting:
+
+- FIFO admission is limited to 64 queued frames.
+- Aggregate encoded bytes (six-byte CSM header plus payload) are limited to 1,048,576.
+- The enqueue that exceeds either limit fails closed with the original queue-limit reason; already queued frames remain pollable, and polling decrements the exact encoded-byte count.
+- Tests cover FIFO order, 64-frame cap, exact 1 MiB boundary, overflow, payload defensive copy and post-close rejection.
+
+Actions run [#169](https://github.com/qiangge5586-a11y/1/actions/runs/42175597475) passed **7,705 offline checks**, including 308 receive-queue checks. This model is not yet wired into a live CSM channel.
