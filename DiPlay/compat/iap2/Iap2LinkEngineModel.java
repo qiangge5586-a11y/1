@@ -96,10 +96,6 @@ public final class Iap2LinkEngineModel {
     public synchronized Iap2OutboundWindowModel.Result send(
             int sessionId, byte[] payload, long nowMillis) {
         requireReady();
-        Iap2LinkNegotiationModel.PeerConfiguration peer = negotiation.getPeerConfiguration();
-        if (peer == null || !peer.acceptsPayload(payload)) {
-            throw new IllegalArgumentException("payload exceeds peer maxLength - 10");
-        }
         Iap2OutboundWindowModel.Result result = outbound.send(sessionId, payload, nowMillis);
         enqueuePacketFrames(result.transmitted);
         return result;
