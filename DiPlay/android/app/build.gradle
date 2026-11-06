@@ -22,6 +22,7 @@ android {
 
     sourceSets {
         main {
+            // Includes the API-17 iAP2 duplex stream and single-owner pump scaffold.
             java {
                 srcDirs = ['src/main/java', '../../compat/hotspot', '../../compat/usb', '../../compat/bluetooth', '../../compat/ncm', '../../compat/iap2']
                 exclude 'test/**'
