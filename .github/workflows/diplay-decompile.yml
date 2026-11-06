@@ -62,16 +62,16 @@ jobs:
       - name: Decode manifest resources and Smali
         run: |
           set -euo pipefail
-          java -jar tools/apktool.jar d -f DiPlay/original/diplay0.3.11.apk -o DiPlay/decompiled/apktool
+          java -jar tools/apktool.jar d -f diplay0.3.11.apk -o DiPlay/decompiled/apktool
       - name: Write report
         run: |
           {
             echo "# DiPlay 0.3.11 decompilation"
             echo
-            echo "Source: DiPlay/original/diplay0.3.11.apk"
+            echo "Source: diplay0.3.11.apk"
             echo
             echo "SHA-256:"
-            sha256sum DiPlay/original/diplay0.3.11.apk
+            sha256sum diplay0.3.11.apk
             echo
             echo "Outputs: JADX Java-like source (see JADX_EXIT_CODE.txt and jadx.log for decoder diagnostics); APKTool manifest, resources and Smali."
             echo
