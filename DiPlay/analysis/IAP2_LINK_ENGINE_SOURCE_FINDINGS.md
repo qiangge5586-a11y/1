@@ -112,7 +112,7 @@ Golden synchronization frame (sequence 99, acknowledgement 0, session 0):
 
 ```
 FF 5A 00 1D 80 63 00 00 A7
-01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02 1E
+01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02 BA
 ```
 
 The offline test `Iap2LinkFrameCodecTest` now asserts this source-derived vector.
