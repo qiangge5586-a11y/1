@@ -29,14 +29,14 @@ A dedicated project now exists at `DiPlay/android/`, separate from the root `and
 - Chinese landscape diagnostic dashboard with report baseline clearly distinguished from live measurements.
 - USB Host read-only descriptor enumeration.
 - Bluetooth adapter read-only status check.
-- Offline Java 7 NTB16 codec and incremental stream decoder, with 23 synthetic tests total (no USB I/O).
+- Offline Java 7 NTB16 codec and incremental stream decoder, with 25 synthetic tests total (no USB I/O).
 - Hotspot safety transaction models and simulation tests are included; no real ROOT executor or system-write path is enabled.
 
 Latest successful APK build containing USB and Bluetooth read-only modules, the offline NTB16 codec, and the incremental NTB16 stream decoder: [GitHub Actions run #40](https://github.com/qiangge5586-a11y/1/actions/runs/42153609844).
 
 Artifact: `diplay-honda-compat-debug`, ID `13473827130`, archive size 30,286 bytes; archive digest `sha256:5edf4ce826df704c44a4f6106cac3cec6e98fbc8b1b7cd4189b7377bcb194d81` (expires 2026-11-20). Downloaded archive inspection confirmed it contains `app-debug.apk` (33,981 bytes); APK SHA-256: `d86d10b5340368a6b4c9cf6fb4ff76dce7bfa00deddea5a8565eaa0d5a59b6e3`.
 
-The matching NCM test workflow [run #59](https://github.com/qiangge5586-a11y/1/actions/runs/42153609651) passed the full fixture suite. The NTB16 codec has 13 cases and the stream decoder has 10 cases, including cross-chunk resynchronization and pad/header boundary regressions.
+The matching NCM test workflow [run #61](https://github.com/qiangge5586-a11y/1/actions/runs/42153809527) passed the expanded fixture suite. The NTB16 codec has 14 cases, including 2,000 deterministic malformed-input slices; the stream decoder has 11 cases, including 40 randomized valid frames split into random input chunks with interleaved garbage.
 
 The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
 
