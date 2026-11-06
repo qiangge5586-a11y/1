@@ -112,10 +112,10 @@ Golden synchronization frame (sequence 99, acknowledgement 0, session 0):
 
 ```
 FF 5A 00 1D 80 63 00 00 A7
-01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02 BA
+01 04 FF FF 0F A0 01 F4 04 03 0A 00 02 0B 02 01 0C 01 02 29
 ```
 
-The offline test `Iap2LinkFrameCodecTest` now asserts this source-derived vector.
+The offline test `Iap2LinkFrameCodecTest` asserts the source-derived payload and checksum (`0x29`). The prior `BA` byte in this note was a transcription error; the additive two's-complement checksum of the 19-byte payload is `0x29`.
 
 ## 5. Out-of-order receive and extended ACK
 
