@@ -41,16 +41,16 @@ public final class Iap2OutboundWindowModelTest {
     }
 
     private static void outgoingWindowQueuesAndAckDrains() {
-        Iap2OutboundWindowModel m = model(103, 99, 4, 3, 10, 500, 4, 8);
+        Iap2OutboundWindowModel m = model(104, 99, 4, 3, 10, 500, 4, 8);
         Iap2OutboundWindowModel.Result queued = m.send(10, new byte[] {1}, 10);
         eq(0, queued.transmitted.size());
         eq(1, m.getQueuedCount());
-        Iap2OutboundWindowModel.Result ack = m.acknowledge(100, 20);
+        Iap2OutboundWindowModel.Result ack = m.acknowledge(101, 20);
         truth(ack.acknowledgementAccepted);
         eq(1, ack.transmitted.size());
-        eq(104, ack.transmitted.get(0).sequence);
+        eq(105, ack.transmitted.get(0).sequence);
         eq(0, m.getQueuedCount());
-        eq(104, m.getSentSequence());
+        eq(105, m.getSentSequence());
     }
 
     private static void cumulativeAckRemovesOnlyCoveredPackets() {
