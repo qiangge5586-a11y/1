@@ -13,7 +13,7 @@ import java.lang.reflect.Method;
 /**
  * Read-only USB Host enumeration for API 12+.
  * It only reads descriptors exposed by UsbManager; it never opens a device,
- * requests permission, claims interfaces, accesses endpoints, or transfers data.
+ * requests permission, claims interfaces, accesses endpoint data pipes, or transfers data.
  */
 public final class UsbHostReadOnlyScanner {
     public static final class ScanResult {
