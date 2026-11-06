@@ -81,7 +81,8 @@ This gives the real handshake gate: link must become ready and publish a valid p
 
 - Offline handshake lifecycle test: 61 checks passed.
 - AirPlay IAP encrypted-frame/package structural tests: 27 checks passed.
-- Latest workflow: https://github.com/qiangge5586-a11y/1/actions/runs/42158282014
+- CSM frame decoder tests: 16 checks passed.
+- Combined latest CI run: 104 checks passed (61 handshake + 27 IAP framing/package + 16 CSM): https://github.com/qiangge5586-a11y/1/actions/runs/42158427602
 - No cryptographic implementation was changed.
 - No original DiPlay transport code was modified or wired to these new offline decoders.
 - No live Bluetooth, Wi-Fi, AirPlay, iAP2 or vehicle session was attempted.
