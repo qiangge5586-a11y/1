@@ -163,6 +163,23 @@ def main():
         """    # Complete packages are dispatched by TunnelPackageAccumulator.append().\n""",
         "type-130 remove per-read parsePackages tail copy",
     )
+    # The original parsePackages result was assigned back into v0. Once the
+    # call is removed, that stale move would overwrite the accumulator with
+    # the ciphertext array held in v9 on every read; remove it explicitly.
+    replace_once(
+        tunnel,
+        """    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+
+    move-object v0, v9
+
+    .end local v7    # "read":I
+""",
+        """    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+
+    .end local v7    # "read":I
+""",
+        "type-130 retain accumulator register across reads",
+    )
 
     print("Original DiPlay MFi defaults patched; type-130 receive path uses incremental package accumulation.")
     return 0
