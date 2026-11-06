@@ -56,7 +56,7 @@ public final class MfiIap2MessageCodecTest {
             Iap2ParameterCodec.parse(new byte[] { 0, 3, 0, 0 });
         }}, "parameter length below header");
         expectFailure(new Runnable() { public void run() {
-            Iap2ParameterCodec.parse(new byte[] { 0, 5, 0, 0, 1 });
+            Iap2ParameterCodec.parse(new byte[] { 0, 6, 0, 0, 1 });
         }}, "truncated parameter payload");
         expectFailure(new Runnable() { public void run() {
             MfiIap2MessageCodec.parseFrame(new byte[] { 0, 0x41, 0, 6, 0, 1 });
