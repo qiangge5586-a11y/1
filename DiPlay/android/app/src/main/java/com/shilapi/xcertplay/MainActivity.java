@@ -1,6 +1,12 @@
 package com.shilapi.xcertplay;
 
 import android.app.Activity;
+import android.hardware.usb.UsbDeviceDescriptor;
+import android.hardware.usb.UsbManager;
+import android.content.Context;
+import android.widget.Button;
+import com.shilapi.xcertplay.compat.usb.UsbHostReadOnlyScanner;
+import java.util.List;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -95,6 +101,34 @@ public final class MainActivity extends Activity {
                 "已完成：静态分析、只读解析器、备份记录模型、模拟测试\n"
                 + "进行中：API 17 运行时兼容性验证\n"
                 + "待完成：USB / 蓝牙 / CarPlay 功能逐项移植与实机测试");
+
+        section(root, "USB 设备枚举（只读）",
+                "可手动读取系统 USB Host 设备描述信息。不会打开设备、申请通信权限、访问端点或传输数据。");
+        final TextView usbStatus = text("USB 状态：尚未扫描", 14, MUTED);
+        root.addView(usbStatus);
+        Button usbScan = new Button(this);
+        usbScan.setText("扫描 USB 设备（只读）");
+        usbScan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UsbHostReadOnlyScanner.ScanResult scan =
+                        new UsbHostReadOnlyScanner().scan(MainActivity.this);
+                StringBuilder display = new StringBuilder(scan.getStatus());
+                List<com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor> devices =
+                        scan.getDevices();
+                for (int i = 0; i < devices.size(); i++) {
+                    com.shilapi.xcertplay.compat.usb.UsbDeviceDescriptor d = devices.get(i);
+                    display.append("\\n设备 ").append(i + 1)
+                            .append(": VID=").append(String.format("%04X", d.getVendorId()))
+                            .append(" PID=").append(String.format("%04X", d.getProductId()))
+                            .append(" 类别=").append(d.getDeviceClass())
+                            .append(" 接口数=").append(d.getInterfaceCount());
+                }
+                usbStatus.setText(display.toString());
+            }
+        });
+        root.addView(usbScan, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView footer = text("安全提示：本验证版不是完整 DiPlay 复刻版，请勿作为车机正式升级包使用。",
                 13, MUTED);
