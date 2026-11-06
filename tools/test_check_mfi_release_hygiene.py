@@ -27,9 +27,9 @@ class MfiReleaseHygieneTest(unittest.TestCase):
         self.assertTrue(any("offline-mfi" in item for item in scan_apk(path)))
 
     def test_private_key_pem_payload_is_rejected(self):
-        payload = (b"-----BEGIN PRIVATE KEY-----\\n"
+        payload = (b"-----BEGIN PRIVATE KEY-----\n"
                    + b"A" * 128
-                   + b"\\n-----END PRIVATE KEY-----")
+                   + b"\n-----END PRIVATE KEY-----")
         path = self.make_apk({"assets/provider.dat": payload})
         self.assertTrue(any("private-key PEM payload" in item for item in scan_apk(path)))
 
