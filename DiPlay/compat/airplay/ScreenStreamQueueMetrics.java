@@ -1,16 +1,15 @@
 package com.shilapi.xcertplay.airplay;
 
-import android.util.Log;
-
 /**
  * Low-frequency aggregate instrumentation for the original ScreenStream
  * decrypt queue. This class observes queue pressure only; it never changes
  * admission, ordering, timeout, or drop policy.
+ *
+ * The owner should call snapshot() only for diagnostics/session summaries,
+ * never once per frame. This helper is not wired into original ScreenStream
+ * until the corresponding Smali call sites are patched and verified.
  */
 public final class ScreenStreamQueueMetrics {
-    private static final String TAG = "DiPlay-ScreenQueue";
-    private static final long REPORT_INTERVAL_NS = 5000000000L;
-
     private long queuedBytes;
     private long highWaterBytes;
     private int highWaterDepth;
@@ -19,7 +18,6 @@ public final class ScreenStreamQueueMetrics {
     private long dropped;
     private long offerWaitTotalNs;
     private long offerWaitMaxNs;
-    private long lastReportNs;
 
     public synchronized void recordOffer(int bodyBytes, long waitNs,
             boolean accepted, int depthAfterOffer) {
@@ -35,7 +33,6 @@ public final class ScreenStreamQueueMetrics {
         } else {
             dropped++;
         }
-        reportIfDue();
     }
 
     public synchronized void recordDequeue(int bodyBytes, int depthAfterDequeue) {
@@ -43,20 +40,34 @@ public final class ScreenStreamQueueMetrics {
         if (queuedBytes < 0L) queuedBytes = 0L;
         dequeued++;
         if (depthAfterDequeue > highWaterDepth) highWaterDepth = depthAfterDequeue;
-        reportIfDue();
     }
 
-    private void reportIfDue() {
-        long now = System.nanoTime();
-        if (lastReportNs != 0L && now - lastReportNs < REPORT_INTERVAL_NS) return;
-        lastReportNs = now;
-        Log.i(TAG, "offers=" + offers
-                + " dequeued=" + dequeued
-                + " dropped=" + dropped
-                + " queuedBytes=" + queuedBytes
-                + " highWaterBytes=" + highWaterBytes
-                + " highWaterDepth=" + highWaterDepth
-                + " offerWaitTotalMs=" + (offerWaitTotalNs / 1000000L)
-                + " offerWaitMaxMs=" + (offerWaitMaxNs / 1000000L));
+    public synchronized Snapshot snapshot() {
+        return new Snapshot(queuedBytes, highWaterBytes, highWaterDepth,
+                offers, dequeued, dropped, offerWaitTotalNs, offerWaitMaxNs);
+    }
+
+    public static final class Snapshot {
+        public final long queuedBytes;
+        public final long highWaterBytes;
+        public final int highWaterDepth;
+        public final long offers;
+        public final long dequeued;
+        public final long dropped;
+        public final long offerWaitTotalNs;
+        public final long offerWaitMaxNs;
+
+        private Snapshot(long queuedBytes, long highWaterBytes, int highWaterDepth,
+                long offers, long dequeued, long dropped,
+                long offerWaitTotalNs, long offerWaitMaxNs) {
+            this.queuedBytes = queuedBytes;
+            this.highWaterBytes = highWaterBytes;
+            this.highWaterDepth = highWaterDepth;
+            this.offers = offers;
+            this.dequeued = dequeued;
+            this.dropped = dropped;
+            this.offerWaitTotalNs = offerWaitTotalNs;
+            this.offerWaitMaxNs = offerWaitMaxNs;
+        }
     }
 }
