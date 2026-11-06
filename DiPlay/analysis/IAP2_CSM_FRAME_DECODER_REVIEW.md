@@ -55,3 +55,8 @@ Actions run [#163](https://github.com/qiangge5586-a11y/1/actions/runs/4217510524
 ## Fixed-buffer parity follow-up
 
 The offline decoder now follows the original `offer()` loop more closely: before appending, drain complete frames; append only up to the remaining capacity of the 65,535-byte receive buffer; continue until the entire caller array has been consumed; drain once more. A new test feeds two coalesced 40,006-byte CSM frames in one call, proving that input arrays larger than the fixed receive buffer are processed without growing the pending buffer beyond one maximum frame.
+
+
+## Latest fixed-buffer parity CI
+
+Actions run [#166](https://github.com/qiangge5586-a11y/1/actions/runs/42175369108) passed on commit `1c03614b3ff529bb507d19162513c8b9231819a8`. The full offline suite passed **7,397 checks**, including **2,334 CSM decoder checks**. The new regression supplies two coalesced 40,006-byte CSM frames in a single input array larger than the fixed receive buffer; both decode correctly and pending storage returns to zero. Java 7 offline verification only.
