@@ -36,15 +36,30 @@ public final class Iap2LinkModelPumpDriver implements Iap2LinkPump.Driver,
         byte[] copy = new byte[length];
         System.arraycopy(bytes, 0, copy, 0, length);
         engine.feedNegotiation(copy, nowMillis);
-        drainReceivedCsmEvents();
+        try {
+            drainReceivedCsmEvents();
+        } catch (IllegalStateException csmFailure) {
+            throw new IOException(csmFailure.getMessage(), csmFailure);
+        }
     }
 
-    private void drainReceivedCsmEvents() {
+    private void drainReceivedCsmEvents() throws IllegalStateException {
         List<Iap2LinkEngineModel.DispatchEvent> events = engine.drainEvents();
         for (int i = 0; i < events.size(); i++) {
             Iap2ReceiveWindowModel.Result received = events.get(i).receivedData;
             if (received != null && !received.delivered.isEmpty()) {
-                csmReceiver.acceptDeliveredPackets(received.delivered);
+                try {
+                    csmReceiver.acceptDeliveredPackets(received.delivered);
+                } catch (RuntimeException malformed) {
+                    engine.endOfStream();
+                    throw new IllegalStateException("Invalid CSM control payload", malformed);
+                }
+                if (csmReceiver.isClosed()) {
+                    String reason = csmReceiver.terminalReason();
+                    engine.endOfStream();
+                    throw new IllegalStateException(reason == null
+                            ? "CSM receive channel closed" : reason);
+                }
             }
         }
     }
