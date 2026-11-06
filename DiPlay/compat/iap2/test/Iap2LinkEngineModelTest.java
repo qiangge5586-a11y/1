@@ -337,7 +337,7 @@ public final class Iap2LinkEngineModelTest {
         truth(oversizedQueued.getTerminalReason().contains("maxLength"));
         eq(0, oversizedQueued.drainWireFrames().size());
 
-        Iap2LinkEngineModel oversizedReady =
+        final Iap2LinkEngineModel oversizedReady =
                 new Iap2LinkEngineModel(new Iap2LinkNegotiationModel());
         oversizedReady.start(true, 0);
         oversizedReady.takeNegotiationOutput();
