@@ -58,3 +58,10 @@ This helper is not the complete original engine. Still open:
 - live iPhone and MY16ADA hardware validation.
 
 No transport or vehicle test was performed.
+
+
+## Exhaustive gap / extended-ACK boundary verification (2026-11-06)
+
+`Iap2ReceiveWindowModelTest` now checks every starting sequence byte and every forward distance 2..255 for peer maxOutgoing values 1, 2, 4, 16 and 255. The test verifies the source out-of-window guard (`distance > peerMaxOutgoing + 10`), the exact extended-ACK threshold (`distance >= peerMaxOutgoing`), raw missing-sequence byte order across 255→0, delayed-ACK scheduling below the threshold, and immediate ACK without buffering outside the accepted range.
+
+CI run [#194](https://github.com/qiangge5586-a11y/1/actions/runs/42179792437) passed **2,323,699 Java 7 offline checks**, including 1,135,658 receive-window checks and 1,179,665 ACK/send-window checks. This is finite-domain model verification, not live accessory validation.
