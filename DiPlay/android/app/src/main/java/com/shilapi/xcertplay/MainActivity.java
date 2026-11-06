@@ -3,6 +3,9 @@ package com.shilapi.xcertplay;
 import android.app.Activity;
 import android.widget.Button;
 import com.shilapi.xcertplay.compat.usb.UsbHostReadOnlyScanner;
+import com.shilapi.xcertplay.compat.usb.UsbConfigurationSnapshot;
+import com.shilapi.xcertplay.compat.usb.UsbNcmReadOnlyMatcher;
+import com.shilapi.xcertplay.compat.ncm.NcmInterfaceSelector;
 import java.util.List;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -119,7 +122,29 @@ public final class MainActivity extends Activity {
                             .append(": VID=").append(String.format("%04X", d.getVendorId()))
                             .append(" PID=").append(String.format("%04X", d.getProductId()))
                             .append(" 类别=").append(d.getDeviceClass())
-                            .append(" 接口数=").append(d.getInterfaceCount());
+                            .append(" 接口数=").append(d.getInterfaceCount())
+                            .append(" 配置数=").append(d.getConfigurationCount());
+                    for (int c = 0; c < d.getConfigurations().size(); c++) {
+                        UsbConfigurationSnapshot configuration = d.getConfigurations().get(c);
+                        display.append("\\n  配置ID=").append(configuration.getId())
+                                .append(" 接口=").append(configuration.getInterfaceCount());
+                        NcmInterfaceSelector.Selection ncm =
+                                UsbNcmReadOnlyMatcher.find(configuration);
+                        if (ncm != null) {
+                            display.append("\\n  CDC-NCM候选：控制接口#")
+                                    .append(ncm.getControl().getId())
+                                    .append(" 数据接口#").append(ncm.getData().getId())
+                                    .append(" alt=").append(ncm.getData().getAlternateSetting())
+                                    .append(" claim-alt=").append(ncm.getDataClaim().getAlternateSetting());
+                        }
+                        for (UsbConfigurationSnapshot.InterfaceSnapshot iface : configuration.getInterfaces()) {
+                            display.append("\\n    IF#").append(iface.getId())
+                                    .append(" class=").append(iface.getInterfaceClass())
+                                    .append("/").append(iface.getInterfaceSubclass())
+                                    .append(" alt=").append(iface.getAlternateSetting())
+                                    .append(" EP=").append(iface.getEndpointCount());
+                        }
+                    }
                 }
                 usbStatus.setText(display.toString());
             }
