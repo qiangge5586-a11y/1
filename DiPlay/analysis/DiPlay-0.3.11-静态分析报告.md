@@ -298,3 +298,43 @@ Manifest 还声明了启动 Activity、CarPlay Host Activity、USB 附件处理�
 ### 13.2 ROOT Shell 的 API 17 分支
 
 `RootShell.waitForProcess` 仅在 SDK >= 26 时调用 `Process.waitFor(timeout, TimeUnit)`；低于 API 26 使用 `exitValue()` 轮询和短暂 sleep 的分支。因此这处新 API 已有运行时版本保护，API 17 路径不会直接调用该方法。仍需检查 `ProcessBuilder`、文件路径、shell 命令和 root 授权本身在目标固件上的实际行为。
+
+
+## 15. ROOT 热点模块深度复核：新增关键安全风险
+
+本轮直接从 GitHub Actions 反编译 Artifact 下载并检查 JADX 输出，同时对三个关键类进行本地模式复核：
+
+- `network/HostapdHotspotManager.java`
+- `network/HostapdConfig.java`
+- `network/RootShell.java`
+
+确认原始实现除覆盖系统配置外，还存在以下问题：
+
+1. `killStaleForStartScript()` 与 `killStaleForTeardownScript()` 遍历全部 `/proc/[0-9]*`，凡 `comm` 等于 `hostapd` 或 `dnsmasq` 即执行 `kill -9`。没有验证进程由 DiPlay 启动，可能误杀车机系统服务或其他应用的服务。
+2. 旧 `killStaleScript()` 也会按 `ps` 中进程名匹配后 kill，没有 app-owned PID 注册表。
+3. 启动流程把临时配置直接复制到 `/data/misc/wifi/hostapd.conf`，未见覆盖前备份。
+4. `removeGeneratedFilesScript()` 把系统配置路径 `/data/misc/wifi/hostapd.conf` 放进 `rm -f` 清理列表。这是系统文件，不得作为普通生成文件删除。
+5. 启动/停止流程分别执行 `WifiCtl OFF` 和 `WifiCtl ON`，但所检查的管理器没有持久保存启动前 Wi-Fi 状态；恢复时无条件 ON 不等于恢复原状态。
+6. `RootShell.writeFile(path, content)` 把 path 字符串直接拼接进 Shell 脚本。当前调用路径是否可控需要全量调用点复核，因此必须把路径限制为固定 allowlist。
+
+这几项已加入新报告《ROOT_HOTSPOT_SAFETY_REDESIGN.md》，并新增 `tools/audit-hotspot-safety.py`，在 APK 每次重新反编译后自动检查这些源码特征。该扫描只做静态审计，不执行任何 ROOT 命令。
+
+### 修复优先级
+
+- **P0：** 禁止按进程名全局 kill；只允许终止本事务启动且 PID、进程启动时间、cmdline 均匹配的进程。
+- **P0：** 从通用清理列表移除 `/data/misc/wifi/hostapd.conf`；覆盖前必须完成备份并校验。
+- **P0：** 持久记录原始 Wi-Fi 状态、接口状态和原配置元数据，失败/崩溃后可恢复。
+- **P1：** RootShell 文件路径 allowlist，避免将任意路径拼入 Shell。
+- **P1：** 根据实机只读探测的真实接口名和可用二进制动态选择能力，不再默认 wlan0/hostapd/dnsmasq。
+
+**重要：** 以上是对原始 APK 行为的静态发现，不代表已修改原 APK。当前还没有对车辆执行任何 ROOT 写操作，也没有生成修改版 APK。
+
+## 16. 自动化审计阶段状态
+
+- [x] 下载并读取原始 APK 反编译 Artifact 的真实源码。
+- [x] 本地验证 6 项风险模式均能在原始源码中匹配。
+- [x] 增加 GitHub Actions 自动热点安全扫描步骤。
+- [x] 新建 ROOT 热点事务化改造设计文档。
+- [ ] 等待最新 GitHub Actions 完成并检查审计报告产物。
+- [ ] 建立可重建的 DiPlay 源码工程并集成事务管理器。
+- [ ] API 17 实机验证备份、恢复、进程所有权与 Wi-Fi 状态恢复。
