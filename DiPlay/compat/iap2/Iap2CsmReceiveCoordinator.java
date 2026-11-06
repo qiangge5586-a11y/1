@@ -30,7 +30,14 @@ public final class Iap2CsmReceiveCoordinator {
             Iap2ReceiveWindowModel.Packet packet = packets.get(i);
             if (packet == null) throw new NullPointerException("packet");
             if (packet.sessionId != Iap2LinkFrameCodec.CONTROL_SESSION_ID) continue;
-            List<Iap2CsmFrameDecoder.Frame> frames = decoder.feed(packet.payload);
+            List<Iap2CsmFrameDecoder.Frame> frames;
+            try {
+                frames = decoder.feed(packet.payload);
+            } catch (RuntimeException malformed) {
+                closed = true;
+                terminalReason = "Invalid CSM control payload";
+                throw malformed;
+            }
             for (int j = 0; j < frames.size(); j++) {
                 Iap2CsmFrameDecoder.Frame frame = frames.get(j);
                 if (!queue.enqueue(frame.messageId, frame.payload)) {
