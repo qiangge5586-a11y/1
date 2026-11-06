@@ -207,3 +207,9 @@ Actions run [#137](https://github.com/qiangge5586-a11y/1/actions/runs/4217380812
 Smali `handleAcknowledgement()` calls `peerLimitsAreUsable()` and scans the pre-ready queued packet list with `peerPayloadIsAcceptable()` before changing NEGOTIATING to NORMAL. The exact bound is `payload.length <= peer.maxLength - 10`; any queued payload outside the bound terminates the link. The composition now supports `queueBeforeReady()`, validates all pending packets before flushing, then delegates accepted packets to the outbound window. The check is not repeated for post-ready `sendPacket()` calls in the original source, so the offline `send()` path does not add that guard.
 
 Actions run [#147](https://github.com/qiangge5586-a11y/1/actions/runs/42174129287) passed **7,297 offline checks** (158 negotiation, 118 composition). Boundary test: peer maxLength 11 accepts one byte and rejects two bytes in the pre-ready queue.
+
+## Queue ownership and ACK-batch reset checkpoint
+
+The offline composition now verifies pre-ready queue defensive copying and its 64-packet bound; validates every queued payload against peer maxLength minus 10 before flush; and preserves the source distinction that the size predicate is not repeated by post-ready `sendPacket()`. ACK-batch counting follows the Smali `processFrame()`/ `writePacket()` behavior: ACK-bit frames accumulate to peer maxAcknowledgements, while every emitted link frame resets the counter; threshold emits an ACK-only frame and advances the receive watermark.
+
+Actions run [#154](https://github.com/qiangge5586-a11y/1/actions/runs/42174396466) passed **7,379 offline checks** (158 negotiation, 200 composition).
