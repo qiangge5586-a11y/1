@@ -61,6 +61,7 @@ Artifact: `diplay-honda-compat-debug` (artifact ID `13471009807`, 26,585 bytes; 
 - [Offline NCM/NTB16 codec](compat/ncm/README.md)
 - [Protocol path map](analysis/DiPlay_PROTOCOL_PATH_MAP.md)
 - [Original NCM/NTB16 codec comparison](analysis/NCM_NTB16_CODEC_COMPARISON.md)
+- [API 17 legacy USB claim, raw usbfs and VPN/lwIP review](analysis/API17_LEGACY_USB_NCM_AND_VPN_REVIEW.md)
 
 ## Safety and remaining gates
 
