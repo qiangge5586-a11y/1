@@ -17,7 +17,7 @@ public final class RfcommConnectDeadlineTest {
         long wrappedDeadline = RfcommConnectDeadline.deadlineAfter(nearWrap, 10L);
         eq(Long.MIN_VALUE + 9999995L, wrappedDeadline);
         eq(10000000L, RfcommConnectDeadline.remainingNanos(nearWrap, wrappedDeadline));
-        eq(5000000L, RfcommConnectDeadline.remainingNanos(Long.MIN_VALUE, wrappedDeadline));
+        eq(9999995L, RfcommConnectDeadline.remainingNanos(Long.MIN_VALUE, wrappedDeadline));
 
         fails(0L);
         fails(300001L);
