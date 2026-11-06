@@ -32,9 +32,11 @@ A dedicated project now exists at `DiPlay/android/`, separate from the root `and
 - Offline Java 7 NTB16 codec primitive and fixture self-test (no USB I/O).
 - Hotspot safety transaction models and simulation tests are included; no real ROOT executor or system-write path is enabled.
 
-Latest successful APK build containing USB and Bluetooth read-only modules plus the hardened offline NTB16 codec: [GitHub Actions run #35](https://github.com/qiangge5586-a11y/1/actions/runs/42151606124).
+Latest successful APK build containing USB and Bluetooth read-only modules, the offline NTB16 codec, and the incremental NTB16 stream decoder: [GitHub Actions run #38](https://github.com/qiangge5586-a11y/1/actions/runs/42152490382).
 
-Artifact: `diplay-honda-compat-debug`, ID `13472776256`, 28,575 bytes; digest `sha256:a43f58ffb22d8f0c084ce9fb2c39d5ff108ffd4c5fe202740536a2228cd3290b` (expires 2026-11-20).
+Artifact: `diplay-honda-compat-debug`, ID `13472921457`, archive size 30,289 bytes; archive digest `sha256:8db1ecbbdd3189a6ae277310b7c15e5b6e8facf848041141997e200ab16539e9` (expires 2026-11-20). Downloaded archive inspection confirmed it contains `app-debug.apk` (33,979 bytes); APK SHA-256: `11b5788590b7ea63a364c4f0ac17745bff711ae9860d20f78a81ec65bd66e5f0`.
+
+The matching NCM test workflow [run #57](https://github.com/qiangge5586-a11y/1/actions/runs/42152490383) passed both codec (13 cases) and stream decoder (7 cases), along with the hotspot, USB and diagnostic fixture suites.
 
 The build verifies compilation, APK packaging, application ID, minSdk 17 and targetSdk 28. It is not a full DiPlay 0.3.11 recreation and has not yet been installed or tested on the Honda head unit.
 
