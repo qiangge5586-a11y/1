@@ -163,7 +163,7 @@ jobs:
       - name: 单元测试、Lint 与测试 APK
         run: |
           set -eu
-          bash ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace
+          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace
           unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'lib/arm64-v8a/libhypercar_core.so'
           sha256sum app/build/outputs/apk/debug/app-debug.apk > test-debug-sha256.txt
 
@@ -231,8 +231,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           set -eu
-          chmod +x gradlew
-          ./gradlew :app:assembleRelease "-Phypercar.buildNumber=$BUILD_NUMBER" -Phypercar.requireReleaseSigning=true --stacktrace
+          gradle :app:assembleRelease "-Phypercar.buildNumber=$BUILD_NUMBER" -Phypercar.requireReleaseSigning=true --stacktrace
 
       - name: 校验签名并打包
         if: steps.signing.outputs.ready == 'true'
