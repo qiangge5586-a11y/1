@@ -118,10 +118,9 @@ public final class Iap2LinkNegotiationModel {
                 sendAcknowledgement();
             }
         }
-        if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0
-                && state == State.NEGOTIATING) {
-            // The original engine opens readiness on any ACK after a valid peer SYN.
-            // The ACK number belongs to the separate cumulative-window processing.
+        // Original processFrame() calls handleAcknowledgement() for every
+        // non-zero control frame, including the peer SYN (0x80) itself.
+        if (frame.control != 0 && state == State.NEGOTIATING) {
             if (!peerSynchronizationReceived || peerMaxLength <= 10) {
                 die("peer iAP2 maxLength cannot carry pending control packets");
                 return;
