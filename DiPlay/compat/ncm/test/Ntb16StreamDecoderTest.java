@@ -1,6 +1,9 @@
 package com.shilapi.xcertplay.compat.ncm;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.io.ByteArrayOutputStream;
 
 public final class Ntb16StreamDecoderTest {
     private Ntb16StreamDecoderTest() {
@@ -17,7 +20,8 @@ public final class Ntb16StreamDecoderTest {
         preservesPartialNextHeaderAfterBoundaryBlock();
         enforcesBufferLimit();
         resetClearsPartialState();
-        System.out.println("Ntb16StreamDecoderTest: PASS (10 cases)");
+        randomizedChunkingPreservesFrameOrder();
+        System.out.println("Ntb16StreamDecoderTest: PASS (11 cases)");
     }
 
     private static void decodesFragmentedNtb() {
@@ -104,6 +108,37 @@ public final class Ntb16StreamDecoderTest {
         List<byte[]> second = decoder.append(next, 4, next.length - 4);
         check(second.size() == 1, "next NTB decoded after header completion");
         arrayEquals(new byte[] {66, 67}, second.get(0), "partial next header payload");
+    }
+
+    private static void randomizedChunkingPreservesFrameOrder() {
+        Random random = new Random(0x4E434D31L);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        List<byte[]> expected = new ArrayList<byte[]>();
+        for (int i = 0; i < 40; i++) {
+            byte[] frame = new byte[1 + random.nextInt(300)];
+            random.nextBytes(frame);
+            expected.add(frame);
+            byte[] ntb = Ntb16Codec.build(frame, i);
+            stream.write(ntb, 0, ntb.length);
+            if (i != 39) {
+                int garbageLength = 1 + random.nextInt(5);
+                for (int g = 0; g < garbageLength; g++) stream.write(0x55);
+            }
+        }
+
+        byte[] input = stream.toByteArray();
+        Ntb16StreamDecoder decoder = new Ntb16StreamDecoder();
+        List<byte[]> actual = new ArrayList<byte[]>();
+        int offset = 0;
+        while (offset < input.length) {
+            int count = Math.min(1 + random.nextInt(41), input.length - offset);
+            actual.addAll(decoder.append(input, offset, count));
+            offset += count;
+        }
+        check(actual.size() == expected.size(), "random chunking frame count");
+        for (int i = 0; i < expected.size(); i++) {
+            arrayEquals(expected.get(i), actual.get(i), "random chunk frame " + i);
+        }
     }
 
     private static void enforcesBufferLimit() {
