@@ -166,7 +166,7 @@ public final class Iap2LinkEngineModel {
             Iap2OutboundWindowModel.Result extendedAck = null;
             Iap2ReceiveWindowModel.Result received = null;
 
-            if (frame.control != 0) {
+            if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0) {
                 cumulativeAck = outbound.acknowledge(frame.acknowledgement, nowMillis);
                 enqueuePacketFrames(cumulativeAck.transmitted);
             }
@@ -175,7 +175,9 @@ public final class Iap2LinkEngineModel {
                         frame.payload == null ? new byte[0] : frame.payload, nowMillis);
                 enqueuePacketFrames(extendedAck.retransmitted);
             }
-            if (frame.control == Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT
+            // Original processFrame(): (control & ~0x40) == 0 and payload != null.
+            // This permits both data-only (0x00) and data+ACK (0x40) frames.
+            if ((frame.control & ~Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) == 0
                     && frame.payload != null) {
                 received = inbound.receive(new Iap2ReceiveWindowModel.Packet(
                         frame.sequence, frame.sessionId, frame.payload), nowMillis);
