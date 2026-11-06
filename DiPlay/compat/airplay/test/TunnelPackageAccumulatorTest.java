@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class TunnelPackageAccumulatorTest {
-    private static final class RecordingListener {
+    private static final class RecordingListener implements IapTunnel.Listener {
         final List<byte[]> bodies = new ArrayList<byte[]>();
         final List<String> debug = new ArrayList<String>();
         public void onDebug(String message) { debug.add(message); }
