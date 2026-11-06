@@ -156,10 +156,9 @@ public final class Iap2LinkNegotiationModel {
                 sendAcknowledgement();
             }
         }
-        // Original processFrame() invokes handleAcknowledgement() only
-        // when the ACK bit (0x40) is present; a SYN-only frame is not an ACK.
-        if ((frame.control & Iap2LinkFrameCodec.CONTROL_ACKNOWLEDGEMENT) != 0
-                && state == State.NEGOTIATING) {
+        // Source-audited processFrame() invokes handleAcknowledgement()
+        // for every non-zero control byte, including the peer SYN frame.
+        if (frame.control != 0 && state == State.NEGOTIATING) {
             if (!peerSynchronizationReceived || peerMaxLength <= 10) {
                 die("peer iAP2 maxLength cannot carry pending control packets");
                 return;
