@@ -181,3 +181,8 @@ A separate negotiation regression was also fixed: if the peer's valid synchroniz
 CI run [#64](https://github.com/qiangge5586-a11y/1/actions/runs/42168651726) passed **7,004 offline checks**: 61 wireless handshake, 3,380 AirPlay IAP framing/package, 2,330 CSM, 59 link codec, 1,050 incremental link decoder, 104 negotiation model, and 20 retransmission-policy checks.
 
 Scope remains deliberately limited: the helper does not yet own a pending-packet queue, cumulative ACK window, reorder buffer, timer scheduler, or transport. Those are still separate implementation stages and must be compared against the original Smali before integration. No live iPhone, MY16ADA, Bluetooth, USB, AirPlay or ROOT operation was performed.
+
+
+## Retransmission counter representation cross-check (2026-11-06)
+
+The original Smali artifact's `Iap2LinkEngine$Packet` declares `retransmissions:I` (32-bit signed integer), and `retransmitDuePacket(J)` performs `getRetransmissions()`, `add-int/2addr`, then compares the incremented integer for exact equality with peer `maxRetransmissions`. The peer limit itself is decoded from a u8 synchronization field. The normal reachable lifecycle increments from zero and terminates exactly when the counter reaches that peer limit (0 disables retention), so values above the negotiated u8 limit are not reached in a valid packet lifecycle. Do not reinterpret the internal counter field as a wire u8.
