@@ -123,11 +123,10 @@ public final class MainActivity extends Activity {
                             .append(" PID=").append(String.format("%04X", d.getProductId()))
                             .append(" 类别=").append(d.getDeviceClass())
                             .append(" 接口数=").append(d.getInterfaceCount())
-                            .append(" 接口集合数=").append(d.getConfigurationCount());
+                            .append(" 接口集合数=").append(d.getInterfaceGroupCount());
                     for (int c = 0; c < d.getConfigurations().size(); c++) {
                         UsbConfigurationSnapshot configuration = d.getConfigurations().get(c);
-                        display.append("\n  接口集合=").append(configuration.getId())
-                                .append(" 接口=").append(configuration.getInterfaceCount());
+                        display.append("\n  接口列表（配置元数据未知） 接口=").append(configuration.getInterfaceCount());
                         NcmInterfaceSelector.Selection ncm =
                                 UsbNcmReadOnlyMatcher.find(configuration);
                         if (ncm != null) {
