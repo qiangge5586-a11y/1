@@ -22,19 +22,17 @@ public final class Iap2LinkCommandQueueModelTest {
     private static void enforcesAggregateByteLimit() {
         Iap2LinkCommandQueueModel q = new Iap2LinkCommandQueueModel();
         for (int i=0;i<16;i++) truth(q.enqueueIfCapacity(new byte[65525]));
-        truth(q.enqueueIfCapacity(new byte[65536]));
-        eq(17,q.queuedCommands()); eq(16*65525+65536,q.queuedBytes());
+        truth(q.enqueueIfCapacity(new byte[176]));
+        eq(17,q.queuedCommands()); eq(1048576,q.queuedBytes());
         truth(!q.hasCapacity(1)); truth(!q.enqueueIfCapacity(new byte[1]));
-        Iap2LinkCommandQueueModel exact = new Iap2LinkCommandQueueModel();
-        truth(exact.enqueueIfCapacity(new byte[1048576]));
-        eq(1048576,exact.queuedBytes()); truth(!exact.hasCapacity(0));
     }
     private static void pumpRemovalReleasesExactCapacity() {
         Iap2LinkCommandQueueModel q = new Iap2LinkCommandQueueModel();
-        truth(q.enqueueIfCapacity(new byte[1048576]));
+        for (int i=0;i<16;i++) truth(q.enqueueIfCapacity(new byte[65525]));
+        truth(q.enqueueIfCapacity(new byte[176]));
         truth(!q.hasCapacity(1));
         byte[] removed=q.takeForPump();
-        eq(1048576,removed.length); eq(0,q.queuedBytes()); eq(0,q.queuedCommands());
+        eq(65525,removed.length); eq(983051,q.queuedBytes()); eq(16,q.queuedCommands());
         truth(q.hasCapacity(65525)); truth(q.enqueueIfCapacity(new byte[65525]));
     }
     private static void preservesFifoAndDefensiveCopies() {
