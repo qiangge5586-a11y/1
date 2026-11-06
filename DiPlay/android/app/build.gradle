@@ -23,7 +23,7 @@ android {
     sourceSets {
         main {
             java {
-                srcDirs = ['src/main/java', '../../compat/hotspot', '../../compat/usb', '../../compat/bluetooth']
+                srcDirs = ['src/main/java', '../../compat/hotspot', '../../compat/usb', '../../compat/bluetooth', '../../compat/ncm']
                 exclude 'test/**'
             }
         }
