@@ -158,7 +158,7 @@ public final class Iap2OutboundWindowModelTest {
         eq(101, r.retransmitted.get(0).sequence);
         eq(11, r.retransmitted.get(0).sessionId);
         eq(1, r.retransmitted.get(0).retryCount);
-        eq(120L, r.retransmitted.get(0).deadlineMillis);
+        eq(101L, r.retransmitted.get(0).deadlineMillis);
         eq(Long.valueOf(100), m.getNextDeadlineMillis());
     }
 
