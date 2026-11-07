@@ -57,8 +57,107 @@ def main():
         "MFi settings choices (restore original LOCAL test-provider choice)",
     )
 
-    # Keep the original LOCAL provider code path and backend dispatch intact,
-    # but never propagate the original bundled private identity. A LOCAL test
+    # Permit a separately provisioned, authorized test identity in app-private
+    # storage when the bundled assets are intentionally absent. Validation is
+    # delegated to the original LocalMfiAuthenticationClient loader, which
+    # parses the PKCS#8 EC key and X.509 certificate bundle and verifies that
+    # the key matches the certificate. No credential bytes are embedded here.
+    bootstrap = os.path.join(root, "smali/com/shilapi/xcertplay/DiPlayBootstrap.smali")
+    with open(bootstrap, "r", encoding="utf-8") as source:
+        bootstrap_text = source.read()
+    if "hasValidProvisionedIdentity(Ljava/io/File;)Z" not in bootstrap_text:
+        ensure_anchor = """    invoke-direct {v1, v2, v5}, Lcom/shilapi/xcertplay/DiPlayBootstrap;->matchesAssets(Landroid/content/Context;Ljava/io/File;)Z
+
+    move-result v0
+
+    const/4 v6, 0x1
+
+    if-eqz v0, :cond_3
+"""
+        ensure_replacement = """    invoke-direct {v1, v2, v5}, Lcom/shilapi/xcertplay/DiPlayBootstrap;->matchesAssets(Landroid/content/Context;Ljava/io/File;)Z
+
+    move-result v0
+
+    const/4 v6, 0x1
+
+    if-eqz v0, :cond_3
+
+    sput-boolean v6, Lcom/shilapi/xcertplay/DiPlayBootstrap;->ready:Z
+
+    monitor-exit p0
+
+    return-void
+
+    :cond_3
+    invoke-direct {v1, v5}, Lcom/shilapi/xcertplay/DiPlayBootstrap;->hasValidProvisionedIdentity(Ljava/io/File;)Z
+
+    move-result v0
+
+    if-eqz v0, :cond_provisioned_missing
+
+    sput-boolean v6, Lcom/shilapi/xcertplay/DiPlayBootstrap;->ready:Z
+
+    monitor-exit p0
+
+    return-void
+
+    :cond_provisioned_missing
+"""
+        if bootstrap_text.count(ensure_anchor) != 1:
+            raise SystemExit("DiPlayBootstrap ensure insertion anchor not unique")
+        bootstrap_text = bootstrap_text.replace(ensure_anchor, ensure_replacement, 1)
+        method = """
+.method private final hasValidProvisionedIdentity(Ljava/io/File;)Z
+    .locals 5
+    .param p1, "directory"    # Ljava/io/File;
+
+    :try_start_provisioned
+    sget-object v0, Lcom/shilapi/xcertplay/mfi/LocalMfiAuthenticationClient;->Companion:Lcom/shilapi/xcertplay/mfi/LocalMfiAuthenticationClient$Companion;
+
+    move-object v1, p1
+
+    const/4 v2, 0x0
+
+    const/4 v3, 0x2
+
+    const/4 v4, 0x0
+
+    invoke-static {v0, v1, v2, v3, v4}, Lcom/shilapi/xcertplay/mfi/LocalMfiAuthenticationClient$Companion;->load$default(Lcom/shilapi/xcertplay/mfi/LocalMfiAuthenticationClient$Companion;Ljava/io/File;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/shilapi/xcertplay/mfi/LocalMfiAuthenticationClient;
+
+    move-result-object v0
+
+    if-eqz v0, :provisioned_invalid
+
+    const/4 v0, 0x1
+
+    return v0
+
+    :provisioned_invalid
+    const/4 v0, 0x0
+
+    return v0
+
+    :try_end_provisioned
+    .catch Ljava/lang/Throwable; {:try_start_provisioned .. :try_end_provisioned} :catch_provisioned
+
+    :catch_provisioned
+    move-exception v0
+
+    const/4 v0, 0x0
+
+    return v0
+.end method
+"""
+        if ".method private final hasValidProvisionedIdentity" in bootstrap_text:
+            raise SystemExit("hasValidProvisionedIdentity already exists in unexpected form")
+        pos = bootstrap_text.find(".method public final declared-synchronized ensure(")
+        if pos < 0:
+            raise SystemExit("DiPlayBootstrap ensure method not found")
+        bootstrap_text = bootstrap_text[:pos] + method + "\n" + bootstrap_text[pos:]
+        with open(bootstrap, "w", encoding="utf-8") as target_file:
+            target_file.write(bootstrap_text)
+
+    # Never propagate the original bundled private identity. A LOCAL test
     # provider must be provisioned separately with an authorized test identity.
     # Hardware backends remain selectable; no automatic fallback is introduced.
     identity_dir = os.path.join(root, "assets/offline-mfi")
