@@ -47,7 +47,7 @@ sed -i 's/^  versionCode: .*/  versionCode: 132/; s/^  versionName: .*/  version
   "$DECODED/apktool.yml"
 
 # Remove stale JAR-signature metadata. The patch restores the original LOCAL
-# provider selection path while excluding bundled identity/private-key assets;
+# provider selection path while preserving original bundled identity assets;
 # I2C and USB/CH341 remain explicit selectable hardware providers.
 rm -rf "$DECODED/unknown/META-INF" "$DECODED/original/META-INF"
 python3 "$ROOT/tools/patch-diplay-original.py" "$DECODED"
@@ -117,10 +117,10 @@ cat > "$SOURCE_ROOT/BUILD_INFO.md" <<EOF
 - Minimum Android API: 17
 - Optimized compatibility modules: bluetooth, hotspot, USB, NCM, iAP2, MFi and cluster
 - Original production DiPlay Smali/resources: original-apktool/
-- Offline MFi identity assets: intentionally excluded
-- MFi first-run selection: original LOCAL provider path (test-only; no identity bundled)
+- Offline MFi identity assets: original APK assets preserved unchanged
+- MFi first-run selection: original LOCAL provider path and original bundled asset bootstrap
 - MFi hardware providers: explicit I2C and USB/CH341 choices; no silent fallback
-- Authorized test identity provisioning: required before LOCAL can authenticate
+- MFi identity bytes are not logged, exported, or rewritten by the merge script
 - Signature: test key, v1 + v2 (API 17 uses v1)
 - Vehicle/iPhone hardware validation: not yet performed
 EOF
