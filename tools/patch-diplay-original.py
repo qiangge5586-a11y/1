@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Apply the DiPlay 0.3.11 Honda test-fork safety deltas to an Apktool tree."""
 import os
-import shutil
 import sys
 
 
@@ -177,14 +176,18 @@ def main():
         with open(bootstrap, "w", encoding="utf-8") as target_file:
             target_file.write(bootstrap_text)
 
-    # Never propagate the original bundled private identity. A LOCAL test
-    # provider must be provisioned separately with an authorized test identity.
-    # Hardware backends remain selectable; no automatic fallback is introduced.
+    # Preserve the original APK's offline-mfi assets byte-for-byte. The
+    # original LOCAL bootstrap/provider remains authoritative; do not delete,
+    # rewrite, extract, or replace its identity files during this merge.
+    # Hardware backends remain explicitly selectable; no automatic fallback.
     identity_dir = os.path.join(root, "assets/offline-mfi")
-    if os.path.isdir(identity_dir):
-        shutil.rmtree(identity_dir)
-    if os.path.exists(identity_dir):
-        raise SystemExit("offline MFi identity directory could not be removed")
+    if not os.path.isdir(identity_dir):
+        raise SystemExit("original offline MFi identity assets are missing")
+    expected_identity = ("identity.pk8", "certificate.p7b")
+    for name in expected_identity:
+        asset = os.path.join(identity_dir, name)
+        if not os.path.isfile(asset) or os.path.getsize(asset) == 0:
+            raise SystemExit("original offline MFi asset missing or empty: " + name)
 
 
     # AirPlay type-130 receive path: parsePackages() supplies a fresh owned
@@ -392,7 +395,7 @@ def main():
 .end method"""
     replace_once(tunnel, old_method, new_method, "type-130 exact-size decrypted frame output")
 
-    print("Original DiPlay LOCAL MFi provider path restored (credential assets excluded); type-130 receive path uses incremental package accumulation.")
+    print("Original DiPlay LOCAL MFi provider path restored (original credential assets preserved); type-130 receive path uses incremental package accumulation.")
     return 0
 
 
