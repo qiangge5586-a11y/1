@@ -73,12 +73,43 @@ def main():
     const/4 v6, 0x1
 
     if-eqz v0, :cond_3
+
+    .line 54
+    sput-boolean v6, Lcom/shilapi/xcertplay/DiPlayBootstrap;->ready:Z
+    :try_end_2
+    .catchall {:try_start_2 .. :try_end_2} :catchall_6
+
+    .line 55
+    monitor-exit p0
+
+    return-void
+
+    .line 58
+    :cond_3
+    :try_start_3
 """
         ensure_replacement = """    invoke-direct {v1, v2, v5}, Lcom/shilapi/xcertplay/DiPlayBootstrap;->matchesAssets(Landroid/content/Context;Ljava/io/File;)Z
 
     move-result v0
 
     const/4 v6, 0x1
+
+    if-eqz v0, :cond_provisioned_check
+
+    .line 54
+    sput-boolean v6, Lcom/shilapi/xcertplay/DiPlayBootstrap;->ready:Z
+    :try_end_2
+    .catchall {:try_start_2 .. :try_end_2} :catchall_6
+
+    .line 55
+    monitor-exit p0
+
+    return-void
+
+    :cond_provisioned_check
+    invoke-direct {v1, v5}, Lcom/shilapi/xcertplay/DiPlayBootstrap;->hasValidProvisionedIdentity(Ljava/io/File;)Z
+
+    move-result v0
 
     if-eqz v0, :cond_3
 
@@ -88,20 +119,9 @@ def main():
 
     return-void
 
+    .line 58
     :cond_3
-    invoke-direct {v1, v5}, Lcom/shilapi/xcertplay/DiPlayBootstrap;->hasValidProvisionedIdentity(Ljava/io/File;)Z
-
-    move-result v0
-
-    if-eqz v0, :cond_provisioned_missing
-
-    sput-boolean v6, Lcom/shilapi/xcertplay/DiPlayBootstrap;->ready:Z
-
-    monitor-exit p0
-
-    return-void
-
-    :cond_provisioned_missing
+    :try_start_3
 """
         if bootstrap_text.count(ensure_anchor) != 1:
             raise SystemExit("DiPlayBootstrap ensure insertion anchor not unique")
