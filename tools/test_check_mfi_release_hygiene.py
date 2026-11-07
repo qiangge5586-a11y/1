@@ -22,9 +22,16 @@ class MfiReleaseHygieneTest(unittest.TestCase):
         path = self.make_apk({"classes.dex": b"ordinary application bytecode"})
         self.assertEqual([], scan_apk(path))
 
-    def test_offline_identity_path_is_rejected(self):
-        path = self.make_apk({"assets/offline-mfi/certificate.bin": b"fixture"})
-        self.assertTrue(any("offline-mfi" in item for item in scan_apk(path)))
+    def test_original_offline_identity_assets_are_allowed(self):
+        path = self.make_apk({
+            "assets/offline-mfi/identity.pk8": b"original-pkcs8-fixture",
+            "assets/offline-mfi/certificate.p7b": b"original-certificate-fixture",
+        })
+        self.assertEqual([], scan_apk(path))
+
+    def test_separately_named_private_identity_exports_are_rejected(self):
+        path = self.make_apk({"assets/mfi-private-key/export.bin": b"fixture"})
+        self.assertTrue(any("forbidden identity path" in item for item in scan_apk(path)))
 
     def test_private_key_pem_payload_is_rejected(self):
         payload = (b"-----BEGIN PRIVATE KEY-----\n"
