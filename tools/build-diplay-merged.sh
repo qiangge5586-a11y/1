@@ -46,8 +46,9 @@ find "$DECODED" -type f \( -name '*.smali' -o -name '*.xml' \) -print0 \
 sed -i 's/^  versionCode: .*/  versionCode: 132/; s/^  versionName: .*/  versionName: 0.3.11-honda1/' \
   "$DECODED/apktool.yml"
 
-# Remove any stale original JAR-signature metadata before rebuilding and apply
-# the reviewed hardware-backed MFi defaults (I2C / USB-CH341 only).
+# Remove stale JAR-signature metadata. The patch restores the original LOCAL
+# provider selection path while excluding bundled identity/private-key assets;
+# I2C and USB/CH341 remain explicit selectable hardware providers.
 rm -rf "$DECODED/unknown/META-INF" "$DECODED/original/META-INF"
 python3 "$ROOT/tools/patch-diplay-original.py" "$DECODED"
 
@@ -117,7 +118,9 @@ cat > "$SOURCE_ROOT/BUILD_INFO.md" <<EOF
 - Optimized compatibility modules: bluetooth, hotspot, USB, NCM, iAP2, MFi and cluster
 - Original production DiPlay Smali/resources: original-apktool/
 - Offline MFi identity assets: intentionally excluded
-- MFi default: hardware I2C; alternate: USB/CH341
+- MFi first-run selection: original LOCAL provider path (test-only; no identity bundled)
+- MFi hardware providers: explicit I2C and USB/CH341 choices; no silent fallback
+- Authorized test identity provisioning: required before LOCAL can authenticate
 - Signature: test key, v1 + v2 (API 17 uses v1)
 - Vehicle/iPhone hardware validation: not yet performed
 EOF
