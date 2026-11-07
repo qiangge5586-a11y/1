@@ -85,6 +85,20 @@ fi
 "$BT/apksigner" verify --verbose "$OUT"
 python3 "$ROOT/tools/check-mfi-release-hygiene.py" "$OUT"
 
+# Verify the original MFi credential assets survive the complete decode/patch/
+# rebuild/sign pipeline byte-for-byte. Never print their contents or hashes.
+for identity_asset in identity.pk8 certificate.p7b; do
+  source_asset="$DECODED/assets/offline-mfi/$identity_asset"
+  test -s "$source_asset"
+  source_digest="$(sha256sum "$source_asset" | awk '{print $1}')"
+  packaged_digest="$(unzip -p "$OUT" "assets/offline-mfi/$identity_asset" | sha256sum | awk '{print $1}')"
+  if [[ "$source_digest" != "$packaged_digest" ]]; then
+    echo "Original MFi asset changed during merge: $identity_asset" >&2
+    exit 5
+  fi
+done
+echo "Original MFi identity assets: byte-for-byte preserved"
+
 "$BT/aapt" dump badging "$OUT" > "$BUILD_ROOT/badging.txt"
 grep -F "name='com.shihab.diplay.honda'" "$BUILD_ROOT/badging.txt"
 grep -F "sdkVersion:'17'" "$BUILD_ROOT/badging.txt"
@@ -93,7 +107,7 @@ sha256sum "$OUT"
 
 # Export the complete recoverable source set: original APKTool resources/Smali,
 # every optimized compatibility Java module (including tests), build scripts,
-# and the source-audit documents. The offline MFi identity was already removed.
+# and the source-audit documents. Original offline MFi identity assets are retained unchanged.
 SOURCE_ROOT="$BUILD_ROOT/source-package"
 rm -rf "$SOURCE_ROOT"
 mkdir -p "$SOURCE_ROOT"
