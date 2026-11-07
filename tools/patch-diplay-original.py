@@ -41,25 +41,26 @@ def main():
     replace_once(
         persistence,
         "    sget-object v2, %s->LOCAL:%s\n\n    :cond_2" % (target, target),
-        "    sget-object v2, %s->I2C:%s\n\n    :cond_2" % (target, target),
-        "MFi missing-preference default",
+        "    sget-object v2, %s->LOCAL:%s\n\n    :cond_2" % (target, target),
+        "MFi missing-preference default (restore original LOCAL test-provider path)",
     )
     replace_once(
         host,
         "    sget-object v5, %s->LOCAL:%s\n\n    iput-object v5, p0, Lcom/shilapi/xcertplay/CarPlayHostActivity;->mfiTarget:%s" % (target, target, target),
-        "    sget-object v5, %s->I2C:%s\n\n    iput-object v5, p0, Lcom/shilapi/xcertplay/CarPlayHostActivity;->mfiTarget:%s" % (target, target, target),
+        "    sget-object v5, %s->LOCAL:%s\n\n    iput-object v5, p0, Lcom/shilapi/xcertplay/CarPlayHostActivity;->mfiTarget:%s" % (target, target, target),
         "CarPlay host initial MFi target",
     )
     replace_once(
         choices,
         "    sget-object v2, %s->LOCAL:%s\n\n    sget v4, Lcom/shilapi/xcertplay/host/R$string;->local_offline:I" % (target, target),
-        "    sget-object v2, %s->I2C:%s\n\n    sget v4, Lcom/shilapi/xcertplay/host/R$string;->i2c:I" % (target, target),
-        "MFi settings choices (hardware-only)",
+        "    sget-object v2, %s->LOCAL:%s\n\n    sget v4, Lcom/shilapi/xcertplay/host/R$string;->local_offline:I" % (target, target),
+        "MFi settings choices (restore original LOCAL test-provider choice)",
     )
 
-    # The original APK carries a bundled offline MFi identity. Never propagate
-    # that private identity into the merged test artifact; use hardware-backed
-    # I2C by default and retain USB/CH341 as the alternate hardware option.
+    # Keep the original LOCAL provider code path and backend dispatch intact,
+    # but never propagate the original bundled private identity. A LOCAL test
+    # provider must be provisioned separately with an authorized test identity.
+    # Hardware backends remain selectable; no automatic fallback is introduced.
     identity_dir = os.path.join(root, "assets/offline-mfi")
     if os.path.isdir(identity_dir):
         shutil.rmtree(identity_dir)
@@ -272,7 +273,7 @@ def main():
 .end method"""
     replace_once(tunnel, old_method, new_method, "type-130 exact-size decrypted frame output")
 
-    print("Original DiPlay MFi defaults patched; type-130 receive path uses incremental package accumulation.")
+    print("Original DiPlay LOCAL MFi provider path restored (credential assets excluded); type-130 receive path uses incremental package accumulation.")
     return 0
 
 
