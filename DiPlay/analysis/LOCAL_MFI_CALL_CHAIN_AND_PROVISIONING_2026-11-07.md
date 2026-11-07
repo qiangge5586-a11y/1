@@ -40,3 +40,15 @@ The original bootstrap already chooses Context.getFilesDir() below API 21, so th
 ## Status
 
 Source call-chain traced from recovered Smali. No runtime import code is claimed in this commit. The next code change should implement and test the external identity provisioning boundary before attempting a real LOCAL MFi session.
+
+## Superseding build policy update (2026-11-07)
+
+The earlier test-fork build policy that removed `assets/offline-mfi` is superseded.
+The user has confirmed authorization to retain and use the original bundled MFi
+identity assets in this private compatibility build. The merge script now preserves
+the original `identity.pk8` and `certificate.p7b` entries from the supplied
+DiPlay 0.3.11 APK and fails closed if either is missing or empty. The hygiene
+scanner allows the original `assets/offline-mfi/` path while continuing to reject
+separately named private-key exports and PEM private-key payloads. A successful
+static key/certificate loader check is not, by itself, proof of a live Apple MFi
+authentication exchange; device-level validation remains required.
