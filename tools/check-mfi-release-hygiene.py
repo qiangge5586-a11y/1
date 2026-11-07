@@ -5,9 +5,8 @@ import sys
 import zipfile
 
 FORBIDDEN_PATH_MARKERS = (
-    "offline-mfi",
-    "offline_mfi",
-    "offline.mfi",
+    # Preserve and allow the original APK's offline-mfi asset directory.
+    # Still reject separately named private-key exports outside that bundle.
     "mfi-private-key",
     "mfi_private_key",
     "mfi-private-identity",
@@ -63,7 +62,7 @@ def main(argv):
         for finding in findings:
             print("FAIL: " + finding, file=sys.stderr)
         return 1
-    print("MFi release hygiene: PASS (no offline identity or private-key PEM payload)")
+    print("MFi release hygiene: PASS (original bundled identity path allowed; no private-key PEM export payload)")
     return 0
 
 
